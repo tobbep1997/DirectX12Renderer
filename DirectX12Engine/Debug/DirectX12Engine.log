@@ -1,0 +1,7 @@
+﻿  Window.cpp
+g:\documentstorage\github\id3d12helpme\directx12engine\window\window.h(16): warning C4003: not enough arguments for function-like macro invocation 'CreateWindowA'
+g:\documentstorage\github\id3d12helpme\directx12engine\window\window.h(16): error C2059: syntax error: 'constant'
+g:\documentstorage\github\id3d12helpme\directx12engine\window\window.cpp(14): warning C4003: not enough arguments for function-like macro invocation 'CreateWindowA'
+g:\documentstorage\github\id3d12helpme\directx12engine\window\window.cpp(14): error C2059: syntax error: ','
+g:\documentstorage\github\id3d12helpme\directx12engine\window\window.cpp(15): error C2143: syntax error: missing ';' before '{'
+g:\documentstorage\github\id3d12helpme\directx12engine\window\window.cpp(15): error C2447: '{': missing function header (old-style formal list?)
