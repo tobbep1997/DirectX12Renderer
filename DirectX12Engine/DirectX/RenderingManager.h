@@ -1,6 +1,8 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
 
+class GeometryPass;
+
 const UINT FRAME_BUFFER_COUNT = 3;
 class RenderingManager
 {
@@ -47,6 +49,8 @@ private:
 	HRESULT _createCommandAllocators();
 	HRESULT _createCommandList();
 	HRESULT _createFenceAndFenceEvent();
+
+	GeometryPass * m_geometryPass;
 
 private:
 	//DEBUG LAYER

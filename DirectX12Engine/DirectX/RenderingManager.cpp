@@ -2,6 +2,7 @@
 #include "RenderingManager.h"
 #include <functional>
 
+#include "Render/GeometryPass.h"
 
 RenderingManager::RenderingManager()
 {
@@ -10,6 +11,7 @@ RenderingManager::RenderingManager()
 RenderingManager::~RenderingManager()
 {
 	this->Release();
+	delete m_geometryPass;
 }
 
 RenderingManager* RenderingManager::GetInstance()
@@ -72,6 +74,13 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	{
 		return Window::CreateError(hr);
 	}
+
+	m_geometryPass = new GeometryPass(m_device, m_swapChain);
+	if (FAILED(hr = m_geometryPass->Init()))
+	{
+		return Window::CreateError(hr);
+	}
+
 	return hr;
 }
 
@@ -305,6 +314,7 @@ HRESULT RenderingManager::_createSwapChain(const Window & window, IDXGIFactory4 
 	swapChainDesc.Windowed = !window.GetFullscreen();
 
 	IDXGISwapChain * tmpSwapChain = nullptr;
+	
 
 	if (SUCCEEDED(hr = dxgiFactory->CreateSwapChain(m_commandQueue, 
 		&swapChainDesc,

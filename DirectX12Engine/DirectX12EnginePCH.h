@@ -16,6 +16,9 @@
 #include "Window/Window.h"
 #include "DirectX/RenderingManager.h"
 
+#include "DirectX/Shaders/ShaderCreator.h"
+
+
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = nullptr; } }
 
 inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)
