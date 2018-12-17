@@ -18,10 +18,10 @@
     <ClCompile Include="Window\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DirectX\Engine3D.cpp">
+    <ClCompile Include="DirectX\RenderingManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DirectX\RenderingManager.cpp">
+    <ClCompile Include="DirectX12EnginePCH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,10 +29,13 @@
     <ClInclude Include="Window\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DirectX\Engine3D.h">
+    <ClInclude Include="DirectX\RenderingManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DirectX\RenderingManager.h">
+    <ClInclude Include="DirectX12Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX12EnginePCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

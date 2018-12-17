@@ -1,5 +1,4 @@
-#include <Window/Window.h>
-
+#include "DirectX12Engine.h"
 
 #ifdef _DEBUG
 #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
@@ -33,8 +32,17 @@ int WINAPI WinMain(HINSTANCE hInstance,
 #endif
 
 	HRESULT hr;	
-	Window * window = Window::GetInstance();
-	if (SUCCEEDED(hr = window->Create(hInstance, "Name", 1280, 720, FALSE)))
+	Window * window						= nullptr;
+	RenderingManager * renderingManager = nullptr;
+
+
+	if(SUCCEEDED(hr = InitDirectX12Engine(window,
+		renderingManager, 
+		hInstance, 
+		"Name",
+		1280, 
+		720, 
+		FALSE)))
 	{
 		while (window->IsOpen())
 		{
@@ -42,7 +50,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			{
 				//RUN GAME HERE
 			}			
-		}
+		}	
 	}
+	
 	return 0;
 }

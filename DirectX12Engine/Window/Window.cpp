@@ -1,17 +1,44 @@
+#include "DirectX12EnginePCH.h"
 #include "Window.h"
 
+BOOL Window::m_windowOpen = FALSE;
+
+
+HRESULT Window::CreateError(const HRESULT& hr)
+{
+	const _com_error err(hr);
+	return CreateError(err.ErrorMessage());
+}
+
+HRESULT Window::CreateError(const std::string& errormsg)
+{
+	return CreateError(std::wstring(errormsg.begin(), errormsg.end()));
+}
 
 HRESULT Window::CreateError(const std::wstring& errormsg)
 {
-	MessageBoxW(NULL, LPCWSTR(errormsg.c_str()),
+	return CreateError(LPCWSTR(errormsg.c_str()));
+}
+
+HRESULT Window::CreateError(const LPCWSTR& errormsg)
+{
+	MessageBoxW(NULL, errormsg,
 		L"Error", MB_OK | MB_ICONERROR);
 	return E_FAIL;
 }
 
+
 Window* Window::GetInstance()
 {
-	static Window m_window;
-	return &m_window;
+	m_windowOpen = TRUE;
+	static Window window;
+	return &window;
+}
+
+void Window::CloseWindow()
+{
+	m_windowOpen = FALSE;
+	PostQuitMessage(0);
 }
 
 HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const UINT& width, const UINT& height,
@@ -33,7 +60,7 @@ HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const
 	}
 
 	this->m_windowTitle = LPCTSTR(windowName.c_str());
-
+	this->m_fullscreen = fullscreen;
 	WNDCLASSEX wc;
 
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
@@ -105,6 +132,26 @@ BOOL Window::Updating()
 	return FALSE;
 }
 
+const UINT& Window::GetWidth() const
+{
+	return this->m_width;
+}
+
+const UINT& Window::GetHeight() const
+{
+	return this->m_height;
+}
+
+const BOOL& Window::GetFullscreen() const
+{
+	return this->m_fullscreen;
+}
+
+const HWND& Window::GetHWND() const
+{
+	return this->m_hwnd;
+}
+
 LRESULT Window::StaticWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	Window* pParent;
@@ -131,22 +178,15 @@ LRESULT Window::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE) {
 			DestroyWindow(this->m_hwnd);
-			_closeWindow();
 		}
 		return 0;
 
 	case WM_DESTROY:
-		_closeWindow();
-		PostQuitMessage(0);
+		CloseWindow();
 		return 0;
 	}
 	return DefWindowProc(this->m_hwnd,
 		msg,
 		wParam,
 		lParam);
-}
-
-void Window::_closeWindow()
-{
-	this->m_windowOpen = FALSE;
 }
