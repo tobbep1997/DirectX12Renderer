@@ -7,9 +7,9 @@ RenderingManager::RenderingManager()
 {
 }
 
-
 RenderingManager::~RenderingManager()
 {
+	this->Release();
 }
 
 RenderingManager* RenderingManager::GetInstance()
@@ -18,30 +18,45 @@ RenderingManager* RenderingManager::GetInstance()
 	return &renderingManager;
 }
 
-
-HRESULT RenderingManager::Init(const Window & window)
+HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLayer)
 {
 	HRESULT hr;
 	IDXGIAdapter1 * adapter = nullptr;
 	IDXGIFactory4 * dxgiFactory = nullptr;
 	if (SUCCEEDED(hr = this->_checkD3D12Support(adapter, dxgiFactory)))
 	{
-		if (SUCCEEDED(hr = D3D12CreateDevice(
-			adapter,
-			D3D_FEATURE_LEVEL_12_0,
-			IID_PPV_ARGS(&m_device))))
+		if (EnableDebugLayer)
 		{
-			if (SUCCEEDED(hr = _createCommandQueue()))
+			m_debugLayerEnabled = TRUE;
+			if (SUCCEEDED(hr = D3D12GetDebugInterface(IID_PPV_ARGS(&m_debugLayer))))
 			{
-				if (SUCCEEDED(hr = _createSwapChain(window, dxgiFactory)))
+				m_debugLayer->EnableDebugLayer();
+			}
+			
+			
+		}
+		if (SUCCEEDED(hr))
+		{
+			if (SUCCEEDED(hr = D3D12CreateDevice(
+				adapter,
+				D3D_FEATURE_LEVEL_12_0,
+				IID_PPV_ARGS(&m_device))))
+			{
+				if (SUCCEEDED(hr = _createCommandQueue()))
 				{
-					if (SUCCEEDED(hr = _createRenderTargetDescriptorHeap()))
+					if (SUCCEEDED(hr = _createSwapChain(window, dxgiFactory)))
 					{
-						if (SUCCEEDED(hr = _createCommandAllocators()))
+						if (SUCCEEDED(hr = _createRenderTargetDescriptorHeap()))
 						{
-							if (SUCCEEDED(hr = _createCommandList()))
+							if (SUCCEEDED(hr = _createCommandAllocators()))
 							{
-								hr = _createFenceAndFenceEvent();								
+								if (SUCCEEDED(hr = _createCommandList()))
+								{
+									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
+									{
+
+									}
+								}
 							}
 						}
 					}
@@ -60,7 +75,7 @@ HRESULT RenderingManager::Init(const Window & window)
 	return hr;
 }
 
-void RenderingManager::Flush()
+void RenderingManager::Flush(const BOOL & present)
 {
 	HRESULT hr = 0;
 	if (FAILED(hr = this->_flush()))
@@ -68,6 +83,7 @@ void RenderingManager::Flush()
 		Window::CreateError(hr);
 		Window::CloseWindow();
 	}
+	this->Present();
 }
 
 HRESULT RenderingManager::_updatePipeline()
@@ -151,7 +167,7 @@ void RenderingManager::Present()
 
 void RenderingManager::Release()
 {
-	for (int i = 0; i < FRAME_BUFFER_COUNT; ++i)
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
 	{		
 		m_frameIndex = i;
 		_waitForPreviousFrame(FALSE);
@@ -161,18 +177,31 @@ void RenderingManager::Release()
 	if (m_swapChain->GetFullscreenState(&fs, NULL))
 		m_swapChain->SetFullscreenState(false, NULL);
 
-	SAFE_RELEASE(m_device);
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_commandQueue);
 	SAFE_RELEASE(m_rtvDescriptorHeap);
 	SAFE_RELEASE(m_commandList);
 
-	for (int i = 0; i < FRAME_BUFFER_COUNT; ++i)
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
 	{
 		SAFE_RELEASE(m_renderTargets[i]);
 		SAFE_RELEASE(m_commandAllocator[i]);
 		SAFE_RELEASE(m_fence[i]);
 	};
+	SAFE_RELEASE(m_debugLayer);	
+
+	if (m_device->Release() > 0)
+	{
+		if (m_debugLayerEnabled)
+		{
+			ID3D12DebugDevice * dbgDevice = nullptr;
+			if (SUCCEEDED(m_device->QueryInterface(IID_PPV_ARGS(&dbgDevice))))
+			{
+				dbgDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
+				SAFE_RELEASE(dbgDevice);
+			}
+		}
+	}
 }
 
 HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
@@ -219,7 +248,7 @@ HRESULT RenderingManager::_checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFact
 			}
 
 			if (SUCCEEDED(hr = D3D12CreateDevice(adapter, 
-				D3D_FEATURE_LEVEL_11_0,
+				D3D_FEATURE_LEVEL_12_0,
 				_uuidof(ID3D12Device),
 				nullptr)))
 			{
@@ -275,7 +304,7 @@ HRESULT RenderingManager::_createSwapChain(const Window & window, IDXGIFactory4 
 	swapChainDesc.SampleDesc = sampleDesc;
 	swapChainDesc.Windowed = !window.GetFullscreen();
 
-	IDXGISwapChain * tmpSwapChain;
+	IDXGISwapChain * tmpSwapChain = nullptr;
 
 	if (SUCCEEDED(hr = dxgiFactory->CreateSwapChain(m_commandQueue, 
 		&swapChainDesc,
@@ -287,6 +316,7 @@ HRESULT RenderingManager::_createSwapChain(const Window & window, IDXGIFactory4 
 			return E_FAIL;
 		}
 	}
+	SAFE_RELEASE(tmpSwapChain);
 	return hr;
 }
 

@@ -17,3 +17,11 @@
 #include "DirectX/RenderingManager.h"
 
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = nullptr; } }
+
+inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)
+{
+#ifdef _DEBUG
+	return object->SetName(name.c_str());
+#endif
+	return S_OK;
+}
