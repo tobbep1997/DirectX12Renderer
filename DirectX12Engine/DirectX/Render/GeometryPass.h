@@ -6,9 +6,11 @@ class GeometryPass :
 {
 private:
 	IDXGISwapChain * m_swapChain;
-
+	ID3D12GraphicsCommandList * m_commandList;
 public:
-	GeometryPass(ID3D12Device * device, IDXGISwapChain * swapChain);
+	GeometryPass(ID3D12Device * device, 
+		IDXGISwapChain * swapChain, 
+		ID3D12GraphicsCommandList * commandList);
 	~GeometryPass();
 	
 	
@@ -19,15 +21,15 @@ public:
 
 private:
 	HRESULT _initID3D12RootSignature();
-	HRESULT _initInputLayout(D3D12_INPUT_LAYOUT_DESC * inputLayoutDesc);
-	HRESULT _initID3D12PipelineState(const D3D12_INPUT_LAYOUT_DESC & inputLayoutDesc);
+	HRESULT _initID3D12PipelineState();
 	HRESULT _initShaders();
+	HRESULT _createTriagnle();
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;
 	ID3D12Resource		* m_vertexBuffer  = nullptr;
 
-
+	D3D12_INPUT_LAYOUT_DESC m_inputLayoutDesc;
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 	D3D12_VIEWPORT	m_viewport;
 	D3D12_RECT		m_rect;

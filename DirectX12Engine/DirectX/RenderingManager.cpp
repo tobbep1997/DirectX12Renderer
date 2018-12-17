@@ -11,7 +11,6 @@ RenderingManager::RenderingManager()
 RenderingManager::~RenderingManager()
 {
 	this->Release();
-	delete m_geometryPass;
 }
 
 RenderingManager* RenderingManager::GetInstance()
@@ -75,7 +74,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 		return Window::CreateError(hr);
 	}
 
-	m_geometryPass = new GeometryPass(m_device, m_swapChain);
+	m_geometryPass = new GeometryPass(m_device, m_swapChain, m_commandList);
 	if (FAILED(hr = m_geometryPass->Init()))
 	{
 		return Window::CreateError(hr);
@@ -176,6 +175,10 @@ void RenderingManager::Present()
 
 void RenderingManager::Release()
 {
+
+	m_geometryPass->Release();
+	delete m_geometryPass;
+
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
 	{		
 		m_frameIndex = i;
