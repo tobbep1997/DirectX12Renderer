@@ -1,8 +1,8 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
 
-inline HRESULT InitDirectX12Engine(Window * window,
-	RenderingManager * renderingManager,
+inline BOOL InitDirectX12Engine(Window *& window,
+	RenderingManager *& renderingManager,
 	HINSTANCE hInstance,
 	const std::string & windowName,
 	const UINT & width,
@@ -20,8 +20,8 @@ inline HRESULT InitDirectX12Engine(Window * window,
 	{
 		if (SUCCEEDED(hr = renderingManager->Init(*window)))
 		{
-			return S_OK;
+			return TRUE;
 		}
 	}
-	return hr;
+	return FALSE;
 }

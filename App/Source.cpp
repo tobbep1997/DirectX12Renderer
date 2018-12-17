@@ -31,27 +31,28 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	_AlocConsole();
 #endif
 
-	HRESULT hr;	
 	Window * window						= nullptr;
 	RenderingManager * renderingManager = nullptr;
 
-
-	if(SUCCEEDED(hr = InitDirectX12Engine(window,
+	if(InitDirectX12Engine(window,
 		renderingManager, 
 		hInstance, 
-		"Name",
+		"DirectX12 Ejaculant",
 		1280, 
 		720, 
-		FALSE)))
+		FALSE))
 	{
 		while (window->IsOpen())
 		{
 			if (!window->Updating())
 			{
 				//RUN GAME HERE
-			}			
+			}
+			renderingManager->Flush();
+			renderingManager->Present();
 		}	
 	}
-	
+
+	renderingManager->Release();
 	return 0;
 }

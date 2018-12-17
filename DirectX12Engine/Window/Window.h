@@ -10,7 +10,7 @@ public:
 	static HRESULT CreateError(const std::wstring & errormsg);
 	static HRESULT CreateError(const LPCWSTR & errormsg);
 	static Window * GetInstance();
-	void CloseWindow();
+	static void CloseWindow();
 
 	HRESULT Create(HINSTANCE hInstance, 
 				const std::string & windowName, 

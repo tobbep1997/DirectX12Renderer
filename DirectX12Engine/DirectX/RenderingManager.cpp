@@ -28,14 +28,23 @@ HRESULT RenderingManager::Init(const Window & window)
 	{
 		if (SUCCEEDED(hr = D3D12CreateDevice(
 			adapter,
-			D3D_FEATURE_LEVEL_11_0,
+			D3D_FEATURE_LEVEL_12_0,
 			IID_PPV_ARGS(&m_device))))
 		{
 			if (SUCCEEDED(hr = _createCommandQueue()))
 			{
 				if (SUCCEEDED(hr = _createSwapChain(window, dxgiFactory)))
 				{
-					
+					if (SUCCEEDED(hr = _createRenderTargetDescriptorHeap()))
+					{
+						if (SUCCEEDED(hr = _createCommandAllocators()))
+						{
+							if (SUCCEEDED(hr = _createCommandList()))
+							{
+								hr = _createFenceAndFenceEvent();								
+							}
+						}
+					}
 				}
 			}
 		}
@@ -43,31 +52,148 @@ HRESULT RenderingManager::Init(const Window & window)
 
 	SAFE_RELEASE(adapter);
 	SAFE_RELEASE(dxgiFactory);
+
+	if (FAILED(hr))
+	{
+		return Window::CreateError(hr);
+	}
 	return hr;
 }
 
-HRESULT RenderingManager::Update()
+void RenderingManager::Flush()
 {
-	return S_OK;
-
+	HRESULT hr = 0;
+	if (FAILED(hr = this->_flush()))
+	{
+		Window::CreateError(hr);
+		Window::CloseWindow();
+	}
 }
 
-HRESULT RenderingManager::Flush()
+HRESULT RenderingManager::_updatePipeline()
 {
-	return S_OK;
+	HRESULT hr = S_OK;
+	if (FAILED(hr = _waitForPreviousFrame()))
+	{
+		return hr;
+	}
 
+	if (FAILED(hr = m_commandAllocator[m_frameIndex]->Reset()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = m_commandList->Reset(m_commandAllocator[m_frameIndex], NULL)))
+	{
+		return hr;
+	}
+
+	m_commandList->ResourceBarrier(1, 
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_renderTargets[m_frameIndex],
+			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+		m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_frameIndex,
+		m_rtvDescriptorSize);
+
+	m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+	const float clearColor[] = { 1.0f, 0.0f, 1.0f, 1.0f };
+	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_renderTargets[m_frameIndex],
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+	m_commandList->Close();
+	return hr;
 }
 
-HRESULT RenderingManager::Present()
+HRESULT RenderingManager::_flush()
 {
-	return S_OK;
+	HRESULT hr = 0;
 
+	if (FAILED(hr = _updatePipeline()))
+	{
+		return hr;
+	}
+
+	ID3D12CommandList* ppCommandLists[] = { m_commandList };
+
+	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	if (FAILED(hr = m_commandQueue->Signal(m_fence[m_frameIndex], m_fenceValue[m_frameIndex])))
+	{
+		return hr;
+	}
+
+	return hr;
 }
 
-HRESULT RenderingManager::Release()
+HRESULT RenderingManager::_present()
 {
-	return S_OK;
+	HRESULT hr = 0;
+	hr = m_swapChain->Present(0, 0);
+	return hr;
+}
 
+void RenderingManager::Present()
+{
+	HRESULT hr = 0;
+	if (FAILED(hr = this->_present()))
+	{
+		Window::CreateError(hr);
+		Window::CloseWindow();
+	}
+}
+
+void RenderingManager::Release()
+{
+	for (int i = 0; i < FRAME_BUFFER_COUNT; ++i)
+	{		
+		m_frameIndex = i;
+		_waitForPreviousFrame(FALSE);
+	}
+
+	BOOL fs = false;
+	if (m_swapChain->GetFullscreenState(&fs, NULL))
+		m_swapChain->SetFullscreenState(false, NULL);
+
+	SAFE_RELEASE(m_device);
+	SAFE_RELEASE(m_swapChain);
+	SAFE_RELEASE(m_commandQueue);
+	SAFE_RELEASE(m_rtvDescriptorHeap);
+	SAFE_RELEASE(m_commandList);
+
+	for (int i = 0; i < FRAME_BUFFER_COUNT; ++i)
+	{
+		SAFE_RELEASE(m_renderTargets[i]);
+		SAFE_RELEASE(m_commandAllocator[i]);
+		SAFE_RELEASE(m_fence[i]);
+	};
+}
+
+HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
+{
+	HRESULT hr = 0;
+
+	if (updateFrame)
+		m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+
+	if (m_fence[m_frameIndex]->GetCompletedValue() < m_fenceValue[m_frameIndex])
+	{
+		if (FAILED(hr = m_fence[m_frameIndex]->SetEventOnCompletion(m_fenceValue[m_frameIndex], m_fenceEvent)))
+		{
+			return hr;
+		}
+		WaitForSingleObject(m_fenceEvent, INFINITE);
+	}
+
+	m_fenceValue[m_frameIndex]++;
+
+	return hr;
 }
 
 HRESULT RenderingManager::_checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory)
@@ -109,10 +235,7 @@ HRESULT RenderingManager::_checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFact
 		SAFE_RELEASE(dxgiFactory);
 	}
 
-	if (FAILED(hr))
-	{	
-		return Window::CreateError(hr);
-	}
+
 	return hr;
 }
 
@@ -125,7 +248,6 @@ HRESULT RenderingManager::_createCommandQueue()
 	if (FAILED(hr = this->m_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue))))
 	{
 		SAFE_RELEASE(this->m_commandQueue);
-		return Window::CreateError(hr);
 	}
 	return hr;
 }
@@ -165,10 +287,6 @@ HRESULT RenderingManager::_createSwapChain(const Window & window, IDXGIFactory4 
 			return E_FAIL;
 		}
 	}
-	if (FAILED(hr))
-	{
-		return Window::CreateError(hr);
-	}
 	return hr;
 }
 
@@ -186,11 +304,62 @@ HRESULT RenderingManager::_createRenderTargetDescriptorHeap()
 		IID_PPV_ARGS(&m_rtvDescriptorHeap))))
 	{
 		m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+		for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+		{
+			if (FAILED(hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_renderTargets[i]))))
+			{
+				break;
+			}
+			m_device->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
+			rtvHandle.Offset(1, m_rtvDescriptorSize);
+		}
+
+	}
+	return hr;
+}
+
+HRESULT RenderingManager::_createCommandAllocators()
+{
+	HRESULT hr = 0;
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (FAILED(hr = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator[i]))))
+		{
+			break;
+		}
+	}
+	
+	return hr;
+}
+
+HRESULT RenderingManager::_createCommandList()
+{
+	HRESULT hr = 0;
+
+	hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList));
+	m_commandList->Close();
+	return hr;
+}
+
+HRESULT RenderingManager::_createFenceAndFenceEvent()
+{
+	HRESULT hr = 0;
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (FAILED(hr = m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence[i]))))
+		{
+			break;
+		}
+		m_fenceValue[i] = 0;
 	}
 
-	if (FAILED(hr))
-	{
-		return Window::CreateError(hr);
-	}
+	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (nullptr == m_fenceEvent)
+		return E_FAIL;
+
 	return hr;
 }

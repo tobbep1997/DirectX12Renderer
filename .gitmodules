@@ -1,0 +1,3 @@
+[submodule "DirectX12Engine/Submodule/DirectXHelpContent"]
+	path = DirectX12Engine/Submodule/DirectXHelpContent
+	url = https://github.com/Microsoft/DirectX-Graphics-Samples.git
