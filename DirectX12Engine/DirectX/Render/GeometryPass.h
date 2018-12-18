@@ -19,15 +19,20 @@ private:
 	HRESULT _initID3D12PipelineState();
 	HRESULT _initShaders();
 	HRESULT _createTriagnle();
+	HRESULT _createInstanceBuffer();
 	HRESULT _createViewport();
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;
+
+	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
+	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+	D3D12_INDEX_BUFFER_VIEW  m_indexBufferView;
 	ID3D12Resource		* m_vertexBuffer  = nullptr;
 	ID3D12Resource		* m_heapBuffer	  = nullptr;
+	ID3D12Resource		* m_indexBuffer   = nullptr;
 
-	D3D12_INPUT_LAYOUT_DESC m_inputLayoutDesc;
-	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+
 	D3D12_VIEWPORT	m_viewport;
 	D3D12_RECT		m_rect;
 
@@ -36,7 +41,13 @@ private:
 
 	struct Vertex
 	{
+		Vertex(const DirectX::XMFLOAT4 & position, const DirectX::XMFLOAT4 & color)
+		{
+			this->position = DirectX::XMFLOAT4(position);
+			this->color = DirectX::XMFLOAT4(color);
+		}
 		DirectX::XMFLOAT4 position;
+		DirectX::XMFLOAT4 color;
 	};
 };
 

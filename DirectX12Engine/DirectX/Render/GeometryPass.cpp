@@ -39,7 +39,7 @@ HRESULT GeometryPass::Init()
 	{
 		return hr;
 	}
-
+	
 	return hr;
 }
 
@@ -100,7 +100,9 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+
 	};
 
 	m_inputLayoutDesc.NumElements = sizeof(inputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
@@ -204,9 +206,9 @@ HRESULT GeometryPass::_createTriagnle()
 	HRESULT hr = 0;
 
 	Vertex vList[] = {
-		{ { 0.0f, 0.5f, 0.5f, 1.0f } },
-		{ { 0.5f, -0.5f, 0.5f, 1.0f } },
-		{ { -0.5f, -0.5f, 0.5f, 1.0f } },
+		{ {  0.0f,  0.5f, 0.5f, 1.0f },	{1.0f, 0.0f, 0.0f, 1.0f} },
+		{ {  0.5f, -0.5f, 0.5f, 1.0f },	{0.0f, 1.0f, 0.0f, 1.0f} },
+		{ { -0.5f, -0.5f, 0.5f, 1.0f }, {0.0f, 0.0f, 1.0f, 1.0f} },
 	};
 
 	const int bufferSize = sizeof(vList);
@@ -263,14 +265,18 @@ HRESULT GeometryPass::_createTriagnle()
 	return hr;
 }
 
+HRESULT GeometryPass::_createInstanceBuffer()
+{
+}
+
 HRESULT GeometryPass::_createViewport()
 {
 	HRESULT hr = 0;
 	// Fill out the Viewport
 	m_viewport.TopLeftX = 0;
 	m_viewport.TopLeftY = 0;
-	m_viewport.Width = p_window->GetWidth();
-	m_viewport.Height = p_window->GetHeight();
+	m_viewport.Width = static_cast<FLOAT>(p_window->GetWidth());
+	m_viewport.Height = static_cast<FLOAT>(p_window->GetHeight());
 	m_viewport.MinDepth = 0.0f;
 	m_viewport.MaxDepth = 1.0f;
 
