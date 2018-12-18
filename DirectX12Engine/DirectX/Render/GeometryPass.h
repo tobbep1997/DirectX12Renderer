@@ -4,13 +4,8 @@
 class GeometryPass :
 	public IRender
 {
-private:
-	IDXGISwapChain * m_swapChain;
-	ID3D12GraphicsCommandList * m_commandList;
 public:
-	GeometryPass(ID3D12Device * device, 
-		IDXGISwapChain * swapChain, 
-		ID3D12GraphicsCommandList * commandList);
+	GeometryPass(RenderingManager * renderingManager, const Window & window);
 	~GeometryPass();
 	
 	
@@ -24,10 +19,12 @@ private:
 	HRESULT _initID3D12PipelineState();
 	HRESULT _initShaders();
 	HRESULT _createTriagnle();
+	HRESULT _createViewport();
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;
 	ID3D12Resource		* m_vertexBuffer  = nullptr;
+	ID3D12Resource		* m_heapBuffer	  = nullptr;
 
 	D3D12_INPUT_LAYOUT_DESC m_inputLayoutDesc;
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;

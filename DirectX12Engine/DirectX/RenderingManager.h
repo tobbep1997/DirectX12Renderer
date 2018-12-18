@@ -17,6 +17,20 @@ public:
 	void Present();
 	void Release();
 
+
+	ID3D12Device * GetDevice() const;
+	IDXGISwapChain3 * GetSwapChain() const;
+	ID3D12GraphicsCommandList * GetCommandList() const;
+	ID3D12CommandQueue * GetCommandQueue() const;
+	ID3D12DescriptorHeap * GetRTVDescriptorHeap() const;
+
+	ID3D12CommandAllocator * GetCommandAllocator()const;
+	ID3D12Resource * GetRenderTargets() const;
+	ID3D12Fence *	GetFence() const;
+
+	UINT64 * GetFenceValues();
+	UINT * GetFrameIndex();
+
 private:
 
 	ID3D12Device *				m_device = nullptr;

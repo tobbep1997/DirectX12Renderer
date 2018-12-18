@@ -4,9 +4,14 @@
 class IRender
 {
 protected:
-	ID3D12Device * p_device;
-
-	IRender(ID3D12Device * device) { this->p_device = device; }
+	RenderingManager * p_renderingManager;
+	const Window * p_window;
+	IRender(RenderingManager * renderingManager, 
+		const Window & window)
+	{
+		this->p_renderingManager = renderingManager;
+		this->p_window = &window;
+	}
 public:
 	virtual~IRender() = default;
 

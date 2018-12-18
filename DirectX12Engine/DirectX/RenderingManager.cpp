@@ -55,8 +55,13 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 								{
 									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
 									{
+										m_geometryPass = new GeometryPass(this, window);
+										if (SUCCEEDED(hr = m_geometryPass->Init()))
+										{
 
+										}
 									}
+										m_commandList->Close();
 								}
 							}
 						}
@@ -72,13 +77,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	if (FAILED(hr))
 	{
 		return Window::CreateError(hr);
-	}
-
-	m_geometryPass = new GeometryPass(m_device, m_swapChain, m_commandList);
-	if (FAILED(hr = m_geometryPass->Init()))
-	{
-		return Window::CreateError(hr);
-	}
+	}	
 
 	return hr;
 }
@@ -125,6 +124,12 @@ HRESULT RenderingManager::_updatePipeline()
 
 	const float clearColor[] = { 1.0f, 0.0f, 1.0f, 1.0f };
 	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+	//---------------------------------------------------------------------
+	//UPDATE HERE
+	m_geometryPass->Draw();
+
+	//---------------------------------------------------------------------
 
 	m_commandList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -175,10 +180,6 @@ void RenderingManager::Present()
 
 void RenderingManager::Release()
 {
-
-	m_geometryPass->Release();
-	delete m_geometryPass;
-
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
 	{		
 		m_frameIndex = i;
@@ -202,6 +203,10 @@ void RenderingManager::Release()
 	};
 	SAFE_RELEASE(m_debugLayer);	
 
+
+	m_geometryPass->Release();
+	delete m_geometryPass;
+
 	if (m_device->Release() > 0)
 	{
 		if (m_debugLayerEnabled)
@@ -214,6 +219,56 @@ void RenderingManager::Release()
 			}
 		}
 	}
+}
+
+ID3D12Device* RenderingManager::GetDevice() const
+{
+	return this->m_device;
+}
+
+IDXGISwapChain3* RenderingManager::GetSwapChain() const
+{
+	return this->m_swapChain;
+}
+
+ID3D12GraphicsCommandList* RenderingManager::GetCommandList() const
+{
+	return this->m_commandList;
+}
+
+ID3D12DescriptorHeap* RenderingManager::GetRTVDescriptorHeap() const
+{
+	return this->m_rtvDescriptorHeap;
+}
+
+ID3D12CommandAllocator* RenderingManager::GetCommandAllocator() const
+{
+	return *this->m_commandAllocator;
+}
+
+ID3D12Resource* RenderingManager::GetRenderTargets() const
+{
+	return *this->m_renderTargets;
+}
+
+ID3D12Fence* RenderingManager::GetFence() const
+{
+	return *this->m_fence;
+}
+
+UINT* RenderingManager::GetFrameIndex()
+{
+	return &this->m_frameIndex;
+}
+
+UINT64 * RenderingManager::GetFenceValues()
+{
+	return this->m_fenceValue;
+}
+
+ID3D12CommandQueue* RenderingManager::GetCommandQueue() const
+{
+	return this->m_commandQueue;
 }
 
 HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
@@ -383,7 +438,6 @@ HRESULT RenderingManager::_createCommandList()
 	HRESULT hr = 0;
 
 	hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList));
-	m_commandList->Close();
 	return hr;
 }
 
