@@ -19,8 +19,8 @@ private:
 	HRESULT _initID3D12PipelineState();
 	HRESULT _initShaders();
 	HRESULT _createTriagnle();
-	HRESULT _createInstanceBuffer();
 	HRESULT _createViewport();
+	HRESULT _createDepthStencil();
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;
@@ -37,6 +37,8 @@ private:
 	ID3D12Resource		* m_indexBuffer			= nullptr;
 	ID3D12Resource		* m_indexHeapBuffer		= nullptr;
 
+	ID3D12Resource		* m_depthStencilBuffer  = nullptr;
+	ID3D12DescriptorHeap* m_depthStencilDescritorHeap = nullptr;
 
 	D3D12_VIEWPORT	m_viewport;
 	D3D12_RECT		m_rect;

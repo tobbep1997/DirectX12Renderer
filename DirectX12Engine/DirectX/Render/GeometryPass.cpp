@@ -52,6 +52,12 @@ HRESULT GeometryPass::Update()
 
 HRESULT GeometryPass::Draw()
 {
+	p_renderingManager->GetCommandList()->ClearDepthStencilView(
+		m_depthStencilDescritorHeap->GetCPUDescriptorHandleForHeapStart(), 
+		D3D12_CLEAR_FLAG_DEPTH,
+		1.0f, 0, 0,
+		nullptr);
+
 	HRESULT hr = 0;
 	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
 	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
@@ -60,7 +66,18 @@ HRESULT GeometryPass::Draw()
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	p_renderingManager->GetCommandList()->IASetIndexBuffer(&m_indexBufferView);
+	
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencilDescritorHeap->GetCPUDescriptorHandleForHeapStart());
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+		p_renderingManager->GetRTVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
+		*p_renderingManager->GetFrameIndex(),
+		*p_renderingManager->GetRTVDescriptorSize());
+
+	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
 	p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 4, 0);
 	return hr;
 }
 
@@ -74,6 +91,8 @@ HRESULT GeometryPass::Release()
 	SAFE_RELEASE(m_vertexHeapBuffer);
 	SAFE_RELEASE(m_indexBuffer);
 	SAFE_RELEASE(m_indexHeapBuffer);
+	SAFE_RELEASE(m_depthStencilBuffer);
+	SAFE_RELEASE(m_depthStencilDescritorHeap);
 	return hr;
 }
 
@@ -119,18 +138,11 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
-	graphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(
-		D3D12_FILL_MODE_SOLID,
-		D3D12_CULL_MODE_BACK,
-		FALSE, 
-		0, 0, 0, 
-		FALSE, 
-		FALSE, 
-		FALSE, 
-		0,
-		D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
+	graphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
+	graphicsPipelineStateDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
 	DXGI_SWAP_CHAIN_DESC desc;
 	if (SUCCEEDED(hr = p_renderingManager->GetSwapChain()->GetDesc(&desc)))
@@ -196,7 +208,13 @@ HRESULT GeometryPass::_createTriagnle()
 		{ { -0.5f,  0.5f, 0.5f, 1.0f },	{1.0f, 0.0f, 0.0f, 1.0f} },
 		{ {  0.5f, -0.5f, 0.5f, 1.0f },	{0.0f, 1.0f, 0.0f, 1.0f} },
 		{ { -0.5f, -0.5f, 0.5f, 1.0f }, {0.0f, 0.0f, 1.0f, 1.0f} },
-		{ {  0.5f,  0.5f, 0.5f, 1.0f }, {1.0f, 0.0f, 1.0f, 1.0f} }
+		{ {  0.5f,  0.5f, 0.5f, 1.0f }, {1.0f, 1.0f, 1.0f, 1.0f} },
+
+		// second quad (further from camera, green)
+		{ { -0.75f,  0.75f, 0.75f, 1.0f },	{1.0f, 0.0f, 0.0f, 1.0f} },
+		{ {  0.0f ,  0.0f , 0.75f, 1.0f },	{0.0f, 1.0f, 0.0f, 1.0f} },
+		{ { -0.75f,  0.0f , 0.75f, 1.0f },  {0.0f, 0.0f, 1.0f, 1.0f} },
+		{ {  0.0f ,  0.75f, 0.75f, 1.0f },  {1.0f, 1.0f, 1.0f, 1.0f} },
 	};
 
 	m_vertexBufferSize = sizeof(vList);
@@ -275,6 +293,11 @@ HRESULT GeometryPass::_createTriagnle()
 
 					p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
+					if (FAILED(hr = _createDepthStencil()))
+					{
+						return hr;
+					}
+
 					p_renderingManager->GetCommandList()->Close();
 					ID3D12CommandList* ppCommandLists[] = { p_renderingManager->GetCommandList() };
 					p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
@@ -292,6 +315,8 @@ HRESULT GeometryPass::_createTriagnle()
 						m_vertexBufferView.StrideInBytes = sizeof(Vertex);
 						m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
 
+
+
 					}
 				}
 			}
@@ -301,14 +326,6 @@ HRESULT GeometryPass::_createTriagnle()
 	return hr;
 }
 
-HRESULT GeometryPass::_createInstanceBuffer()
-{
-	HRESULT hr = 0;
-	
-	
-
-	return hr;
-}
 
 HRESULT GeometryPass::_createViewport()
 {
@@ -328,3 +345,51 @@ HRESULT GeometryPass::_createViewport()
 	m_rect.bottom = p_window->GetHeight();
 	return hr;
 }
+
+HRESULT GeometryPass::_createDepthStencil()
+{
+	HRESULT hr = 0;
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+
+	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
+		&dsvHeapDesc, IID_PPV_ARGS(&m_depthStencilDescritorHeap))))
+	{
+		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+		depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+		depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+		D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+		depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+		depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+		depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Tex2D(
+					DXGI_FORMAT_D32_FLOAT,
+					p_window->GetWidth(), p_window->GetHeight(),
+					1, 0, 1, 0, 
+					D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&depthOptimizedClearValue,
+			IID_PPV_ARGS(&m_depthStencilBuffer))))
+		{
+			p_renderingManager->GetDevice()->CreateDepthStencilView(
+				m_depthStencilBuffer,
+				&depthStencilDesc,
+				m_depthStencilDescritorHeap->GetCPUDescriptorHandleForHeapStart());
+			
+				
+			
+		}
+	}
+
+	return hr;
+}
+

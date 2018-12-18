@@ -261,6 +261,11 @@ UINT* RenderingManager::GetFrameIndex()
 	return &this->m_frameIndex;
 }
 
+UINT* RenderingManager::GetRTVDescriptorSize()
+{
+	return &this->m_rtvDescriptorSize;
+}
+
 UINT64 * RenderingManager::GetFenceValues()
 {
 	return this->m_fenceValue;

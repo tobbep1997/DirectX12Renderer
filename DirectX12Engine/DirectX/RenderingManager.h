@@ -30,6 +30,7 @@ public:
 
 	UINT64 * GetFenceValues();
 	UINT * GetFrameIndex();
+	UINT * GetRTVDescriptorSize();
 
 private:
 
