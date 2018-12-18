@@ -28,9 +28,14 @@ private:
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 	D3D12_INDEX_BUFFER_VIEW  m_indexBufferView;
-	ID3D12Resource		* m_vertexBuffer  = nullptr;
-	ID3D12Resource		* m_heapBuffer	  = nullptr;
-	ID3D12Resource		* m_indexBuffer   = nullptr;
+
+	UINT				  m_vertexBufferSize = 0;
+	ID3D12Resource		* m_vertexBuffer		= nullptr;
+	ID3D12Resource		* m_vertexHeapBuffer	= nullptr;
+
+	UINT				  m_indexBufferSize = 0;
+	ID3D12Resource		* m_indexBuffer			= nullptr;
+	ID3D12Resource		* m_indexHeapBuffer		= nullptr;
 
 
 	D3D12_VIEWPORT	m_viewport;

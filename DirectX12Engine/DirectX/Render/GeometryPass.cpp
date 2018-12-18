@@ -59,7 +59,8 @@ HRESULT GeometryPass::Draw()
 	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	p_renderingManager->GetCommandList()->DrawInstanced(3, 1, 0, 0);
+	p_renderingManager->GetCommandList()->IASetIndexBuffer(&m_indexBufferView);
+	p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
 	return hr;
 }
 
@@ -70,8 +71,9 @@ HRESULT GeometryPass::Release()
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
 	SAFE_RELEASE(m_vertexBuffer);
-	SAFE_RELEASE(m_heapBuffer);
-
+	SAFE_RELEASE(m_vertexHeapBuffer);
+	SAFE_RELEASE(m_indexBuffer);
+	SAFE_RELEASE(m_indexHeapBuffer);
 	return hr;
 }
 
@@ -151,21 +153,6 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 HRESULT GeometryPass::_initShaders()
 {
 	HRESULT hr = 0;
-	//if (FAILED(hr = ShaderCreator::CreateShader(
-	//	L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryVertex.hlsl",
-	//	m_vertexShader,
-	//	"vs_5_1")))
-	//{
-	//	return hr;
-	//}
-
-	//if (FAILED(hr = ShaderCreator::CreateShader(
-	//	L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryPixel.hlsl",
-	//	m_pixelShader,
-	//	"ps_5_1")))
-	//{
-	//	return hr;
-	//}
 	ID3DBlob * blob;
 	if (SUCCEEDED(hr = D3DCompileFromFile(
 		L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryVertex.hlsl",
@@ -206,67 +193,121 @@ HRESULT GeometryPass::_createTriagnle()
 	HRESULT hr = 0;
 
 	Vertex vList[] = {
-		{ {  0.0f,  0.5f, 0.5f, 1.0f },	{1.0f, 0.0f, 0.0f, 1.0f} },
+		{ { -0.5f,  0.5f, 0.5f, 1.0f },	{1.0f, 0.0f, 0.0f, 1.0f} },
 		{ {  0.5f, -0.5f, 0.5f, 1.0f },	{0.0f, 1.0f, 0.0f, 1.0f} },
 		{ { -0.5f, -0.5f, 0.5f, 1.0f }, {0.0f, 0.0f, 1.0f, 1.0f} },
+		{ {  0.5f,  0.5f, 0.5f, 1.0f }, {1.0f, 0.0f, 1.0f, 1.0f} }
 	};
 
-	const int bufferSize = sizeof(vList);
+	m_vertexBufferSize = sizeof(vList);
 
-	p_renderingManager->GetDevice()->CreateCommittedResource(
+	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
 		D3D12_HEAP_FLAG_NONE, 
-		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
+		&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),
 		D3D12_RESOURCE_STATE_COPY_DEST, 
 		nullptr, 
-		IID_PPV_ARGS(&m_vertexBuffer));
-
-	m_vertexBuffer->SetName(L"Vertex Buffer Resource Heap");
-
-	
-	p_renderingManager->GetDevice()->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), 
-		D3D12_HEAP_FLAG_NONE, 
-		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_heapBuffer));
-	m_heapBuffer->SetName(L"Vertex Buffer Upload Resource Heap");
-
-	D3D12_SUBRESOURCE_DATA vertexData = {};
-	vertexData.pData = reinterpret_cast<BYTE*>(vList); 
-	vertexData.RowPitch = bufferSize;
-	vertexData.SlicePitch = bufferSize;
-
-
-	UpdateSubresources(p_renderingManager->GetCommandList(), m_vertexBuffer, m_heapBuffer, 0, 0, 1, &vertexData);
-
-	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
-	p_renderingManager->GetCommandList()->Close();
-	ID3D12CommandList* ppCommandLists[] = { p_renderingManager->GetCommandList() };
-	p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-	p_renderingManager->GetFenceValues()[*p_renderingManager->GetFrameIndex()]++;
-	hr = p_renderingManager->GetCommandQueue()->Signal(
-		&p_renderingManager->GetFence()[*p_renderingManager->GetFrameIndex()],
-		p_renderingManager->GetFenceValues()[*p_renderingManager->GetFrameIndex()]);
-
-	if (FAILED(hr))
+		IID_PPV_ARGS(&m_vertexBuffer))))
 	{
-		return hr;
+		
+
+		m_vertexBuffer->SetName(L"Vertex Buffer Resource Heap");
+
+		
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_vertexHeapBuffer))))
+		{
+			m_vertexHeapBuffer->SetName(L"Vertex Buffer Upload Resource Heap");
+			
+
+			D3D12_SUBRESOURCE_DATA vertexData = {};
+			vertexData.pData = reinterpret_cast<void*>(vList); 
+			vertexData.RowPitch = m_vertexBufferSize;
+			vertexData.SlicePitch = m_vertexBufferSize;
+
+			UpdateSubresources(p_renderingManager->GetCommandList(), m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
+
+			p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+
+			//--
+			DWORD iList[] =
+			{
+				0, 1, 2,
+				0, 3, 1
+			};
+
+			m_indexBufferSize = sizeof(iList);
+
+			if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Buffer(m_indexBufferSize),
+				D3D12_RESOURCE_STATE_COPY_DEST,
+				nullptr,
+				IID_PPV_ARGS(&m_indexBuffer))))
+
+			{
+				SET_NAME(m_indexBuffer, L"Index Buffer");
+
+				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+					D3D12_HEAP_FLAG_NONE,
+					&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					nullptr,
+					IID_PPV_ARGS(&m_indexHeapBuffer))))
+				{
+					D3D12_SUBRESOURCE_DATA indexData = {};
+					indexData.pData = reinterpret_cast<void*>(iList);
+					indexData.RowPitch = m_indexBufferSize;
+					indexData.SlicePitch = m_indexBufferSize;
+
+					UpdateSubresources(p_renderingManager->GetCommandList(),
+						m_indexBuffer,
+						m_indexHeapBuffer,
+						0, 0, 1,
+						&indexData);
+
+					p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+
+					p_renderingManager->GetCommandList()->Close();
+					ID3D12CommandList* ppCommandLists[] = { p_renderingManager->GetCommandList() };
+					p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+					p_renderingManager->GetFenceValues()[*p_renderingManager->GetFrameIndex()]++;
+					if (SUCCEEDED(hr = p_renderingManager->GetCommandQueue()->Signal(
+						&p_renderingManager->GetFence()[*p_renderingManager->GetFrameIndex()],
+						p_renderingManager->GetFenceValues()[*p_renderingManager->GetFrameIndex()])))
+					{
+						m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
+						m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+						m_indexBufferView.SizeInBytes = m_indexBufferSize;
+
+						m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+						m_vertexBufferView.StrideInBytes = sizeof(Vertex);
+						m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
+
+					}
+				}
+			}
+		}
 	}
-
-	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-	m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-	m_vertexBufferView.SizeInBytes = bufferSize;
-
 
 	return hr;
 }
 
 HRESULT GeometryPass::_createInstanceBuffer()
 {
+	HRESULT hr = 0;
+	
+	
+
+	return hr;
 }
 
 HRESULT GeometryPass::_createViewport()
