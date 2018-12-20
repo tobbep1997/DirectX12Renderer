@@ -200,12 +200,16 @@ void RenderingManager::Release()
 		SAFE_RELEASE(m_renderTargets[i]);
 		SAFE_RELEASE(m_commandAllocator[i]);
 		SAFE_RELEASE(m_fence[i]);
+		m_fenceValue[i] = 0;
 	};
-	SAFE_RELEASE(m_debugLayer);	
+	SAFE_RELEASE(m_debugLayer);
 
+	m_frameIndex = 0;
+	m_rtvDescriptorSize = 0;
 
 	m_geometryPass->Release();
 	delete m_geometryPass;
+	m_geometryPass = nullptr;
 
 	if (m_device->Release() > 0)
 	{

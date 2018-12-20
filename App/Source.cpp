@@ -15,15 +15,15 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		TRUE))
+		FALSE))
 	{
 		while (window->IsOpen())
 		{
 			if (!window->Updating())
 			{
-				//RUN GAME HERE
+				
 			}
-			renderingManager->Flush();
+			UpdateRenderingManger(renderingManager);
 		}	
 	}
 

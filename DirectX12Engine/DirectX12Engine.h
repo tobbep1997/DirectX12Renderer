@@ -8,7 +8,7 @@
 #endif
 
 
-inline void _CrtSetDbgFlag()
+inline void _SetDbgFlag()
 {
 #ifdef _DEBUG
 	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
@@ -34,13 +34,13 @@ inline BOOL InitDirectX12Engine(Window *& window,
 	const BOOL & fullscreen = FALSE,
 	const BOOL & debuggingTools = FALSE)
 {
-	_CrtSetDbgFlag();
+	_SetDbgFlag();
 	if (debuggingTools)
 		_AlocConsole();
 
 	HRESULT hr;
 	if (window || renderingManager)
-		return E_INVALIDARG;
+		return FALSE;
 
 	window = Window::GetInstance();
 	renderingManager = RenderingManager::GetInstance();
@@ -49,8 +49,37 @@ inline BOOL InitDirectX12Engine(Window *& window,
 	{
 		if (SUCCEEDED(hr = renderingManager->Init(*window, debuggingTools)))
 		{
+			OutputDebugString("DirectX12 Init\n");
 			return TRUE;
 		}
 	}
+	OutputDebugString("DirectX12 FAILED\n");
+	
+	return FALSE;
+}
+
+inline void UpdateRenderingManger(RenderingManager *& renderingManager, const BOOL & present = TRUE)
+{
+	if (renderingManager)
+		renderingManager->Flush(present);
+	
+}
+
+inline BOOL RestartRenderingManager(Window *& window, RenderingManager *& renderingManager, const BOOL & debuggingTools = FALSE)
+{
+	HRESULT hr;
+
+	if (!window || !renderingManager)
+		return FALSE;
+
+	renderingManager->Release();
+
+	if (SUCCEEDED(hr = renderingManager->Init(*window, debuggingTools)))
+	{
+		OutputDebugString("DirectX12 Restart\n");
+		return TRUE;
+	}
+	OutputDebugString("DirectX12 FAILED to Restart\n");
+
 	return FALSE;
 }

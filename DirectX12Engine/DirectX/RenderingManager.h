@@ -65,7 +65,7 @@ private:
 	HRESULT _createCommandList();
 	HRESULT _createFenceAndFenceEvent();
 
-	GeometryPass * m_geometryPass;
+	GeometryPass * m_geometryPass = nullptr;
 
 private:
 	//DEBUG LAYER
