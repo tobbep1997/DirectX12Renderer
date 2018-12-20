@@ -15,7 +15,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		FALSE))
+		TRUE))
 	{
 		while (window->IsOpen())
 		{

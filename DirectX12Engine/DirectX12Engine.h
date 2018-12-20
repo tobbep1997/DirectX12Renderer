@@ -7,36 +7,40 @@
 #define DBG_NEW new
 #endif
 
-
-inline void _SetDbgFlag()
+namespace DEBUG
 {
-#ifdef _DEBUG
-	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
-}
+	
 
-inline void _AlocConsole() {
-#ifdef _DEBUG
-	AllocConsole();
-	FILE* fp;
-	freopen_s(&fp, "CONIN$", "r", stdin);
-	freopen_s(&fp, "CONOUT$", "w", stdout);
-#endif
-}
+	inline void _SetDbgFlag()
+	{
+	#ifdef _DEBUG
+		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	#endif
+	}
 
+	inline void _AlocConsole() {
+	#ifdef _DEBUG
+		AllocConsole();
+		FILE* fp;
+		freopen_s(&fp, "CONIN$", "r", stdin);
+		freopen_s(&fp, "CONOUT$", "w", stdout);
+	#endif
+	}
+
+}
 inline BOOL InitDirectX12Engine(Window *& window,
 	RenderingManager *& renderingManager,
-	HINSTANCE hInstance,
+	const HINSTANCE hInstance,
 	const std::string & windowName,
 	const UINT & width,
 	const UINT & height,
 	const BOOL & fullscreen = FALSE,
 	const BOOL & debuggingTools = FALSE)
 {
-	_SetDbgFlag();
+	DEBUG::_SetDbgFlag();
 	if (debuggingTools)
-		_AlocConsole();
+		DEBUG::_AlocConsole();
 
 	HRESULT hr;
 	if (window || renderingManager)
@@ -45,11 +49,14 @@ inline BOOL InitDirectX12Engine(Window *& window,
 	window = Window::GetInstance();
 	renderingManager = RenderingManager::GetInstance();
 
+	PRINT("Init Window Start") NEW_LINE;
 	if (SUCCEEDED(hr = window->Create(hInstance, windowName, width, height, fullscreen)))
 	{
+		PRINT("Init Window Done") NEW_LINE;
+		PRINT("Init DirectX12Engine Start") NEW_LINE;
 		if (SUCCEEDED(hr = renderingManager->Init(*window, debuggingTools)))
 		{
-			OutputDebugString("DirectX12 Init\n");
+			PRINT("Init DirectX12Engine Done") NEW_LINE;
 			return TRUE;
 		}
 	}

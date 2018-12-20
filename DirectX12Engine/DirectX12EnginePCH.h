@@ -27,3 +27,31 @@ inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)
 #endif
 	return S_OK;
 }
+
+namespace DEBUG
+{
+	inline void Print(const std::wstring & w_string)
+	{
+		OutputDebugStringW(w_string.c_str());
+	}
+
+	inline void Print(const std::string & string)
+	{
+		Print(std::wstring(string.begin(), string.end()));
+	}
+
+	inline void Print(const HRESULT & hr)
+	{
+		const _com_error err(hr);
+		return Print(err.ErrorMessage());
+	}
+}
+
+#ifdef _DEBUG
+	#include <iostream>
+	#define PRINT(p) { DEBUG::Print(p);		std::cout << p;			}
+	#define NEW_LINE { DEBUG::Print("\n");	std::cout << std::endl;	}
+#else
+	#define PRINT(p) {}
+	#define NEW_LINE {}
+#endif

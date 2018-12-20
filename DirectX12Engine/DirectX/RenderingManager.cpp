@@ -24,6 +24,9 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	HRESULT hr;
 	IDXGIAdapter1 * adapter = nullptr;
 	IDXGIFactory4 * dxgiFactory = nullptr;
+
+	m_geometryPass = new GeometryPass(this, window);
+
 	if (SUCCEEDED(hr = this->_checkD3D12Support(adapter, dxgiFactory)))
 	{
 		if (EnableDebugLayer)
@@ -54,14 +57,14 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 								if (SUCCEEDED(hr = _createCommandList()))
 								{
 									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
-									{
-										m_geometryPass = new GeometryPass(this, window);
+									{						
+										m_commandAllocator[this->m_frameIndex]->Reset();
+										m_commandList->Reset(m_commandAllocator[this->m_frameIndex], nullptr);
 										if (SUCCEEDED(hr = m_geometryPass->Init()))
 										{
 
 										}
 									}
-										m_commandList->Close();
 								}
 							}
 						}
@@ -105,7 +108,7 @@ HRESULT RenderingManager::_updatePipeline()
 	{
 		return hr;
 	}
-	if (FAILED(hr = m_commandList->Reset(m_commandAllocator[m_frameIndex], NULL)))
+	if (FAILED(hr = m_commandList->Reset(m_commandAllocator[m_frameIndex], nullptr)))
 	{
 		return hr;
 	}
@@ -447,6 +450,7 @@ HRESULT RenderingManager::_createCommandList()
 	HRESULT hr = 0;
 
 	hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList));
+	m_commandList->Close();
 	return hr;
 }
 

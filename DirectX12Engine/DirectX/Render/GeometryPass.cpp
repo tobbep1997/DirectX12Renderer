@@ -297,7 +297,6 @@ HRESULT GeometryPass::_createTriagnle()
 					{
 						return hr;
 					}
-
 					p_renderingManager->GetCommandList()->Close();
 					ID3D12CommandList* ppCommandLists[] = { p_renderingManager->GetCommandList() };
 					p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
@@ -314,9 +313,6 @@ HRESULT GeometryPass::_createTriagnle()
 						m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 						m_vertexBufferView.StrideInBytes = sizeof(Vertex);
 						m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
-
-
-
 					}
 				}
 			}
