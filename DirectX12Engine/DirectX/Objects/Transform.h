@@ -9,10 +9,15 @@ public:
 	~Transform();
 
 	void Init() override;
+	void Update() override;
 	void Release() override;
 
 	void SetPosition(const DirectX::XMFLOAT4 & position);
 	void SetPosition(const float & x, const float & y, const float & z, const float & w = 1.0f);
+
+	void AddPosition(const DirectX::XMFLOAT4 & position);
+	void AddPosition(const float & x, const float & y, const float & z, const float & w = 1.0f);
+
 
 	void SetRotation(const DirectX::XMFLOAT4 & rotation);
 	void SetRotation(const float & x, const float & y, const float & z, const float & w = 1.0f);
@@ -24,7 +29,7 @@ public:
 	const DirectX::XMFLOAT4 & GetRotation() const;
 	const DirectX::XMFLOAT4 & GetScale() const;
 
-	const DirectX::XMFLOAT4X4A & GetWorldMatrix();
+	const DirectX::XMFLOAT4X4A & GetWorldMatrix() const;
 
 private:
 	DirectX::XMFLOAT4 m_position	= DirectX::XMFLOAT4(0, 0, 0, 1);

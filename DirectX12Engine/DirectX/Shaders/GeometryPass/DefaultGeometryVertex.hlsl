@@ -13,13 +13,16 @@ struct VS_OUTPUT
 
 cbuffer CAMERA_BUFFER : register(b0)
 {
-    float4 m_cameraPos;
+    float4 CameraPos;
+    float4x4 CameraViewProjection;
+
+    float4 Padding[44];
 }
 
 VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output = (VS_OUTPUT) 0;
-    output.pos = input.pos;
-    output.color = input.color * m_cameraPos;
+    output.pos = mul(input.pos, CameraViewProjection);
+    output.color = input.color;
     return output;
 }

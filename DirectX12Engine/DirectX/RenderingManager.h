@@ -2,6 +2,7 @@
 #include "DirectX12EnginePCH.h"
 
 class GeometryPass;
+class Camera;
 
 const UINT FRAME_BUFFER_COUNT = 3;
 class RenderingManager
@@ -13,7 +14,7 @@ public:
 	static RenderingManager * GetInstance();
 
 	HRESULT Init(const Window & window, const BOOL & EnableDebugLayer = FALSE);
-	void Flush(const BOOL & present = TRUE);
+	void Flush(const Camera & camera, const BOOL & present = TRUE);
 	void Present();
 	void Release();
 
@@ -50,11 +51,11 @@ private:
 	UINT m_frameIndex = 0;
 	UINT m_rtvDescriptorSize = 0;
 
-	HRESULT _flush();
+	HRESULT _flush(const Camera & camera);
 	HRESULT _present();
 
 
-	HRESULT _updatePipeline();
+	HRESULT _updatePipeline(const Camera & camera);
 	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE);
 
 	HRESULT _checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory);

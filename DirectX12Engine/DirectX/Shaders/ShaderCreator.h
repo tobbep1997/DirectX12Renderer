@@ -9,9 +9,6 @@ public:
 	{
 		HRESULT hr;
 
-		/*if (blob)
-			return E_INVALIDARG;*/
-
 		ID3DBlob * errorBlob = nullptr;
 		if (FAILED(hr = D3DCompileFromFile(
 			path.c_str(),

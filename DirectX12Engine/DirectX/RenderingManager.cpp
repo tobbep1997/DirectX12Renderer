@@ -83,10 +83,10 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	return hr;
 }
 
-void RenderingManager::Flush(const BOOL & present)
+void RenderingManager::Flush(const Camera & camera, const BOOL & present)
 {
 	HRESULT hr = 0;
-	if (FAILED(hr = this->_flush()))
+	if (FAILED(hr = this->_flush(camera)))
 	{
 		Window::CreateError(hr);
 		Window::CloseWindow();
@@ -94,7 +94,7 @@ void RenderingManager::Flush(const BOOL & present)
 	this->Present();
 }
 
-HRESULT RenderingManager::_updatePipeline()
+HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 {
 	HRESULT hr = S_OK;
 	if (FAILED(hr = _waitForPreviousFrame()))
@@ -128,7 +128,7 @@ HRESULT RenderingManager::_updatePipeline()
 
 	//---------------------------------------------------------------------
 	//UPDATE HERE
-	m_geometryPass->Update();
+	m_geometryPass->Update(camera);
 	//DRAW HERE
 	m_geometryPass->Draw();
 
@@ -143,11 +143,11 @@ HRESULT RenderingManager::_updatePipeline()
 	return hr;
 }
 
-HRESULT RenderingManager::_flush()
+HRESULT RenderingManager::_flush(const Camera & camera)
 {
 	HRESULT hr = 0;
 
-	if (FAILED(hr = _updatePipeline()))
+	if (FAILED(hr = _updatePipeline(camera)))
 	{
 		return hr;
 	}

@@ -1,6 +1,8 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
 
+class Camera;
+
 class IRender
 {
 protected:
@@ -16,7 +18,7 @@ public:
 	virtual~IRender() = default;
 
 	virtual HRESULT Init()		= 0;
-	virtual HRESULT Update()	= 0;
+	virtual HRESULT Update(const Camera & camera)	= 0;
 	virtual HRESULT Draw()		= 0;
 	virtual HRESULT Release()	= 0;
 

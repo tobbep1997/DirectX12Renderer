@@ -179,8 +179,12 @@ LRESULT Window::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (wParam == VK_ESCAPE) {
 			DestroyWindow(this->m_hwnd);
 		}
+		Input::PressKey(wParam);		
 		return 0;
-
+	case WM_KEYUP:
+		Input::UnPressKey(wParam);
+		return 0;
+		
 	case WM_DESTROY:
 		CloseWindow();
 		return 0;

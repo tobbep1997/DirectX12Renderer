@@ -21,6 +21,11 @@ void Transform::Init()
 	_calcWorldMatrix();
 }
 
+void Transform::Update()
+{
+	_calcWorldMatrix();
+}
+
 void Transform::Release()
 {
 }
@@ -33,6 +38,22 @@ void Transform::SetPosition(const DirectX::XMFLOAT4& position)
 void Transform::SetPosition(const float& x, const float& y, const float& z, const float& w)
 {
 	this->SetPosition(DirectX::XMFLOAT4(x, y, z, w));
+}
+
+void Transform::AddPosition(const DirectX::XMFLOAT4& position)
+{
+	this->SetPosition(m_position.x + position.x,
+		m_position.y + position.y,
+		m_position.z + position.z,
+		position.w);
+}
+
+void Transform::AddPosition(const float& x, const float& y, const float& z, const float& w)
+{
+	this->SetPosition(m_position.x + x,
+		m_position.y + y,
+		m_position.z + z,
+		w);
 }
 
 void Transform::SetRotation(const DirectX::XMFLOAT4& rotation)
@@ -70,9 +91,8 @@ const DirectX::XMFLOAT4& Transform::GetScale() const
 	return this->m_scale;
 }
 
-const DirectX::XMFLOAT4X4A& Transform::GetWorldMatrix()
+const DirectX::XMFLOAT4X4A& Transform::GetWorldMatrix() const
 {
-	_calcWorldMatrix();
 	return this->m_worldMatrix;
 }
 

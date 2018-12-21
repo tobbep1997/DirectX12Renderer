@@ -1,5 +1,6 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
+#include "Utility/DeltaTime.h"
 
 #ifdef _DEBUG
 #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
@@ -65,10 +66,10 @@ inline BOOL InitDirectX12Engine(Window *& window,
 	return FALSE;
 }
 
-inline void UpdateRenderingManger(RenderingManager *& renderingManager, const BOOL & present = TRUE)
+inline void UpdateRenderingManger(RenderingManager *& renderingManager, const Camera & camera, const BOOL & present = TRUE)
 {
 	if (renderingManager)
-		renderingManager->Flush(present);
+		renderingManager->Flush(camera, present);
 	
 }
 

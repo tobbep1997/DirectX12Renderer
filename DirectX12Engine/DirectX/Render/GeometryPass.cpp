@@ -29,7 +29,7 @@ HRESULT GeometryPass::Init()
 	return hr;
 }
 
-HRESULT GeometryPass::Update()
+HRESULT GeometryPass::Update(const Camera & camera)
 {
 	HRESULT hr = 0;
 	p_renderingManager->GetCommandList()->ClearDepthStencilView(
@@ -58,10 +58,11 @@ HRESULT GeometryPass::Update()
 	static double timer = 0;
 	timer += 1.0 / 5000.0;
 
-	m_cameraBuffer.CameraPosition.x = abs(sin(timer));
-	m_cameraBuffer.CameraPosition.y = abs(sin(timer));
-	m_cameraBuffer.CameraPosition.z = abs(sin(timer));
-	m_cameraBuffer.CameraPosition.w = 1.0f;
+	m_cameraBuffer.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
+		camera.GetPosition().y,
+		camera.GetPosition().z,
+		camera.GetPosition().w);
+	m_cameraBuffer.ViewProjection = camera.GetViewProjectionMatrix();
 
 	memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_cameraBuffer, sizeof(m_cameraBuffer));
 

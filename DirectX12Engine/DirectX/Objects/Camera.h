@@ -5,6 +5,7 @@ class Camera :
 {
 public:
 	void Init() override;
+	void Update() override;
 	void Release() override;
 private:
 	DirectX::XMFLOAT4 m_direction;
@@ -47,8 +48,8 @@ public:
 	const DirectX::XMFLOAT4 & GetDirection() const;
 	const DirectX::XMFLOAT4 & GetUp() const;
 
-	const DirectX::XMFLOAT4X4A & GetViewMatrix();
-	const DirectX::XMFLOAT4X4A & GetProjectionMatrix();
-	const DirectX::XMFLOAT4X4A & GetViewProjectionMatrix();
+	const DirectX::XMFLOAT4X4A & GetViewMatrix() const;
+	const DirectX::XMFLOAT4X4A & GetProjectionMatrix() const;
+	const DirectX::XMFLOAT4X4A & GetViewProjectionMatrix() const;
 };
 

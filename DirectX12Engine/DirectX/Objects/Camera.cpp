@@ -8,6 +8,13 @@ void Camera::Init()
 	this->m_up			= DirectX::XMFLOAT4(0, 1, 0, 0);
 }
 
+void Camera::Update()
+{
+	_calcView();
+	_calcProjection();
+	_calcViewProjection();
+}
+
 void Camera::Release()
 {
 }
@@ -37,8 +44,6 @@ void Camera::_calcProjection()
 void Camera::_calcViewProjection()
 {
 	using namespace DirectX;
-	_calcView();
-	_calcProjection();
 
 	XMStoreFloat4x4A(&this->m_viewProjection,
 		XMLoadFloat4x4A(&this->m_projection) * XMLoadFloat4x4A(&this->m_view));
@@ -50,27 +55,25 @@ Camera::Camera(const float& fov, const float& aspectRatio, const float& nearPlan
 	this->m_aspectRatio = aspectRatio;
 	this->m_nearPlane	= nearPlane;
 	this->m_farPlane	= farPlane;
+	Init();
 }
 
 Camera::~Camera()
 {
 }	
 
-const DirectX::XMFLOAT4X4A& Camera::GetViewMatrix()
+const DirectX::XMFLOAT4X4A& Camera::GetViewMatrix() const
 {
-	_calcView();
 	return this->m_view;
 }
 
-const DirectX::XMFLOAT4X4A& Camera::GetProjectionMatrix()
+const DirectX::XMFLOAT4X4A& Camera::GetProjectionMatrix() const
 {
-	_calcProjection();
 	return this->m_projection;
 }
 
-const DirectX::XMFLOAT4X4A& Camera::GetViewProjectionMatrix()
+const DirectX::XMFLOAT4X4A& Camera::GetViewProjectionMatrix() const
 {
-	_calcViewProjection();
 	return this->m_viewProjection;
 }
 

@@ -10,14 +10,10 @@ private:
 
 	struct CameraBuffer
 	{
-		CameraBuffer(const DirectX::XMFLOAT4 & cameraPosition = DirectX::XMFLOAT4(1,1,1,1))
-		{
-			this->CameraPosition = DirectX::XMFLOAT4A(cameraPosition.x, 
-				cameraPosition.y,
-				cameraPosition.z,
-				cameraPosition.w);
-		}
 		DirectX::XMFLOAT4A CameraPosition;
+		DirectX::XMFLOAT4X4A ViewProjection;
+	
+		DirectX::XMFLOAT4A Padding[44];
 	};
 public:
 	GeometryPass(RenderingManager * renderingManager, const Window & window);
@@ -25,7 +21,7 @@ public:
 	
 	
 	HRESULT Init() override;
-	HRESULT Update() override;
+	HRESULT Update(const Camera & camera) override;
 	HRESULT Draw() override;
 	HRESULT Release() override;
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxgi.h>
@@ -14,7 +16,11 @@
 #include <comdef.h>
 
 #include "Window/Window.h"
+#include "Window/Input.h"
 #include "DirectX/RenderingManager.h"
+
+#include "DirectX/Objects/Camera.h"
+#include "DirectX/Objects/Transform.h"
 
 #include "DirectX/Shaders/ShaderCreator.h"
 
