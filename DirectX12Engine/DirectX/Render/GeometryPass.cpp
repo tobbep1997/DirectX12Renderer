@@ -54,9 +54,13 @@ HRESULT GeometryPass::Update()
 		*p_renderingManager->GetRTVDescriptorSize());
 
 	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-	m_cameraBuffer.CameraPosition.x = (rand() % 255) / 255.0f;
-	m_cameraBuffer.CameraPosition.y = (rand() % 255) / 255.0f;
-	m_cameraBuffer.CameraPosition.z = (rand() % 255) / 255.0f;
+
+	static double timer = 0;
+	timer += 1.0 / 5000.0;
+
+	m_cameraBuffer.CameraPosition.x = abs(sin(timer));
+	m_cameraBuffer.CameraPosition.y = abs(sin(timer));
+	m_cameraBuffer.CameraPosition.z = abs(sin(timer));
 	m_cameraBuffer.CameraPosition.w = 1.0f;
 
 	memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_cameraBuffer, sizeof(m_cameraBuffer));
@@ -357,15 +361,15 @@ HRESULT GeometryPass::_createVertexBuffer()
 {
 	HRESULT hr = 0;
 	Vertex vList[] = {
-	{ { -0.5f,  0.5f, 0.5f, 1.0f },	{1.0f, 0.0f, 0.0f, 1.0f} },
-	{ {  0.5f, -0.5f, 0.5f, 1.0f },	{0.0f, 1.0f, 0.0f, 1.0f} },
-	{ { -0.5f, -0.5f, 0.5f, 1.0f }, {0.0f, 0.0f, 1.0f, 1.0f} },
+	{ { -0.5f,  0.5f, 0.5f, 1.0f },	{1.0f, 1.0f, 1.0f, 1.0f} },
+	{ {  0.5f, -0.5f, 0.5f, 1.0f },	{1.0f, 1.0f, 1.0f, 1.0f} },
+	{ { -0.5f, -0.5f, 0.5f, 1.0f }, {1.0f, 1.0f, 1.0f, 1.0f} },
 	{ {  0.5f,  0.5f, 0.5f, 1.0f }, {1.0f, 1.0f, 1.0f, 1.0f} },
 
 	// second quad (further from camera, green)
-	{ { -0.75f,  0.75f, 0.75f, 1.0f },	{1.0f, 0.0f, 0.0f, 1.0f} },
-	{ {  0.0f ,  0.0f , 0.75f, 1.0f },	{0.0f, 1.0f, 0.0f, 1.0f} },
-	{ { -0.75f,  0.0f , 0.75f, 1.0f },  {0.0f, 0.0f, 1.0f, 1.0f} },
+	{ { -0.75f,  0.75f, 0.75f, 1.0f },	{1.0f, 1.0f, 1.0f, 1.0f} },
+	{ {  0.0f ,  0.0f , 0.75f, 1.0f },	{1.0f, 1.0f, 1.0f, 1.0f} },
+	{ { -0.75f,  0.0f , 0.75f, 1.0f },  {1.0f, 1.0f, 1.0f, 1.0f} },
 	{ {  0.0f ,  0.75f, 0.75f, 1.0f },  {1.0f, 1.0f, 1.0f, 1.0f} },
 	};
 
