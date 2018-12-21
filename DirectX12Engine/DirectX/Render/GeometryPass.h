@@ -4,6 +4,21 @@
 class GeometryPass :
 	public IRender
 {
+private:
+
+	static const UINT BUFFER_SIZE = 1;
+
+	struct CameraBuffer
+	{
+		CameraBuffer(const DirectX::XMFLOAT4 & cameraPosition = DirectX::XMFLOAT4(1,1,1,1))
+		{
+			this->CameraPosition = DirectX::XMFLOAT4A(cameraPosition.x, 
+				cameraPosition.y,
+				cameraPosition.z,
+				cameraPosition.w);
+		}
+		DirectX::XMFLOAT4A CameraPosition;
+	};
 public:
 	GeometryPass(RenderingManager * renderingManager, const Window & window);
 	~GeometryPass();
@@ -15,6 +30,7 @@ public:
 	HRESULT Release() override;
 
 private:
+	HRESULT _openCommandList() const;
 	HRESULT _preInit();
 	HRESULT _signalGPU();
 
@@ -26,6 +42,9 @@ private:
 
 	HRESULT _createVertexBuffer();
 	HRESULT _createIndexBuffer();
+
+	HRESULT _createConstantBuffer();
+	
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;
@@ -43,7 +62,7 @@ private:
 	ID3D12Resource		* m_indexHeapBuffer		= nullptr;
 
 	ID3D12Resource		* m_depthStencilBuffer  = nullptr;
-	ID3D12DescriptorHeap* m_depthStencilDescritorHeap = nullptr;
+	ID3D12DescriptorHeap* m_depthStencilDescriptorHeap = nullptr;
 
 	D3D12_VIEWPORT	m_viewport;
 	D3D12_RECT		m_rect;
@@ -51,15 +70,25 @@ private:
 	D3D12_SHADER_BYTECODE m_vertexShader;
 	D3D12_SHADER_BYTECODE m_pixelShader;
 
+	D3D12_ROOT_PARAMETER  m_rootParameters[BUFFER_SIZE] {};
+
+	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
+	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
+
+	CameraBuffer m_cameraBuffer {};
+
+	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
+
 	struct Vertex
 	{
-		Vertex(const DirectX::XMFLOAT4 & position, const DirectX::XMFLOAT4 & color)
+		Vertex(const DirectX::XMFLOAT4 & position = DirectX::XMFLOAT4(0,0,0,0), 
+			const DirectX::XMFLOAT4 & color = DirectX::XMFLOAT4(0,0,0,0))
 		{
-			this->position = DirectX::XMFLOAT4(position);
-			this->color = DirectX::XMFLOAT4(color);
+			this->Position = DirectX::XMFLOAT4(position);
+			this->Color = DirectX::XMFLOAT4(color);
 		}
-		DirectX::XMFLOAT4 position;
-		DirectX::XMFLOAT4 color;
+		DirectX::XMFLOAT4 Position;
+		DirectX::XMFLOAT4 Color;
 	};
 };
 

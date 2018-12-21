@@ -41,9 +41,9 @@ private:
 	ID3D12DescriptorHeap *		m_rtvDescriptorHeap = nullptr;
 
 	HANDLE						m_fenceEvent;
-	ID3D12CommandAllocator *	m_commandAllocator[FRAME_BUFFER_COUNT]{nullptr, nullptr, nullptr};
-	ID3D12Resource *			m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr, nullptr, nullptr };
-	ID3D12Fence *				m_fence[FRAME_BUFFER_COUNT]{ nullptr, nullptr, nullptr };
+	ID3D12CommandAllocator *	m_commandAllocator[FRAME_BUFFER_COUNT]{ nullptr };
+	ID3D12Resource *			m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr };
+	ID3D12Fence *				m_fence[FRAME_BUFFER_COUNT]{ nullptr };
 	UINT64						m_fenceValue[FRAME_BUFFER_COUNT]{ 0,0,0 };
 
 

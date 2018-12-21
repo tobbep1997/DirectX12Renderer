@@ -13,8 +13,7 @@ GeometryPass::GeometryPass(RenderingManager * renderingManager,
 
 
 GeometryPass::~GeometryPass()
-{
-}
+= default;
 
 HRESULT GeometryPass::Init()
 {
@@ -33,19 +32,12 @@ HRESULT GeometryPass::Init()
 HRESULT GeometryPass::Update()
 {
 	HRESULT hr = 0;
-
-	return hr;
-}
-
-HRESULT GeometryPass::Draw()
-{
 	p_renderingManager->GetCommandList()->ClearDepthStencilView(
-		m_depthStencilDescritorHeap->GetCPUDescriptorHandleForHeapStart(), 
+		m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		D3D12_CLEAR_FLAG_DEPTH,
 		1.0f, 0, 0,
 		nullptr);
 
-	HRESULT hr = 0;
 	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
 	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
 	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
@@ -53,8 +45,8 @@ HRESULT GeometryPass::Draw()
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	p_renderingManager->GetCommandList()->IASetIndexBuffer(&m_indexBufferView);
-	
-	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencilDescritorHeap->GetCPUDescriptorHandleForHeapStart());
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		p_renderingManager->GetRTVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -62,6 +54,22 @@ HRESULT GeometryPass::Draw()
 		*p_renderingManager->GetRTVDescriptorSize());
 
 	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+	m_cameraBuffer.CameraPosition.x = (rand() % 255) / 255.0f;
+	m_cameraBuffer.CameraPosition.y = (rand() % 255) / 255.0f;
+	m_cameraBuffer.CameraPosition.z = (rand() % 255) / 255.0f;
+	m_cameraBuffer.CameraPosition.w = 1.0f;
+
+	memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_cameraBuffer, sizeof(m_cameraBuffer));
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { m_constantBufferDescriptorHeap[*p_renderingManager->GetFrameIndex()] };
+	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(0, m_constantBufferDescriptorHeap[*p_renderingManager->GetFrameIndex()]->GetGPUDescriptorHandleForHeapStart());
+	return hr;
+}
+
+HRESULT GeometryPass::Draw()
+{
+	HRESULT hr = 0;
 
 	p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
 	p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 4, 0);
@@ -78,33 +86,59 @@ HRESULT GeometryPass::Release()
 	SAFE_RELEASE(m_indexBuffer);
 	SAFE_RELEASE(m_indexHeapBuffer);
 	SAFE_RELEASE(m_depthStencilBuffer);
-	SAFE_RELEASE(m_depthStencilDescritorHeap);
+	SAFE_RELEASE(m_depthStencilDescriptorHeap);
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		SAFE_RELEASE(m_constantBufferDescriptorHeap[i]);
+		SAFE_RELEASE(m_constantBuffer[i]);
+	}
+	return hr;
+}
+
+HRESULT GeometryPass::_openCommandList() const
+{
+	HRESULT hr = 0;
+	if (SUCCEEDED(hr = p_renderingManager->GetCommandAllocator()[*p_renderingManager->GetFrameIndex()].Reset()))
+	{
+		if (SUCCEEDED(hr = p_renderingManager->GetCommandList()->Reset(&p_renderingManager->GetCommandAllocator()[*p_renderingManager->GetFrameIndex()], nullptr)))
+		{
+			
+		}	
+	}
 	return hr;
 }
 
 HRESULT GeometryPass::_preInit()
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = _initID3D12RootSignature()))
+	if (SUCCEEDED(hr = _openCommandList()))
 	{
-		if (SUCCEEDED(hr = _initShaders()))
+		if (SUCCEEDED(hr = _initID3D12RootSignature()))
 		{
-			if (SUCCEEDED(hr = _initID3D12PipelineState()))
+			if (SUCCEEDED(hr = _initShaders()))
 			{
-				if (SUCCEEDED(hr = _createViewport()))
+				if (SUCCEEDED(hr = _initID3D12PipelineState()))
 				{
-					if (SUCCEEDED(hr = _createVertexBuffer()))
+					if (SUCCEEDED(hr = _createViewport()))
 					{
-						if (SUCCEEDED(hr = _createIndexBuffer()))
+						if (SUCCEEDED(hr = _createVertexBuffer()))
 						{
-							if (SUCCEEDED(hr = _createDepthStencil()))
+							if (SUCCEEDED(hr = _createIndexBuffer()))
 							{
+								if (SUCCEEDED(hr = _createDepthStencil()))
+								{
+									if (SUCCEEDED(hr = _createConstantBuffer()))
+									{
+									}
+								}
 							}
 						}
 					}
 				}
 			}
 		}
+		
 	}
 	if (FAILED(hr))
 		this->Release();
@@ -139,10 +173,35 @@ HRESULT GeometryPass::_signalGPU()
 HRESULT GeometryPass::_initID3D12RootSignature()
 {
 	HRESULT hr = 0;
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ID3DBlob * signature;
+	D3D12_DESCRIPTOR_RANGE descriptorRangeTable[BUFFER_SIZE];
+	descriptorRangeTable[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+	descriptorRangeTable[0].NumDescriptors = BUFFER_SIZE;
+	descriptorRangeTable[0].BaseShaderRegister = 0;
+	descriptorRangeTable[0].RegisterSpace = 0;
+	descriptorRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
+	descriptorTable.NumDescriptorRanges = _countof(descriptorRangeTable);
+	descriptorTable.pDescriptorRanges = &descriptorRangeTable[0];
+
+
+	m_rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[0].DescriptorTable = descriptorTable;
+	m_rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	rootSignatureDesc.Init(_countof(m_rootParameters),
+		m_rootParameters, 
+		0, 
+		nullptr, 
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS);
+
+	ID3DBlob * signature = nullptr;
 	if (SUCCEEDED(hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, nullptr)))
 	{
 		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature))))
@@ -257,7 +316,7 @@ HRESULT GeometryPass::_createDepthStencil()
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
 	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&dsvHeapDesc, IID_PPV_ARGS(&m_depthStencilDescritorHeap))))
+		&dsvHeapDesc, IID_PPV_ARGS(&m_depthStencilDescriptorHeap))))
 	{
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
 		depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -284,7 +343,7 @@ HRESULT GeometryPass::_createDepthStencil()
 			p_renderingManager->GetDevice()->CreateDepthStencilView(
 				m_depthStencilBuffer,
 				&depthStencilDesc,
-				m_depthStencilDescritorHeap->GetCPUDescriptorHandleForHeapStart());
+				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 			
 				
 			
@@ -320,7 +379,7 @@ HRESULT GeometryPass::_createVertexBuffer()
 		nullptr,
 		IID_PPV_ARGS(&m_vertexBuffer))))
 	{
-		m_vertexBuffer->SetName(L"Vertex Buffer Resource Heap");
+		SET_NAME(m_vertexBuffer, L"Vertex Buffer Resource Heap");
 
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -330,7 +389,7 @@ HRESULT GeometryPass::_createVertexBuffer()
 			nullptr,
 			IID_PPV_ARGS(&m_vertexHeapBuffer))))
 		{
-			m_vertexHeapBuffer->SetName(L"Vertex Buffer Upload Resource Heap");
+			SET_NAME(m_vertexHeapBuffer, L"Vertex Buffer Upload Resource Heap");
 
 
 			D3D12_SUBRESOURCE_DATA vertexData = {};
@@ -397,3 +456,51 @@ HRESULT GeometryPass::_createIndexBuffer()
 	return hr;
 }
 
+HRESULT GeometryPass::_createConstantBuffer()
+{
+	HRESULT hr = 0;
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		heapDesc.NumDescriptors = BUFFER_SIZE;
+		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		if (FAILED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
+			&heapDesc,
+			IID_PPV_ARGS(&m_constantBufferDescriptorHeap[i]))))
+		{
+			return hr;
+		}
+
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_constantBuffer[i]))))
+		{
+			SET_NAME(m_constantBuffer[i], L"ConstantBuffer Upload Resource Heap");
+		}
+		else
+			return hr;
+
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
+		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
+
+		p_renderingManager->GetDevice()->CreateConstantBufferView(
+			&cbvDesc,
+			m_constantBufferDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());
+
+		CD3DX12_RANGE readRange(0, 0);
+		if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
+			0, &readRange,
+			reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
+		{
+			memcpy(m_cameraBufferGPUAddress[i], &m_cameraBuffer, sizeof(m_cameraBuffer));
+		}
+	}
+	return hr;
+}

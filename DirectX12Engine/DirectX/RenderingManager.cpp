@@ -57,9 +57,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 								if (SUCCEEDED(hr = _createCommandList()))
 								{
 									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
-									{						
-										m_commandAllocator[this->m_frameIndex]->Reset();
-										m_commandList->Reset(m_commandAllocator[this->m_frameIndex], nullptr);
+									{		
 										if (SUCCEEDED(hr = m_geometryPass->Init()))
 										{
 
@@ -130,6 +128,8 @@ HRESULT RenderingManager::_updatePipeline()
 
 	//---------------------------------------------------------------------
 	//UPDATE HERE
+	m_geometryPass->Update();
+	//DRAW HERE
 	m_geometryPass->Draw();
 
 	//---------------------------------------------------------------------
