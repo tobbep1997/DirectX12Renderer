@@ -26,9 +26,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		while (window->IsOpen())
 		{
 			const double deltaTime = deltaTimer.GetDeltaTimeInSeconds();
-			if (!window->Updating())
+			if (window->Updating())
 			{
-				
 			}
 
 			if (Input::IsKeyPressed('A'))

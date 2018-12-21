@@ -24,7 +24,6 @@
 
 #include "DirectX/Shaders/ShaderCreator.h"
 
-#define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = nullptr; } }
 
 inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)
 {
@@ -48,11 +47,12 @@ namespace DEBUG
 
 	inline void Print(const HRESULT & hr)
 	{
-		const _com_error err(hr);
+		const _com_error err(hr);		
 		return Print(err.ErrorMessage());
 	}
 }
 
+#define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = nullptr; } }
 #ifdef _DEBUG
 	#include <iostream>
 	#define PRINT(p) { DEBUG::Print(p);		std::cout << p;			}

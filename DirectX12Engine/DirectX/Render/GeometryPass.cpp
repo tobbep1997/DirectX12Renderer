@@ -117,6 +117,7 @@ HRESULT GeometryPass::_openCommandList() const
 HRESULT GeometryPass::_preInit()
 {
 	HRESULT hr = 0;
+	
 	if (SUCCEEDED(hr = _openCommandList()))
 	{
 		if (SUCCEEDED(hr = _initID3D12RootSignature()))
@@ -143,7 +144,6 @@ HRESULT GeometryPass::_preInit()
 				}
 			}
 		}
-		
 	}
 	if (FAILED(hr))
 		this->Release();
