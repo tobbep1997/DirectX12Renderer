@@ -15,12 +15,17 @@ public:
 	HRESULT Release() override;
 
 private:
+	HRESULT _preInit();
+	HRESULT _signalGPU();
+
 	HRESULT _initID3D12RootSignature();
 	HRESULT _initID3D12PipelineState();
 	HRESULT _initShaders();
-	HRESULT _createTriagnle();
 	HRESULT _createViewport();
 	HRESULT _createDepthStencil();
+
+	HRESULT _createVertexBuffer();
+	HRESULT _createIndexBuffer();
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;
