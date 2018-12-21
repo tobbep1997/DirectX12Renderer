@@ -32,13 +32,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 
 			if (Input::IsKeyPressed('A'))
-				camera->AddPosition(-1.0 * deltaTime, 0, 0);
+				camera->Translate(static_cast<float>(-1.0 * deltaTime), 0, 0);
 			if (Input::IsKeyPressed('D'))
-				camera->AddPosition(1.0 * deltaTime, 0, 0);
+				camera->Translate(static_cast<float>(1.0 * deltaTime), 0, 0);
 			if (Input::IsKeyPressed('W'))
-				camera->AddPosition(0, 0, 1.0 * deltaTime);
+				camera->Translate(0, 0, static_cast<float>(1.0 * deltaTime));
 			if (Input::IsKeyPressed('S'))
-				camera->AddPosition(0, 0, -1.0 * deltaTime);
+				camera->Translate(0, 0, static_cast<float>(-1.0 * deltaTime));
 
 			camera->Update();
 			UpdateRenderingManger(renderingManager, *camera);

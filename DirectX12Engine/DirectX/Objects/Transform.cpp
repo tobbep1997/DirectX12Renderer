@@ -40,7 +40,7 @@ void Transform::SetPosition(const float& x, const float& y, const float& z, cons
 	this->SetPosition(DirectX::XMFLOAT4(x, y, z, w));
 }
 
-void Transform::AddPosition(const DirectX::XMFLOAT4& position)
+void Transform::Translate(const DirectX::XMFLOAT4& position)
 {
 	this->SetPosition(m_position.x + position.x,
 		m_position.y + position.y,
@@ -48,7 +48,7 @@ void Transform::AddPosition(const DirectX::XMFLOAT4& position)
 		position.w);
 }
 
-void Transform::AddPosition(const float& x, const float& y, const float& z, const float& w)
+void Transform::Translate(const float& x, const float& y, const float& z, const float& w)
 {
 	this->SetPosition(m_position.x + x,
 		m_position.y + y,

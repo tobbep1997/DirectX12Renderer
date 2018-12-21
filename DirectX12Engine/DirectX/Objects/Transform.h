@@ -15,8 +15,8 @@ public:
 	void SetPosition(const DirectX::XMFLOAT4 & position);
 	void SetPosition(const float & x, const float & y, const float & z, const float & w = 1.0f);
 
-	void AddPosition(const DirectX::XMFLOAT4 & position);
-	void AddPosition(const float & x, const float & y, const float & z, const float & w = 1.0f);
+	void Translate(const DirectX::XMFLOAT4 & position);
+	void Translate(const float & x, const float & y, const float & z, const float & w = 1.0f);
 
 
 	void SetRotation(const DirectX::XMFLOAT4 & rotation);
