@@ -5,7 +5,7 @@
 
 Transform::Transform() : IObject()
 {
-	Init();
+	this->Init();
 }
 
 Transform::~Transform()
@@ -14,9 +14,9 @@ Transform::~Transform()
 
 void Transform::Init()
 {
-	m_position = DirectX::XMFLOAT4(0, 0, 0, 1);
-	m_scale = DirectX::XMFLOAT4(0, 0, 0, 1);
-	m_rotation = DirectX::XMFLOAT4(0, 0, 0, 1);
+	m_position	= DirectX::XMFLOAT4(0, 0, 0, 1);
+	m_scale		= DirectX::XMFLOAT4(0, 0, 0, 1);
+	m_rotation	= DirectX::XMFLOAT4(0, 0, 0, 1);
 
 	_calcWorldMatrix();
 }
@@ -83,8 +83,6 @@ void Transform::_calcWorldMatrix()
 	const XMMATRIX scale = XMMatrixScalingFromVector(XMLoadFloat4(&this->m_scale));
 	const XMMATRIX rotation = XMMatrixRotationRollPitchYawFromVector(XMLoadFloat4(&this->m_rotation));
 	const XMMATRIX translation = XMMatrixTranslationFromVector(XMLoadFloat4(&this->m_position));
-
-	const XMMATRIX worldMatrix = scale * rotation * translation;
-
-	XMStoreFloat4x4A(&this->m_worldMatrix, worldMatrix);
+	
+	XMStoreFloat4x4A(&this->m_worldMatrix, XMMatrixTranspose(scale * rotation * translation));
 }
