@@ -17,9 +17,12 @@
 
 #include "Window/Window.h"
 #include "Window/Input.h"
+#include "DirectX/Structs.h"
 #include "DirectX/RenderingManager.h"
 
+
 #include "DirectX/Objects/Camera.h"
+#include "DirectX/Objects/Drawable.h"
 #include "DirectX/Objects/Transform.h"
 
 #include "DirectX/Shaders/ShaderCreator.h"

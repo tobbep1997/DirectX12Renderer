@@ -13,6 +13,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	DeltaTime deltaTimer;
 
+	//StaticMesh * staticMesh = new StaticMesh();
+	//staticMesh->LoadStaticMesh("Models/Cube.fbx");
+
+
 	if(InitDirectX12Engine(window,
 		renderingManager, 
 		hInstance, 
@@ -38,6 +42,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				camera->Translate(0, 0, static_cast<float>(1.0 * deltaTime));
 			if (Input::IsKeyPressed('S'))
 				camera->Translate(0, 0, static_cast<float>(-1.0 * deltaTime));
+
 
 			camera->Update();
 			UpdateRenderingManger(renderingManager, *camera);
