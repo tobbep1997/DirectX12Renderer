@@ -13,9 +13,11 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	DeltaTime deltaTimer;
 
-	//StaticMesh * staticMesh = new StaticMesh();
-	//staticMesh->LoadStaticMesh("Models/Cube.fbx");
+	StaticMesh * staticMesh = new StaticMesh();
+	staticMesh->LoadStaticMesh("../Models/Cube.fbx");
 
+	Drawable * drawable = new Drawable();
+	drawable->SetMesh(*staticMesh);
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -50,6 +52,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 	delete camera;
+	delete staticMesh;
 
 	return 0;
 }

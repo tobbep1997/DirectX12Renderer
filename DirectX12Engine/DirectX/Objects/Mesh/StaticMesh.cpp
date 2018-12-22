@@ -3,6 +3,9 @@
 
 #include "Utility/Operators.h"
 
+#include <assimp/Importer.hpp>     
+#include <assimp/scene.h>          
+#include <assimp/postprocess.h>
 
 StaticMesh::StaticMesh()
 {
@@ -26,7 +29,7 @@ void StaticMesh::_clearMesh()
 
 void StaticMesh::_createMesh(const aiScene* scene)
 {
-	/*if (!scene->HasMeshes())
+	if (!scene->HasMeshes())
 		Window::CreateError("Mesh has no Mesh");
 
 	_clearMesh();
@@ -38,7 +41,7 @@ void StaticMesh::_createMesh(const aiScene* scene)
 		vertex->Tangent		= Convert_Assimp_To_DirectX(*scene->mMeshes[i]->mTangents);
 		vertex->TexCord		= Convert_Assimp_To_DirectX(*scene->mMeshes[i]->mTextureCoords[0]);
 		m_staticMesh.push_back(vertex);
-	}*/
+	}
 }
 
 void StaticMesh::Init()
@@ -62,18 +65,19 @@ void StaticMesh::SetMesh(const std::vector<StaticVertex *>& mesh)
 
 void StaticMesh::LoadStaticMesh(const std::string& path)
 {
-	//Assimp::Importer importer;
-	//const aiScene * scene = importer.ReadFile(path.c_str(),
-	//	aiProcess_CalcTangentSpace		|
-	//	aiProcess_Triangulate			|
-	//	aiProcess_JoinIdenticalVertices |
-	//	aiProcess_SortByPType);
+	Assimp::Importer importer;
+	const aiScene * scene = importer.ReadFile(path.c_str(),
+		aiProcess_CalcTangentSpace		|
+		aiProcess_Triangulate			|
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_SortByPType);
 
-	//if (!scene)
-	//{
-	//	Window::CreateError(importer.GetErrorString());
-	//}
-	//_createMesh(scene);
+	if (!scene)
+	{
+		Window::CreateError(importer.GetErrorString());
+		return;
+	}
+	_createMesh(scene);
 	
 }
 

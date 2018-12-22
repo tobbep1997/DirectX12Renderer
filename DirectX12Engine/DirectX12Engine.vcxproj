@@ -76,10 +76,17 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectX12Engine;$(SolutionDir)DirectX12Engine\Submodule\DirectXHelpContent\Libraries;$(SolutionDir)DirectX12Engine\Submodule\EASTL\include;$(SolutionDir)DirectX12Engine\Submodule\EASTL\test\packages\EABase\include\Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)DirectX12Engine;$(SolutionDir)DirectX12Engine\Submodule\DirectXHelpContent\Libraries;$(SolutionDir)DirectX12Engine\Submodule\EASTL\include;$(SolutionDir)DirectX12Engine\Submodule\EASTL\test\packages\EABase\include\Common;C:\Program Files\Assimp\include</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DirectX12EnginePCH.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NOMINMAX;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Lib>
+      <AdditionalDependencies>assimp-vc140-mt.lib</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>C:\Program Files\Assimp\lib\x64;C:\Program Files\Assimp\bin\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -87,10 +94,17 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectX12Engine;$(SolutionDir)DirectX12Engine\Submodule\DirectXHelpContent\Libraries;$(SolutionDir)DirectX12Engine\Submodule\EASTL\include;$(SolutionDir)DirectX12Engine\Submodule\EASTL\test\packages\EABase\include\Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)DirectX12Engine;$(SolutionDir)DirectX12Engine\Submodule\DirectXHelpContent\Libraries;$(SolutionDir)DirectX12Engine\Submodule\EASTL\include;$(SolutionDir)DirectX12Engine\Submodule\EASTL\test\packages\EABase\include\Common;C:\Program Files\Assimp\include</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DirectX12EnginePCH.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NOMINMAX;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Lib>
+      <AdditionalDependencies>assimp-vc140-mt.lib</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>C:\Program Files\Assimp\lib\x64;C:\Program Files\Assimp\bin\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -100,14 +114,21 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectX12Engine;$(SolutionDir)DirectX12Engine\Submodule\DirectXHelpContent\Libraries;$(SolutionDir)DirectX12Engine\Submodule\EASTL\include;$(SolutionDir)DirectX12Engine\Submodule\EASTL\test\packages\EABase\include\Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)DirectX12Engine;$(SolutionDir)DirectX12Engine\Submodule\DirectXHelpContent\Libraries;$(SolutionDir)DirectX12Engine\Submodule\EASTL\include;$(SolutionDir)DirectX12Engine\Submodule\EASTL\test\packages\EABase\include\Common;C:\Program Files\Assimp\include</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DirectX12EnginePCH.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NOMINMAX;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <Lib>
+      <AdditionalDependencies>assimp-vc140-mt.lib</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>C:\Program Files\Assimp\lib\x64;C:\Program Files\Assimp\bin\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -117,19 +138,26 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectX12Engine;$(SolutionDir)DirectX12Engine\Submodule\DirectXHelpContent\Libraries;$(SolutionDir)DirectX12Engine\Submodule\EASTL\include;$(SolutionDir)DirectX12Engine\Submodule\EASTL\test\packages\EABase\include\Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)DirectX12Engine;$(SolutionDir)DirectX12Engine\Submodule\DirectXHelpContent\Libraries;$(SolutionDir)DirectX12Engine\Submodule\EASTL\include;$(SolutionDir)DirectX12Engine\Submodule\EASTL\test\packages\EABase\include\Common;C:\Program Files\Assimp\include</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DirectX12EnginePCH.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NOMINMAX;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <Lib>
+      <AdditionalDependencies>assimp-vc140-mt.lib</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>C:\Program Files\Assimp\lib\x64;C:\Program Files\Assimp\bin\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="DirectX\Objects\Mesh\StaticMesh.h" />
     <ClInclude Include="DirectX\Structs.h" />
-    <ClInclude Include="DirectX\Objects\Drawable.h" />    
+    <ClInclude Include="DirectX\Objects\Drawable.h" />
     <ClInclude Include="Utility\DeltaTime.h" />
     <ClInclude Include="DirectX\Objects\Camera.h" />
     <ClInclude Include="DirectX12Engine.h" />
