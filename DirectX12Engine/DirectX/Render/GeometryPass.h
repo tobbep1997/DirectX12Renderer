@@ -8,12 +8,13 @@ private:
 
 	static const UINT BUFFER_SIZE = 1;
 
-	struct CameraBuffer
+	struct ObjectBuffer
 	{
 		DirectX::XMFLOAT4A CameraPosition;
+		DirectX::XMFLOAT4X4A WorldMatrix;
 		DirectX::XMFLOAT4X4A ViewProjection;
-	
-		DirectX::XMFLOAT4A Padding[44];
+		
+		DirectX::XMFLOAT4A Padding[40];
 	};
 public:
 	GeometryPass(RenderingManager * renderingManager, const Window & window);
@@ -43,14 +44,6 @@ private:
 
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
 
-	UINT				  m_vertexBufferSize = 0;
-	ID3D12Resource		* m_vertexBuffer		= nullptr;
-	ID3D12Resource		* m_vertexHeapBuffer	= nullptr;
-
-	UINT				  m_indexBufferSize = 0;
-	ID3D12Resource		* m_indexBuffer			= nullptr;
-	ID3D12Resource		* m_indexHeapBuffer		= nullptr;
-
 	ID3D12Resource		* m_depthStencilBuffer  = nullptr;
 	ID3D12DescriptorHeap* m_depthStencilDescriptorHeap = nullptr;
 
@@ -65,7 +58,8 @@ private:
 	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
 	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
 
-	CameraBuffer m_cameraBuffer {};
+	ObjectBuffer m_objectBuffer {};
+	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 
 	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
 

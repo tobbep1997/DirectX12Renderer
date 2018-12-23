@@ -38,13 +38,21 @@ HRESULT GeometryPass::Update(const Camera & camera)
 		1.0f, 0, 0,
 		nullptr);
 
-	m_cameraBuffer.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
+	m_objectBuffer.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
 		camera.GetPosition().z,
 		camera.GetPosition().w);
-	m_cameraBuffer.ViewProjection = camera.GetViewProjectionMatrix();
+	m_objectBuffer.ViewProjection = camera.GetViewProjectionMatrix();
+	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
+	for (UINT i = 0; i < drawQueueSize; i++)
+	{
+		m_objectBuffer.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
 
-	memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_cameraBuffer, sizeof(m_cameraBuffer));
+		memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectBuffer, sizeof(m_objectBuffer));
+	}
+
+
+	//memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_objectBuffer, sizeof(m_objectBuffer));
 
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
@@ -62,10 +70,9 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	   
-	ID3D12DescriptorHeap* descriptorHeaps[] = { m_constantBufferDescriptorHeap[*p_renderingManager->GetFrameIndex()] };
-	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(0, m_constantBufferDescriptorHeap[*p_renderingManager->GetFrameIndex()]->GetGPUDescriptorHandleForHeapStart());
-
+	//ID3D12DescriptorHeap* descriptorHeaps[] = { m_constantBufferDescriptorHeap[*p_renderingManager->GetFrameIndex()] };
+	//p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	//p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(0, m_constantBufferDescriptorHeap[*p_renderingManager->GetFrameIndex()]->GetGPUDescriptorHandleForHeapStart());
 
 
 	return hr;
@@ -76,13 +83,13 @@ HRESULT GeometryPass::Draw()
 	HRESULT hr = 0;
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	for (UINT i = 0; i < drawQueueSize; i++)
-	{
-		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());
+	{		
+		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
+
+		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+		
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
-
-	//p_renderingManager->GetCommandList()->IASetIndexBuffer(&m_indexBufferView);
-	//p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 4, 0);
 
 	return hr;
 }
@@ -98,10 +105,6 @@ HRESULT GeometryPass::Release()
 	HRESULT hr = 0;
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
-	SAFE_RELEASE(m_vertexBuffer);
-	SAFE_RELEASE(m_vertexHeapBuffer);
-	SAFE_RELEASE(m_indexBuffer);
-	SAFE_RELEASE(m_indexHeapBuffer);
 	SAFE_RELEASE(m_depthStencilBuffer);
 	SAFE_RELEASE(m_depthStencilDescriptorHeap);
 
@@ -168,9 +171,12 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	descriptorTable.NumDescriptorRanges = _countof(descriptorRangeTable);
 	descriptorTable.pDescriptorRanges = &descriptorRangeTable[0];
 
+	D3D12_ROOT_DESCRIPTOR rootCBVDescriptor;
+	rootCBVDescriptor.RegisterSpace = 0;
+	rootCBVDescriptor.ShaderRegister = 0;
 
-	m_rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[0].DescriptorTable = descriptorTable;
+	m_rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameters[0].Descriptor = rootCBVDescriptor;
 	m_rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
@@ -344,16 +350,16 @@ HRESULT GeometryPass::_createConstantBuffer()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = BUFFER_SIZE;
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-			&heapDesc,
-			IID_PPV_ARGS(&m_constantBufferDescriptorHeap[i]))))
-		{
-			return hr;
-		}
+		//D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		//heapDesc.NumDescriptors = BUFFER_SIZE;
+		//heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		//heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		//if (FAILED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
+		//	&heapDesc,
+		//	IID_PPV_ARGS(&m_constantBufferDescriptorHeap[i]))))
+		//{
+		//	return hr;
+		//}
 
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -368,20 +374,21 @@ HRESULT GeometryPass::_createConstantBuffer()
 		else
 			return hr;
 
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
-		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
+		//D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		//cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
+		//cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
 
-		p_renderingManager->GetDevice()->CreateConstantBufferView(
+		/*p_renderingManager->GetDevice()->CreateConstantBufferView(
 			&cbvDesc,
-			m_constantBufferDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());
+			m_constantBufferDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());*/
 
 		CD3DX12_RANGE readRange(0, 0);
 		if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
 			0, &readRange,
 			reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
 		{
-			memcpy(m_cameraBufferGPUAddress[i], &m_cameraBuffer, sizeof(m_cameraBuffer));
+			memcpy(m_cameraBufferGPUAddress[i], &m_objectBuffer, sizeof(m_objectBuffer));
+			memcpy(m_cameraBufferGPUAddress[i] + m_constantBufferPerObjectAlignedSize, &m_objectBuffer, sizeof(m_objectBuffer));
 		}
 	}
 	return hr;

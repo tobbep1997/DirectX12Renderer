@@ -19,8 +19,8 @@ struct VS_OUTPUT
 cbuffer CAMERA_BUFFER : register(b0)
 {
     float4 CameraPos;
-    float4x4 CameraViewProjection;
-    float4x4 WorldViewProjection;
+    float4x4 WorldMatrix;
+    float4x4 ViewProjection;
     
     float4 Padding[40];
 }
@@ -28,7 +28,7 @@ cbuffer CAMERA_BUFFER : register(b0)
 VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output = (VS_OUTPUT) 0;
-    output.pos = mul(input.pos, CameraViewProjection);
+    output.pos = mul(input.pos, mul(WorldMatrix, ViewProjection));
     
     output.normal = input.normal;
     return output;
