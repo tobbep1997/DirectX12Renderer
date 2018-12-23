@@ -58,7 +58,7 @@ private:
 
 	HRESULT _flush(const Camera & camera);
 	HRESULT _present();
-
+	void _clear();
 
 	HRESULT _updatePipeline(const Camera & camera);
 	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE);

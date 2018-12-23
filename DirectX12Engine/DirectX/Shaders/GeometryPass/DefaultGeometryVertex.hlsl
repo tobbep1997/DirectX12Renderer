@@ -1,7 +1,9 @@
 struct VS_INPUT
 {
     float4 pos : POSITION;
-    float4 color : COLOR;
+    float4 normal : NORMAL;
+    float4 tangent : TANGENT;
+    float4 texCord : TEXCORD;
 };
 
 
@@ -23,6 +25,6 @@ VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output = (VS_OUTPUT) 0;
     output.pos = mul(input.pos, CameraViewProjection);
-    output.color = input.color;
+    output.color = input.normal;
     return output;
 }

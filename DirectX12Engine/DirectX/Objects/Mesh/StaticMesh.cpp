@@ -19,12 +19,7 @@ StaticMesh::~StaticMesh()
 
 void StaticMesh::_clearMesh()
 {
-	for (UINT i = 0; i < m_staticMesh.size(); i++)
-	{
-		delete m_staticMesh[i];
-	}
 	m_staticMesh.clear();
-	
 }
 
 void StaticMesh::_createMesh(const aiScene* scene)
@@ -37,11 +32,11 @@ void StaticMesh::_createMesh(const aiScene* scene)
 	{
 		for (UINT j = 0; j < scene->mMeshes[i]->mNumVertices; j++)
 		{
-			StaticVertex * vertex = new StaticVertex();
-			vertex->Position	= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mVertices[j]);
-			vertex->Normal		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mNormals[j]);
-			vertex->Tangent		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mTangents[j]);
-			vertex->TexCord		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mTextureCoords[0][j]);
+			StaticVertex vertex = {};
+			vertex.Position		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mVertices[j]);
+			vertex.Normal		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mNormals[j], 0);
+			vertex.Tangent		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mTangents[j], 0);
+			vertex.TexCord		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mTextureCoords[0][j], 0);
 			m_staticMesh.push_back(vertex);
 		}
 	}
@@ -49,7 +44,7 @@ void StaticMesh::_createMesh(const aiScene* scene)
 
 void StaticMesh::Init()
 {
-	m_staticMesh = std::vector<StaticVertex*>();
+	m_staticMesh = std::vector<StaticVertex>();
 }
 
 void StaticMesh::Update()
@@ -63,7 +58,7 @@ void StaticMesh::Release()
 	SAFE_RELEASE(m_vertexHeapBuffer);
 }
 
-void StaticMesh::SetMesh(const std::vector<StaticVertex *>& mesh)
+void StaticMesh::SetMesh(const std::vector<StaticVertex>& mesh)
 {
 	this->m_staticMesh = mesh;
 }
@@ -73,8 +68,7 @@ void StaticMesh::LoadStaticMesh(const std::string& path)
 	Assimp::Importer importer;
 	const aiScene * scene = importer.ReadFile(path.c_str(),
 		aiProcess_CalcTangentSpace		|
-		aiProcess_Triangulate			|
-		aiProcess_JoinIdenticalVertices |
+		aiProcess_Triangulate			|		
 		aiProcess_SortByPType);
 
 	if (!scene)
@@ -95,6 +89,10 @@ BOOL StaticMesh::CreateBuffer(RenderingManager* renderingManager)
 		{
 			if (SUCCEEDED(hr = renderingManager->SignalGPU()))
 			{
+				m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+				m_vertexBufferView.StrideInBytes = sizeof(StaticVertex);
+				m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
+
 				return TRUE;
 			}			
 		}
@@ -102,16 +100,20 @@ BOOL StaticMesh::CreateBuffer(RenderingManager* renderingManager)
 	return FALSE;	
 }
 
-const std::vector<StaticVertex *>& StaticMesh::GetStaticMesh() const
+const std::vector<StaticVertex>& StaticMesh::GetStaticMesh() const
 {
 	return this->m_staticMesh;
+}
+
+const D3D12_VERTEX_BUFFER_VIEW& StaticMesh::GetVertexBufferView() const
+{
+	return this->m_vertexBufferView;
 }
 
 HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 {
 	HRESULT hr = 0;
-
-	m_vertexBufferSize = sizeof(this->m_staticMesh.data());
+	m_vertexBufferSize = static_cast<UINT>(sizeof(StaticVertex) * this->m_staticMesh.size());
 
 	if (SUCCEEDED(hr = renderingManager->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -129,9 +131,6 @@ HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 			nullptr,
 			IID_PPV_ARGS(&m_vertexHeapBuffer))))
 		{
-			SET_NAME(m_vertexHeapBuffer, L"Vertex Buffer Upload Resource Heap");
-
-
 			D3D12_SUBRESOURCE_DATA vertexData = {};
 			vertexData.pData = reinterpret_cast<void*>(this->m_staticMesh.data());
 			vertexData.RowPitch = m_vertexBufferSize;

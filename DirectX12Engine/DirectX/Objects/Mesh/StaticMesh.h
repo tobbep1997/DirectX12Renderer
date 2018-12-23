@@ -14,12 +14,15 @@ public:
 	StaticMesh();
 	~StaticMesh();
 
-	void SetMesh(const std::vector<StaticVertex *> & mesh);
+	void SetMesh(const std::vector<StaticVertex> & mesh);
 	void LoadStaticMesh(const std::string & path);
 
 	BOOL CreateBuffer(RenderingManager * renderingManager);
 	
-	const std::vector<StaticVertex *> & GetStaticMesh() const;
+	const std::vector<StaticVertex> & GetStaticMesh() const;
+
+	const D3D12_VERTEX_BUFFER_VIEW & GetVertexBufferView() const;
+
 private:
 
 	
@@ -32,6 +35,6 @@ private:
 	D3D12_VERTEX_BUFFER_VIEW		m_vertexBufferView;
 	ID3D12Resource *				m_vertexBuffer		= nullptr;
 	ID3D12Resource *				m_vertexHeapBuffer	= nullptr;
-	std::vector<StaticVertex *>	m_staticMesh;
+	std::vector<StaticVertex>	m_staticMesh;
 };
 

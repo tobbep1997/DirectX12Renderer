@@ -13,12 +13,16 @@ protected:
 	{
 		this->p_renderingManager = renderingManager;
 		this->p_window = &window;
+		p_drawQueue = new std::vector<Drawable*>();
 	}
 
-	std::vector<Drawable*> p_drawQueue;
+	std::vector<Drawable*> * p_drawQueue;
 
 public:
-	virtual~IRender() = default;
+	virtual~IRender()
+	{
+		delete p_drawQueue;
+	}
 
 
 	virtual HRESULT Init()		= 0;
@@ -27,9 +31,9 @@ public:
 	virtual HRESULT Clear()		= 0;
 	virtual HRESULT Release()	= 0;
 
-	void Queue(Drawable * drawable)
+	void Queue(Drawable * drawable) const
 	{
-		p_drawQueue.push_back(drawable);
+		p_drawQueue->push_back(drawable);
 	}
 	
 };

@@ -30,6 +30,11 @@ void Drawable::SetMesh(StaticMesh& mesh)
 	this->m_mesh = &mesh;
 }
 
+const StaticMesh& Drawable::GetMesh() const
+{
+	return *this->m_mesh;
+}
+
 void Drawable::Draw(RenderingManager * renderingManager)
 {
 	if (this->m_isVisible)

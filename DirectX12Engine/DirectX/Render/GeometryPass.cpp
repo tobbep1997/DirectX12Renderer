@@ -38,13 +38,14 @@ HRESULT GeometryPass::Update(const Camera & camera)
 		1.0f, 0, 0,
 		nullptr);
 
-	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
-	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
-	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
-	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
-	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	p_renderingManager->GetCommandList()->IASetIndexBuffer(&m_indexBufferView);
+	m_cameraBuffer.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
+		camera.GetPosition().y,
+		camera.GetPosition().z,
+		camera.GetPosition().w);
+	m_cameraBuffer.ViewProjection = camera.GetViewProjectionMatrix();
+
+	memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_cameraBuffer, sizeof(m_cameraBuffer));
+
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -55,35 +56,40 @@ HRESULT GeometryPass::Update(const Camera & camera)
 
 	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
-	static double timer = 0;
-	timer += 1.0 / 5000.0;
-
-	m_cameraBuffer.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
-		camera.GetPosition().y,
-		camera.GetPosition().z,
-		camera.GetPosition().w);
-	m_cameraBuffer.ViewProjection = camera.GetViewProjectionMatrix();
-
-	memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_cameraBuffer, sizeof(m_cameraBuffer));
-
+	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
+	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
+	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
+	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
+	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	   
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_constantBufferDescriptorHeap[*p_renderingManager->GetFrameIndex()] };
 	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(0, m_constantBufferDescriptorHeap[*p_renderingManager->GetFrameIndex()]->GetGPUDescriptorHandleForHeapStart());
+
+
+
 	return hr;
 }
 
 HRESULT GeometryPass::Draw()
 {
 	HRESULT hr = 0;
+	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
+	for (UINT i = 0; i < drawQueueSize; i++)
+	{
+		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());
+		p_renderingManager->GetCommandList()->DrawInstanced(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size(), 1, 0, 0);
+	}
 
-	p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
-	p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 4, 0);
+	//p_renderingManager->GetCommandList()->IASetIndexBuffer(&m_indexBufferView);
+	//p_renderingManager->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 4, 0);
+
 	return hr;
 }
 
 HRESULT GeometryPass::Clear()
 {
-	this->p_drawQueue.clear();
+	this->p_drawQueue->clear();
 	return S_OK;
 }
 
@@ -121,16 +127,16 @@ HRESULT GeometryPass::_preInit()
 				{
 					if (SUCCEEDED(hr = _createViewport()))
 					{
-						if (SUCCEEDED(hr = _createVertexBuffer()))
+						if (SUCCEEDED(hr = _createDepthStencil()))
 						{
-							if (SUCCEEDED(hr = _createIndexBuffer()))
+							if (SUCCEEDED(hr = _createConstantBuffer()))
 							{
-								if (SUCCEEDED(hr = _createDepthStencil()))
+								/*if (SUCCEEDED(hr = _createVertexBuffer()))
 								{
-									if (SUCCEEDED(hr = _createConstantBuffer()))
+									if (SUCCEEDED(hr = _createIndexBuffer()))
 									{
 									}
-								}
+								}	*/
 							}
 						}
 					}
@@ -149,13 +155,13 @@ HRESULT GeometryPass::_signalGPU()
 
 	if (SUCCEEDED(hr = p_renderingManager->SignalGPU()))
 	{
-		m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
-		m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-		m_indexBufferView.SizeInBytes = m_indexBufferSize;
+		//m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
+		//m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+		//m_indexBufferView.SizeInBytes = m_indexBufferSize;
 
-		m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-		m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-		m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
+		//m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+		//m_vertexBufferView.StrideInBytes = sizeof(Vertex);
+		//m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
 	}
 
 	return hr;
@@ -211,7 +217,9 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
 	m_inputLayoutDesc.NumElements = sizeof(inputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
@@ -438,9 +446,6 @@ HRESULT GeometryPass::_createIndexBuffer()
 				&indexData);
 
 			p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
-
-
 		}
 	}
 	return hr;

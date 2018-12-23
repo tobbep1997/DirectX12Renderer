@@ -17,6 +17,8 @@ public:
 	
 	void SetMesh(StaticMesh & mesh);
 
+	const StaticMesh & GetMesh() const;
+
 	void Draw(RenderingManager * renderingManager);
 
 	void SetIsVisible(const BOOL & visible);

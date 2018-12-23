@@ -5,13 +5,10 @@
 #include "Render/GeometryPass.h"
 
 RenderingManager::RenderingManager()
-{
-}
+= default;
 
 RenderingManager::~RenderingManager()
-{
-	this->Release();
-}
+= default;
 
 RenderingManager* RenderingManager::GetInstance()
 {
@@ -160,7 +157,7 @@ HRESULT RenderingManager::_flush(const Camera & camera)
 	{
 		return hr;
 	}
-
+	_clear();
 	return hr;
 }
 
@@ -169,6 +166,11 @@ HRESULT RenderingManager::_present()
 	HRESULT hr = 0;
 	hr = m_swapChain->Present(0, 0);
 	return hr;
+}
+
+void RenderingManager::_clear()
+{
+	m_geometryPass->Clear();
 }
 
 void RenderingManager::Present()
