@@ -183,13 +183,10 @@ void RenderingManager::Present()
 	}
 }
 
-void RenderingManager::Release()
+void RenderingManager::Release(const BOOL & waitForFrames)
 {
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
-	{		
-		m_frameIndex = i;
-		_waitForPreviousFrame(FALSE);
-	}
+	if (waitForFrames)
+		WaitForFrames();
 
 	BOOL fs = false;
 	if (m_swapChain->GetFullscreenState(&fs, NULL))
@@ -227,6 +224,15 @@ void RenderingManager::Release()
 				SAFE_RELEASE(dbgDevice);
 			}
 		}
+	}
+}
+
+void RenderingManager::WaitForFrames()
+{
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
+	{
+		m_frameIndex = i;
+		_waitForPreviousFrame(FALSE);
 	}
 }
 

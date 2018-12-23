@@ -35,10 +35,6 @@ private:
 	HRESULT _initShaders();
 	HRESULT _createViewport();
 	HRESULT _createDepthStencil();
-
-	HRESULT _createVertexBuffer();
-	HRESULT _createIndexBuffer();
-
 	HRESULT _createConstantBuffer();
 	
 
@@ -46,8 +42,6 @@ private:
 	ID3D12RootSignature * m_rootSignature = nullptr;
 
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
-	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
-	D3D12_INDEX_BUFFER_VIEW  m_indexBufferView;
 
 	UINT				  m_vertexBufferSize = 0;
 	ID3D12Resource		* m_vertexBuffer		= nullptr;

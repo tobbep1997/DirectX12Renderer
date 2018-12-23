@@ -14,7 +14,6 @@ public:
 	StaticMesh();
 	~StaticMesh();
 
-	void SetMesh(const std::vector<StaticVertex> & mesh);
 	void LoadStaticMesh(const std::string & path);
 
 	BOOL CreateBuffer(RenderingManager * renderingManager);
@@ -25,9 +24,7 @@ public:
 
 private:
 
-	
 	HRESULT _createBuffer(RenderingManager * renderingManager);
-
 	void _clearMesh();
 	void _createMesh(const aiScene * scene);
 
@@ -36,5 +33,7 @@ private:
 	ID3D12Resource *				m_vertexBuffer		= nullptr;
 	ID3D12Resource *				m_vertexHeapBuffer	= nullptr;
 	std::vector<StaticVertex>	m_staticMesh;
+
+	std::string m_name;
 };
 

@@ -9,12 +9,10 @@
 
 StaticMesh::StaticMesh()
 {
-	this->Init();
 }
 
 StaticMesh::~StaticMesh()
 {
-	this->Release();
 }
 
 void StaticMesh::_clearMesh()
@@ -58,13 +56,9 @@ void StaticMesh::Release()
 	SAFE_RELEASE(m_vertexHeapBuffer);
 }
 
-void StaticMesh::SetMesh(const std::vector<StaticVertex>& mesh)
-{
-	this->m_staticMesh = mesh;
-}
-
 void StaticMesh::LoadStaticMesh(const std::string& path)
 {
+	this->m_name = path;
 	Assimp::Importer importer;
 	const aiScene * scene = importer.ReadFile(path.c_str(),
 		aiProcess_CalcTangentSpace		|
@@ -123,6 +117,10 @@ HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 		nullptr,
 		IID_PPV_ARGS(&m_vertexBuffer))))
 	{
+		SET_NAME(m_vertexBuffer, std::wstring(L"StaticMesh :") +
+			std::wstring(m_name.begin(), m_name.end()) +
+			std::wstring(L": vertexBuffer"));
+
 		if (SUCCEEDED(hr = renderingManager->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -131,6 +129,10 @@ HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 			nullptr,
 			IID_PPV_ARGS(&m_vertexHeapBuffer))))
 		{
+			SET_NAME(m_vertexHeapBuffer, std::wstring(L"StaticMesh :") +
+				std::wstring(m_name.begin(), m_name.end()) +
+				std::wstring(L": vertexHeapBuffer"));
+
 			D3D12_SUBRESOURCE_DATA vertexData = {};
 			vertexData.pData = reinterpret_cast<void*>(this->m_staticMesh.data());
 			vertexData.RowPitch = m_vertexBufferSize;
