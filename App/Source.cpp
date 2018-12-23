@@ -2,8 +2,8 @@
 
 void CameraMovment(Camera * camera, const float & deltaTime)
 {
-	const float moveSpeed = 1.0f;
-	const float rotSpeed = 1.0f;
+	const float moveSpeed = 2.0f;
+	const float rotSpeed = 2.0f;
 
 	if (Input::IsKeyPressed('A'))
 		camera->Translate(-moveSpeed * deltaTime, 0, 0);
@@ -34,28 +34,22 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	Window * window = nullptr;
 	RenderingManager * renderingManager = nullptr;
 
-	Camera * camera = new Camera();
+	Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .1f, 100.0f);
 	camera->SetPosition(0, 0, -5);
 
 	DeltaTime deltaTimer;
-
-	StaticMesh * staticCubeMesh = new StaticMesh();
-	staticCubeMesh->Init();
-	staticCubeMesh->LoadStaticMesh("../Models/Cube.fbx");
-
+	   
 	StaticMesh * staticCylinderMesh = new StaticMesh();
 	staticCylinderMesh->Init();
-	staticCylinderMesh->LoadStaticMesh("../Models/Cylinder.fbx");
+	staticCylinderMesh->LoadStaticMesh("../Models/Plane.fbx");
 
 	Drawable * drawable = new Drawable();
 	drawable->SetMesh(*staticCylinderMesh);
-	drawable->SetPosition(-1.f, 0, 0);
-	Drawable * drawable2 = new Drawable();
-	drawable2->SetMesh(*staticCubeMesh);
-	drawable2->SetPosition(1.f, 0, 0);
+	drawable->SetPosition(-1.f, -5, 0);
+	drawable->SetScale(.1, .1, .1);
+	drawable->SetRotation(DirectX::XM_PI * -.5f, 0, 0);
 
 	drawable->Update();
-	drawable2->Update();
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -66,7 +60,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		FALSE,
 		TRUE))
 	{
-		staticCubeMesh->CreateBuffer(renderingManager);
 		staticCylinderMesh->CreateBuffer(renderingManager);
 
 		deltaTimer.Init();
@@ -82,19 +75,16 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 			camera->Update();
 			drawable->Draw(renderingManager);
-			drawable2->Draw(renderingManager);
+
 			UpdateRenderingManger(renderingManager, *camera);
 		}	
 	}
 	renderingManager->WaitForFrames();
-	staticCubeMesh->Release();
 	staticCylinderMesh->Release();
 	renderingManager->Release(FALSE);
 
 	delete camera;
-	delete staticCubeMesh;
 	delete staticCylinderMesh;
 	delete drawable;
-	delete drawable2;
 	return 0;
 }

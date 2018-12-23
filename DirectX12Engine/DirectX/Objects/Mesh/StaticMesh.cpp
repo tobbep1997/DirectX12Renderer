@@ -62,7 +62,7 @@ void StaticMesh::LoadStaticMesh(const std::string& path)
 	Assimp::Importer importer;
 	const aiScene * scene = importer.ReadFile(path.c_str(),
 		aiProcess_CalcTangentSpace		|
-		aiProcess_Triangulate			|		
+		aiProcess_Triangulate			|
 		aiProcess_SortByPType);
 
 	if (!scene)

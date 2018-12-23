@@ -388,7 +388,6 @@ HRESULT GeometryPass::_createConstantBuffer()
 			reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
 		{
 			memcpy(m_cameraBufferGPUAddress[i], &m_objectBuffer, sizeof(m_objectBuffer));
-			memcpy(m_cameraBufferGPUAddress[i] + m_constantBufferPerObjectAlignedSize, &m_objectBuffer, sizeof(m_objectBuffer));
 		}
 	}
 	return hr;
