@@ -4,6 +4,15 @@ class Input
 private:
 	static BOOL m_keys[256];
 public:
+
+	enum Keys
+	{
+		UpArrow = 38,
+		DownArrow = 40,
+		LeftArrow = 37,
+		RightArrow = 39
+	};
+
 	Input();
 	~Input();
 

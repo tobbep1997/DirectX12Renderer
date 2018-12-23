@@ -28,7 +28,7 @@ cbuffer CAMERA_BUFFER : register(b0)
 VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output = (VS_OUTPUT) 0;
-    output.pos = mul(input.pos, WorldViewProjection);
+    output.pos = mul(input.pos, CameraViewProjection);
     
     output.normal = input.normal;
     return output;

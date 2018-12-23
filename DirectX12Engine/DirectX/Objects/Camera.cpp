@@ -87,6 +87,78 @@ void Camera::SetDirection(const float& x, const float& y, const float& z, const 
 	this->SetDirection(DirectX::XMFLOAT4(x, y, z, w));
 }
 
+void Camera::Rotate(const DirectX::XMFLOAT4& rotation)
+{
+	DirectX::XMVECTOR vDir = DirectX::XMLoadFloat4(&this->m_direction);
+	const DirectX::XMVECTOR vLastDir = vDir;
+
+	DirectX::XMFLOAT4A lUp(0, 1, 0, 0);
+
+	DirectX::XMVECTOR vUp = DirectX::XMLoadFloat4A(&lUp);
+	DirectX::XMVECTOR vRight = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(vUp, vDir));
+
+	vRight = DirectX::XMVectorScale(vRight, rotation.x);
+	vUp = DirectX::XMVectorScale(vUp, rotation.y);
+	vDir = DirectX::XMVectorScale(vDir, rotation.z);
+
+	DirectX::XMVECTOR vRot = DirectX::XMVectorAdd(vRight, vUp);
+	vRot = DirectX::XMVectorAdd(vRot, vDir);
+
+	const DirectX::XMMATRIX mRot = DirectX::XMMatrixRotationRollPitchYawFromVector(vRot);
+
+	vDir = DirectX::XMLoadFloat4(&this->m_direction);
+
+	const DirectX::XMVECTOR vNewDir = DirectX::XMVector3Normalize(DirectX::XMVector3Transform(vLastDir, mRot));
+	vUp = DirectX::XMLoadFloat4(&m_up);
+
+	const DirectX::XMVECTOR vDot = DirectX::XMVector3Dot(vNewDir, vUp);
+	const float dot = DirectX::XMVectorGetX(vDot);
+	if (fabs(dot) < 0.90)
+	{
+		DirectX::XMStoreFloat4(&this->m_direction, DirectX::XMVector3Normalize(vNewDir));
+		m_direction.w = 0.0f;
+	}
+}
+
+void Camera::Rotate(const float& x, const float& y, const float& z, const float& w)
+{
+	this->Rotate(DirectX::XMFLOAT4(x, y, z, w));
+}
+
+void Camera::Translate(const DirectX::XMFLOAT4& position)
+{
+	const DirectX::XMVECTOR vDir = DirectX::XMLoadFloat4(&this->m_direction);
+
+	const DirectX::XMVECTOR vUp = DirectX::XMLoadFloat4(&this->m_up);
+	const DirectX::XMVECTOR vRight = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(vUp, vDir));
+
+	DirectX::XMFLOAT3 right;
+	DirectX::XMStoreFloat3(&right, vRight);
+
+	DirectX::XMFLOAT4 newPos = GetPosition();
+
+	newPos.x += position.x * right.x;
+	newPos.y += position.x * right.y;
+	newPos.z += position.x * right.z;
+
+	newPos.x += position.y * m_up.x;
+	newPos.y += position.y * m_up.y;
+	newPos.z += position.y * m_up.z;
+
+	newPos.x += position.z * m_direction.x;
+	newPos.y += position.z * m_direction.y;
+	newPos.z += position.z * m_direction.z;
+	
+	newPos.w = 1.0f;
+
+	SetPosition(newPos);
+}
+
+void Camera::Translate(const float& x, const float& y, const float& z, const float& w)
+{
+	this->Translate(DirectX::XMFLOAT4(x, y, z, w));
+}
+
 void Camera::SetUp(const DirectX::XMFLOAT4& up)
 {
 	this->m_up = up;

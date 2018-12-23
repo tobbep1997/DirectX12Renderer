@@ -78,7 +78,7 @@ HRESULT GeometryPass::Draw()
 	for (UINT i = 0; i < drawQueueSize; i++)
 	{
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());
-		p_renderingManager->GetCommandList()->DrawInstanced(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size(), 1, 0, 0);
+		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
 
 	//p_renderingManager->GetCommandList()->IASetIndexBuffer(&m_indexBufferView);

@@ -1,6 +1,30 @@
 #include "DirectX12Engine.h"
 
+void CameraMovment(Camera * camera, const float & deltaTime)
+{
+	const float moveSpeed = 1.0f;
+	const float rotSpeed = 1.0f;
 
+	if (Input::IsKeyPressed('A'))
+		camera->Translate(-moveSpeed * deltaTime, 0, 0);
+	else if (Input::IsKeyPressed('D'))
+		camera->Translate(moveSpeed * deltaTime, 0, 0);
+
+	if (Input::IsKeyPressed('W'))
+		camera->Translate(0, 0, moveSpeed * deltaTime);
+	else if (Input::IsKeyPressed('S'))
+		camera->Translate(0, 0, -moveSpeed * deltaTime);
+
+	if (Input::IsKeyPressed(Input::Keys::LeftArrow))
+		camera->Rotate(0, -rotSpeed * deltaTime, 0);
+	else if (Input::IsKeyPressed(Input::Keys::RightArrow))
+		camera->Rotate(0, rotSpeed * deltaTime, 0);
+
+	if (Input::IsKeyPressed(Input::Keys::UpArrow))
+		camera->Rotate(-rotSpeed * deltaTime, 0, 0);
+	else if (Input::IsKeyPressed(Input::Keys::DownArrow))
+		camera->Rotate(rotSpeed * deltaTime, 0, 0);
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, 
 	HINSTANCE hPrevInstance,
@@ -25,13 +49,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	Drawable * drawable = new Drawable();
 	drawable->SetMesh(*staticCylinderMesh);
-	drawable->SetPosition(-1.f, 0, 0);
+	//drawable->SetPosition(-1.f, 0, 0);
 	Drawable * drawable2 = new Drawable();
 	drawable2->SetMesh(*staticCubeMesh);
 	//drawable2->SetPosition(2, 0, 0);
 
-	drawable->Update();
-	drawable2->Update();
+	//drawable->Update();
+	//drawable2->Update();
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -48,19 +72,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		deltaTimer.Init();
 		while (window->IsOpen())
 		{
-			const double deltaTime = deltaTimer.GetDeltaTimeInSeconds();
+			const float deltaTime = static_cast<const float>(deltaTimer.GetDeltaTimeInSeconds());
 			if (window->Updating())
 			{
 			}
 
-			if (Input::IsKeyPressed('A'))
-				camera->Translate(static_cast<float>(-1.0 * deltaTime), 0, 0);
-			if (Input::IsKeyPressed('D'))
-				camera->Translate(static_cast<float>(1.0 * deltaTime), 0, 0);
-			if (Input::IsKeyPressed('W'))
-				camera->Translate(0, 0, static_cast<float>(1.0 * deltaTime));
-			if (Input::IsKeyPressed('S'))
-				camera->Translate(0, 0, static_cast<float>(-1.0 * deltaTime));
+			CameraMovment(camera, deltaTime);
 
 
 			camera->Update();

@@ -10,7 +10,6 @@ public:
 private:
 	DirectX::XMFLOAT4 m_direction;
 	DirectX::XMFLOAT4 m_up;
-	DirectX::XMFLOAT4 m_right;
 
 	DirectX::XMFLOAT4X4A m_view;
 	DirectX::XMFLOAT4X4A m_projection;
@@ -31,6 +30,12 @@ public:
 
 	void SetDirection(const DirectX::XMFLOAT4 & direction);
 	void SetDirection(const float & x, const float & y, const float & z, const float & w = 0.0f);
+
+	void Rotate(const DirectX::XMFLOAT4 & rotation);
+	void Rotate(const float & x, const float & y, const float & z, const float & w = 0.0f);
+
+	void Translate(const DirectX::XMFLOAT4 & position) override;
+	void Translate(const float & x, const float & y, const float & z, const float & w = 1.0f) override;
 
 	void SetUp(const DirectX::XMFLOAT4 & up);
 	void SetUp(const float & x = 0.0f, const float & y = 1.0f, const float & z = 0.0f, const float & w = 0.0f);
