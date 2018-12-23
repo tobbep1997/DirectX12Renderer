@@ -24,7 +24,6 @@ private:
 
 	
 	HRESULT _createBuffer(RenderingManager * renderingManager);
-	HRESULT _signalGPU(RenderingManager * renderingManager);
 
 	void _clearMesh();
 	void _createMesh(const aiScene * scene);

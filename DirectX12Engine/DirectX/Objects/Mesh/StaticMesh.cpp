@@ -89,11 +89,14 @@ void StaticMesh::LoadStaticMesh(const std::string& path)
 BOOL StaticMesh::CreateBuffer(RenderingManager* renderingManager)
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = _createBuffer(renderingManager)))
+	if (SUCCEEDED(hr = renderingManager->OpenCommandList()))
 	{
-		if (SUCCEEDED(hr = _signalGPU(renderingManager)))
+		if (SUCCEEDED(hr = _createBuffer(renderingManager)))
 		{
-			return TRUE;
+			if (SUCCEEDED(hr = renderingManager->SignalGPU()))
+			{
+				return TRUE;
+			}			
 		}
 	}
 	return FALSE;	
@@ -138,28 +141,6 @@ HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 
 			renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 		}
-	}
-
-	return hr;
-}
-
-HRESULT StaticMesh::_signalGPU(RenderingManager* renderingManager)
-{
-	HRESULT hr = 0;
-
-	renderingManager->GetCommandList()->Close();
-	ID3D12CommandList* ppCommandLists[] = { renderingManager->GetCommandList() };
-	renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-	renderingManager->GetFenceValues()[*renderingManager->GetFrameIndex()]++;
-	if (SUCCEEDED(hr = renderingManager->GetCommandQueue()->Signal(
-		&renderingManager->GetFence()[*renderingManager->GetFrameIndex()],
-		renderingManager->GetFenceValues()[*renderingManager->GetFrameIndex()])))
-	{
-
-		m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-		m_vertexBufferView.StrideInBytes = sizeof(StaticVertex);
-		m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
 	}
 
 	return hr;

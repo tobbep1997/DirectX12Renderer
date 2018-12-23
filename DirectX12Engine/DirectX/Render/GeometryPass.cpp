@@ -81,6 +81,12 @@ HRESULT GeometryPass::Draw()
 	return hr;
 }
 
+HRESULT GeometryPass::Clear()
+{
+	this->p_drawQueue.clear();
+	return S_OK;
+}
+
 HRESULT GeometryPass::Release()
 {
 	HRESULT hr = 0;
@@ -97,19 +103,6 @@ HRESULT GeometryPass::Release()
 	{
 		SAFE_RELEASE(m_constantBufferDescriptorHeap[i]);
 		SAFE_RELEASE(m_constantBuffer[i]);
-	}
-	return hr;
-}
-
-HRESULT GeometryPass::_openCommandList() const
-{
-	HRESULT hr = 0;
-	if (SUCCEEDED(hr = p_renderingManager->GetCommandAllocator()[*p_renderingManager->GetFrameIndex()].Reset()))
-	{
-		if (SUCCEEDED(hr = p_renderingManager->GetCommandList()->Reset(&p_renderingManager->GetCommandAllocator()[*p_renderingManager->GetFrameIndex()], nullptr)))
-		{
-			
-		}	
 	}
 	return hr;
 }

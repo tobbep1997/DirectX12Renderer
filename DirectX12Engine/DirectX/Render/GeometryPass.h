@@ -23,10 +23,10 @@ public:
 	HRESULT Init() override;
 	HRESULT Update(const Camera & camera) override;
 	HRESULT Draw() override;
+	HRESULT Clear() override;
 	HRESULT Release() override;
 
 private:
-	HRESULT _openCommandList() const;
 	HRESULT _preInit();
 	HRESULT _signalGPU();
 
