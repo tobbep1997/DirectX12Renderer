@@ -273,6 +273,41 @@ UINT* RenderingManager::GetRTVDescriptorSize()
 	return &this->m_rtvDescriptorSize;
 }
 
+GeometryPass* RenderingManager::GetGeometryPass() const
+{
+	return this->m_geometryPass;
+}
+
+HRESULT RenderingManager::OpenCommandList()
+{
+	HRESULT hr = 0;
+	if (SUCCEEDED(hr = this->m_commandAllocator[m_frameIndex]->Reset()))
+	{
+		if (SUCCEEDED(hr = this->m_commandList->Reset(this->m_commandAllocator[m_frameIndex], nullptr)))
+		{
+
+		}
+	}
+	return hr;
+}
+
+HRESULT RenderingManager::SignalGPU()
+{
+	HRESULT hr = 0;
+	this->m_commandList->Close();
+	ID3D12CommandList* ppCommandLists[] = { this->m_commandList };
+	this->m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	
+	this->m_fenceValue[this->m_frameIndex]++;
+	if (SUCCEEDED(hr = this->m_commandQueue->Signal(
+		&GetFence()[this->m_frameIndex],
+		this->m_fenceValue[this->m_frameIndex])))
+	{
+
+	}
+	return hr;
+}
+
 UINT64 * RenderingManager::GetFenceValues()
 {
 	return this->m_fenceValue;

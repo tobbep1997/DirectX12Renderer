@@ -118,7 +118,7 @@ HRESULT GeometryPass::_preInit()
 {
 	HRESULT hr = 0;
 	
-	if (SUCCEEDED(hr = _openCommandList()))
+	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
 	{
 		if (SUCCEEDED(hr = _initID3D12RootSignature()))
 		{
@@ -154,14 +154,7 @@ HRESULT GeometryPass::_signalGPU()
 {
 	HRESULT hr = 0;
 
-	p_renderingManager->GetCommandList()->Close();
-	ID3D12CommandList* ppCommandLists[] = { p_renderingManager->GetCommandList() };
-	p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-	p_renderingManager->GetFenceValues()[*p_renderingManager->GetFrameIndex()]++;
-	if (SUCCEEDED(hr = p_renderingManager->GetCommandQueue()->Signal(
-		&p_renderingManager->GetFence()[*p_renderingManager->GetFrameIndex()],
-		p_renderingManager->GetFenceValues()[*p_renderingManager->GetFrameIndex()])))
+	if (SUCCEEDED(hr = p_renderingManager->SignalGPU()))
 	{
 		m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
 		m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;

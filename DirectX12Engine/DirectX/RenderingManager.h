@@ -33,6 +33,11 @@ public:
 	UINT * GetFrameIndex();
 	UINT * GetRTVDescriptorSize();
 
+	GeometryPass * GetGeometryPass() const;
+
+	HRESULT OpenCommandList();
+	HRESULT SignalGPU();
+
 private:
 
 	ID3D12Device *				m_device = nullptr;

@@ -30,8 +30,19 @@ void Drawable::SetMesh(StaticMesh& mesh)
 	this->m_mesh = &mesh;
 }
 
-void Drawable::Draw(IRender* iRender)
+void Drawable::Draw(RenderingManager * renderingManager)
 {
-	iRender->Queue(this);
+	if (this->m_isVisible)
+		reinterpret_cast<IRender*>(renderingManager->GetGeometryPass())->Queue(this);
+}
+
+void Drawable::SetIsVisible(const BOOL& visible)
+{
+	this->m_isVisible = visible;
+}
+
+const BOOL& Drawable::GetIsVisible() const
+{
+	return this->m_isVisible;
 }
 

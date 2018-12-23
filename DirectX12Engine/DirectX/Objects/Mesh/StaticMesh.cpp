@@ -35,12 +35,15 @@ void StaticMesh::_createMesh(const aiScene* scene)
 	_clearMesh();
 	for (UINT i = 0; i < scene->mNumMeshes; i++)
 	{
-		StaticVertex * vertex = new StaticVertex();
-		vertex->Position	= Convert_Assimp_To_DirectX(*scene->mMeshes[i]->mVertices);
-		vertex->Normal		= Convert_Assimp_To_DirectX(*scene->mMeshes[i]->mNormals);
-		vertex->Tangent		= Convert_Assimp_To_DirectX(*scene->mMeshes[i]->mTangents);
-		vertex->TexCord		= Convert_Assimp_To_DirectX(*scene->mMeshes[i]->mTextureCoords[0]);
-		m_staticMesh.push_back(vertex);
+		for (UINT j = 0; j < scene->mMeshes[i]->mNumVertices; j++)
+		{
+			StaticVertex * vertex = new StaticVertex();
+			vertex->Position	= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mVertices[j]);
+			vertex->Normal		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mNormals[j]);
+			vertex->Tangent		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mTangents[j]);
+			vertex->TexCord		= Convert_Assimp_To_DirectX(scene->mMeshes[i]->mTextureCoords[0][j]);
+			m_staticMesh.push_back(vertex);
+		}
 	}
 }
 
@@ -56,6 +59,8 @@ void StaticMesh::Update()
 void StaticMesh::Release()
 {
 	_clearMesh();
+	SAFE_RELEASE(m_vertexBuffer);
+	SAFE_RELEASE(m_vertexHeapBuffer);
 }
 
 void StaticMesh::SetMesh(const std::vector<StaticVertex *>& mesh)

@@ -1,13 +1,13 @@
 #include "DirectX12Engine.h"
 
+Window * window = nullptr;
+RenderingManager * renderingManager = nullptr;
+
 int WINAPI WinMain(HINSTANCE hInstance, 
 	HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine, 
 	int nShowCmd)
 {
-	Window * window						= nullptr;
-	RenderingManager * renderingManager = nullptr;
-
 	Camera * camera = new Camera();
 	camera->SetPosition(0, 0, -5);
 
@@ -28,6 +28,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		FALSE,
 		TRUE))
 	{
+		staticMesh->CreateBuffer(renderingManager);
+
+
 		deltaTimer.Init();
 		while (window->IsOpen())
 		{
@@ -53,6 +56,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	delete camera;
 	delete staticMesh;
-
+	delete drawable;
 	return 0;
 }
