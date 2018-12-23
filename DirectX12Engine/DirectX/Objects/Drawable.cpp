@@ -19,6 +19,7 @@ void Drawable::Init()
 
 void Drawable::Update()
 {
+	Transform::Update();
 }
 
 void Drawable::Release()

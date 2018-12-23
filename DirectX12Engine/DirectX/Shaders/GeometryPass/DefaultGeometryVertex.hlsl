@@ -10,21 +10,26 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
-    float4 color : COLOR;
+    float4 worldPos : WORLDPOS;
+    float4 normal : NORMAL;
+    float4 tangent : TANGENT;
+    float4 texCord : TEXCORD;
 };
 
 cbuffer CAMERA_BUFFER : register(b0)
 {
     float4 CameraPos;
     float4x4 CameraViewProjection;
-
-    float4 Padding[44];
+    float4x4 WorldViewProjection;
+    
+    float4 Padding[40];
 }
 
 VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output = (VS_OUTPUT) 0;
-    output.pos = mul(input.pos, CameraViewProjection);
-    output.color = input.normal;
+    output.pos = mul(input.pos, WorldViewProjection);
+    
+    output.normal = input.normal;
     return output;
 }

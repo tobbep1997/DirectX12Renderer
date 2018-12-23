@@ -33,7 +33,7 @@ public:
 
 private:
 	DirectX::XMFLOAT4 m_position	= DirectX::XMFLOAT4(0, 0, 0, 1);
-	DirectX::XMFLOAT4 m_scale		= DirectX::XMFLOAT4(0, 0, 0, 1);
+	DirectX::XMFLOAT4 m_scale		= DirectX::XMFLOAT4(1, 1, 1, 1);
 	DirectX::XMFLOAT4 m_rotation	= DirectX::XMFLOAT4(0, 0, 0, 1);
 
 	DirectX::XMFLOAT4X4A m_worldMatrix;

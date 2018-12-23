@@ -25,10 +25,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	Drawable * drawable = new Drawable();
 	drawable->SetMesh(*staticCylinderMesh);
-
+	drawable->SetPosition(-1.f, 0, 0);
 	Drawable * drawable2 = new Drawable();
 	drawable2->SetMesh(*staticCubeMesh);
+	//drawable2->SetPosition(2, 0, 0);
 
+	drawable->Update();
+	drawable2->Update();
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
