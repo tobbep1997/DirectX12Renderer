@@ -41,13 +41,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	   
 	StaticMesh * staticCylinderMesh = new StaticMesh();
 	staticCylinderMesh->Init();
-	staticCylinderMesh->LoadStaticMesh("../Models/Plane.fbx");
+	staticCylinderMesh->LoadStaticMesh("../Models/cube.fbx");
 
 	Drawable * drawable = new Drawable();
 	drawable->SetMesh(*staticCylinderMesh);
-	drawable->SetPosition(-1.f, -5, 0);
-	drawable->SetScale(.1, .1, .1);
-	drawable->SetRotation(DirectX::XM_PI * -.5f, 0, 0);
+	//drawable->SetPosition(-1.f, -5, 0);
+	//drawable->SetScale(.1, .1, .1);
+	//drawable->SetRotation(DirectX::XM_PI * -.5f, 0, 0);
 
 	drawable->Update();
 

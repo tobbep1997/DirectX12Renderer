@@ -1,12 +1,14 @@
 #pragma once
 #include "Template/IRender.h"
+//#include <WICTextureLoader.h>
+#include <wincodec.h>
 
 class GeometryPass :
 	public IRender
 {
 private:
 
-	static const UINT BUFFER_SIZE = 1;
+	static const UINT ROOT_PARAMETERS = 2;
 
 	struct ObjectBuffer
 	{
@@ -53,7 +55,7 @@ private:
 	D3D12_SHADER_BYTECODE m_vertexShader;
 	D3D12_SHADER_BYTECODE m_pixelShader;
 
-	D3D12_ROOT_PARAMETER  m_rootParameters[BUFFER_SIZE] {};
+	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};
 
 	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
 	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
@@ -62,6 +64,22 @@ private:
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 
 	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
+
+
+	BYTE* imageData;
+
+	ID3D12Resource * m_textureBuffer = nullptr;
+
+	ID3D12Resource * m_textureUploadHeap = nullptr;
+	ID3D12DescriptorHeap * m_textureDescriptorHeap = nullptr;
+
+	HRESULT tempLoadTexture();
+
+	int LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDesc, LPCWSTR filename, int & bytesPerRow);
+
+	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
+	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
+	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 
 	struct Vertex
 	{

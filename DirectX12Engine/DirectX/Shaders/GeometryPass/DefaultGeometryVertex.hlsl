@@ -29,7 +29,9 @@ VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output = (VS_OUTPUT) 0;
     output.pos = mul(input.pos, mul(WorldMatrix, ViewProjection));
-    
-    output.normal = input.normal;
+    output.worldPos = mul(input.pos, WorldMatrix);
+    output.normal = mul(input.normal, WorldMatrix);
+    output.tangent = mul(input.tangent, WorldMatrix);
+    output.texCord = input.texCord;
     return output;
 }

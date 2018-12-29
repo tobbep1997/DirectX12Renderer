@@ -7,8 +7,10 @@ struct VS_OUTPUT
     float4 texCord : TEXCORD;
 };
 
+Texture2D albedo : register(t0);
+SamplerState defaultSampler : register(s0);
 
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
-    return input.normal;
+    return albedo.Sample(defaultSampler, input.texCord.xy);
 }
