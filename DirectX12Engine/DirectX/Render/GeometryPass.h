@@ -64,23 +64,7 @@ private:
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 
 	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
-
-
-	BYTE* imageData;
-
-	ID3D12Resource * m_textureBuffer = nullptr;
-
-	ID3D12Resource * m_textureUploadHeap = nullptr;
-	ID3D12DescriptorHeap * m_textureDescriptorHeap = nullptr;
-
-	HRESULT tempLoadTexture();
-
-	int LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDesc, LPCWSTR filename, int & bytesPerRow);
-
-	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
-	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
-	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
-
+	   	
 	struct Vertex
 	{
 		Vertex(const DirectX::XMFLOAT4 & position = DirectX::XMFLOAT4(0,0,0,0), 
