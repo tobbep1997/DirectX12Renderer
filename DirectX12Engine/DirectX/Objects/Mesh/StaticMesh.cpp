@@ -63,7 +63,8 @@ void StaticMesh::LoadStaticMesh(const std::string& path)
 	const aiScene * scene = importer.ReadFile(path.c_str(),
 		aiProcess_CalcTangentSpace		|
 		aiProcess_Triangulate			|
-		aiProcess_SortByPType);
+		aiProcess_SortByPType			|
+		aiProcess_FlipUVs);
 
 	if (!scene)
 	{

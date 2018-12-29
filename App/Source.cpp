@@ -74,7 +74,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		staticCylinderMesh->CreateBuffer(renderingManager);
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadTexture("../car.bmp", renderingManager);
-		texture2->LoadTexture("../car2.jpg", renderingManager);
+		texture2->LoadTexture("../Joel.bmp", renderingManager);
 		
 		deltaTimer.Init();
 		while (window->IsOpen())

@@ -83,7 +83,7 @@ HRESULT GeometryPass::Draw()
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	for (UINT i = 0; i < drawQueueSize; i++)
 	{	
-		if (p_drawQueue->at(0)->GetTexture())
+		if (p_drawQueue->at(i)->GetTexture())
 		{
 			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap() };
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
