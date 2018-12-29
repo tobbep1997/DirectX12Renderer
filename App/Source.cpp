@@ -97,9 +97,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	renderingManager->WaitForFrames();
 	staticCylinderMesh->Release();
 	staticCubeMesh->Release();
-	renderingManager->Release(FALSE);
 	texture->Release();
 	texture2->Release();
+	renderingManager->Release(FALSE);
 
 	delete camera;
 	delete staticCubeMesh;

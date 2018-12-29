@@ -26,7 +26,6 @@ void Texture::Release()
 	SAFE_RELEASE(m_textureBuffer);
 	SAFE_RELEASE(m_textureUploadHeap);
 	SAFE_RELEASE(m_textureDescriptorHeap);
-
 }
 
 void Texture::SetRenderingManager(RenderingManager* renderingManager)
