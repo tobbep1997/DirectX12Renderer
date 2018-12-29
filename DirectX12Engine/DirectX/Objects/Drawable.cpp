@@ -5,7 +5,8 @@
 
 Drawable::Drawable()
 {
-	this->Init();
+	m_mesh = nullptr;
+	m_texture = nullptr;
 }
 
 
@@ -50,5 +51,15 @@ void Drawable::SetIsVisible(const BOOL& visible)
 const BOOL& Drawable::GetIsVisible() const
 {
 	return this->m_isVisible;
+}
+
+void Drawable::SetTexture(Texture* texture)
+{
+	this->m_texture = texture;
+}
+
+const Texture* Drawable::GetTexture() const
+{
+	return this->m_texture;
 }
 

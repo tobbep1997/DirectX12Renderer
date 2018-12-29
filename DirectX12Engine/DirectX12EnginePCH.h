@@ -24,6 +24,7 @@
 #include "DirectX/Objects/Camera.h"
 #include "DirectX/Objects/Drawable.h"
 #include "DirectX/Objects/Transform.h"
+#include "DirectX/Objects/Texture/Texture.h"
 
 #include "DirectX/Shaders/ShaderCreator.h"
 
@@ -53,6 +54,16 @@ namespace DEBUG
 		const _com_error err(hr);		
 		return Print(err.ErrorMessage());
 	}
+
+	inline std::wstring StringToWstring(const std::string & string)
+	{
+		return std::wstring(string.begin(), string.end());
+	}
+
+	inline std::string WstringToString(const std::wstring & string)
+	{
+		return std::string(string.begin(), string.end());
+	}
 }
 
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = nullptr; } }
@@ -64,3 +75,4 @@ namespace DEBUG
 	#define PRINT(p) {}
 	#define NEW_LINE {}
 #endif
+

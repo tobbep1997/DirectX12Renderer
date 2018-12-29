@@ -41,15 +41,26 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	   
 	StaticMesh * staticCylinderMesh = new StaticMesh();
 	staticCylinderMesh->Init();
-	staticCylinderMesh->LoadStaticMesh("../Models/cube.fbx");
+	staticCylinderMesh->LoadStaticMesh("../Models/Cylinder.fbx");
+
+	StaticMesh * staticCubeMesh = new StaticMesh();
+	staticCubeMesh->Init();
+	staticCubeMesh->LoadStaticMesh("../Models/Cube.fbx");
 
 	Drawable * drawable = new Drawable();
+	drawable->SetPosition(-2, 0, 0);
 	drawable->SetMesh(*staticCylinderMesh);
-	//drawable->SetPosition(-1.f, -5, 0);
-	//drawable->SetScale(.1, .1, .1);
-	//drawable->SetRotation(DirectX::XM_PI * -.5f, 0, 0);
-
 	drawable->Update();
+
+	Drawable * drawable2 = new Drawable();
+	drawable2->SetMesh(*staticCubeMesh);
+	drawable2->Update();
+
+	Texture * texture = new Texture();
+	Texture * texture2 = new Texture();
+
+	drawable->SetTexture(texture);
+	drawable2->SetTexture(texture2);
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -61,7 +72,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		TRUE))
 	{
 		staticCylinderMesh->CreateBuffer(renderingManager);
-
+		staticCubeMesh->CreateBuffer(renderingManager);
+		texture->LoadTexture("../car.bmp", renderingManager);
+		texture2->LoadTexture("../car2.jpg", renderingManager);
+		
 		deltaTimer.Init();
 		while (window->IsOpen())
 		{
@@ -75,16 +89,24 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 			camera->Update();
 			drawable->Draw(renderingManager);
+			drawable2->Draw(renderingManager);
 
 			UpdateRenderingManger(renderingManager, *camera);
 		}	
 	}
 	renderingManager->WaitForFrames();
 	staticCylinderMesh->Release();
+	staticCubeMesh->Release();
 	renderingManager->Release(FALSE);
+	texture->Release();
+	texture2->Release();
 
 	delete camera;
+	delete staticCubeMesh;
 	delete staticCylinderMesh;
 	delete drawable;
+	delete drawable2;
+	delete texture;
+	delete texture2;
 	return 0;
 }

@@ -2,6 +2,7 @@
 #include "DirectX12EnginePCH.h"
 #include "Utility/DeltaTime.h"
 
+
 #ifdef _DEBUG
 #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
 #else

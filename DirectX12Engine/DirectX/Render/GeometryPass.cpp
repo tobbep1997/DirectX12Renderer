@@ -71,9 +71,7 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { m_textureDescriptorHeap };
-	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(1, m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	
 
 
 	return hr;
@@ -84,7 +82,14 @@ HRESULT GeometryPass::Draw()
 	HRESULT hr = 0;
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	for (UINT i = 0; i < drawQueueSize; i++)
-	{		
+	{	
+		if (p_drawQueue->at(0)->GetTexture())
+		{
+			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap() };
+			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(1, p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+		}
+
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
 
 		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
@@ -703,4 +708,6 @@ int GeometryPass::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 	if (dxgiFormat == DXGI_FORMAT_R16_UNORM) return 16;
 	if (dxgiFormat == DXGI_FORMAT_R8_UNORM) return 8;
 	if (dxgiFormat == DXGI_FORMAT_A8_UNORM) return 8;
+
+	return 0;
 }

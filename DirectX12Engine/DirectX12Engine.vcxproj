@@ -156,6 +156,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="DirectX\Objects\Mesh\StaticMesh.h" />
+    <ClInclude Include="DirectX\Objects\Texture\Texture.h" />
     <ClInclude Include="DirectX\Structs.h" />
     <ClInclude Include="DirectX\Objects\Drawable.h" />
     <ClInclude Include="Submodule\DirectXTK\Inc\Audio.h" />
@@ -215,6 +216,7 @@
   <ItemGroup>
     <ClCompile Include="DirectX\Objects\Mesh\StaticMesh.cpp" />
     <ClCompile Include="DirectX\Objects\Drawable.cpp" />
+    <ClCompile Include="DirectX\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Submodule\DirectXTK\Src\AlphaTestEffect.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>

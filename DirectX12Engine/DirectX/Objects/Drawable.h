@@ -2,6 +2,7 @@
 #include "Transform.h"
 #include "Mesh/StaticMesh.h"
 
+class Texture;
 class IRender;
 
 class Drawable :
@@ -24,9 +25,12 @@ public:
 	void SetIsVisible(const BOOL & visible);
 	const BOOL & GetIsVisible() const;
 
+	void SetTexture(Texture * texture);
+	const Texture * GetTexture() const;
+
 private:	
 	StaticMesh * m_mesh;
-
+	Texture * m_texture;
 	BOOL m_isVisible = TRUE;
 
 };
