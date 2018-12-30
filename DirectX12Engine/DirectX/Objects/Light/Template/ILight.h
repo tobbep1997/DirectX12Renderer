@@ -21,7 +21,7 @@ protected:
 
 private:
 	DirectX::XMFLOAT4 m_color = DirectX::XMFLOAT4(1, 1, 1, 1);
-	float m_intensity = 0;
+	float m_intensity = 1;
 	
 };
 

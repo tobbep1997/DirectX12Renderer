@@ -59,9 +59,17 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	drawable->SetTexture(texture);
 	drawable->SetNormalMap(normal);
 
-	PointLight * pointLight = new PointLight();
-	pointLight->SetPosition(5, 0, -5);
-	pointLight->SetIntensity(10);
+
+	const UINT pointLightSize = 1;
+	std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
+	const UINT sqroot = static_cast<UINT>(sqrt(pointLightSize));
+	for (UINT i = 0; i < pointLightSize; i++)
+	{
+		pointLights[i] = new PointLight();
+		pointLights[i]->SetPosition(0, 0, -7.5);  
+		pointLights[i]->SetIntensity(7.5);  
+	}
+
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -71,8 +79,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		720, 
 		FALSE,
 		TRUE,
-		FALSE))
+		TRUE))
 	{
+
+
 		staticCylinderMesh->CreateBuffer(renderingManager);
 		texture->LoadTexture("../Texture/Bark/Bark_diffuse.bmp", renderingManager);
 		normal->LoadTexture("../Texture/Bark/Bark_normal.bmp", renderingManager);
@@ -84,15 +94,19 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			if (window->Updating())
 			{
 			}
+
 			CameraMovment(camera, deltaTime);
-
-
-
 			camera->Update();
+			 
+
 			drawable->Draw(renderingManager);
-			pointLight->Queue(renderingManager);
-			UpdateRenderingManger(renderingManager, *camera);
+			for (UINT i = 0; i < pointLightSize; i++)
+			{
+				pointLights[i]->Queue(renderingManager);
+			}
+			
 		
+			UpdateRenderingManger(renderingManager, *camera);
 			if (Input::IsKeyPressed('P'))
 				RestartRenderingManager(window, renderingManager, TRUE);
 		}	
@@ -108,6 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	delete drawable;
 	delete texture;
 	delete normal;
-	delete pointLight;
+	for (UINT i = 0; i < pointLightSize; i++)
+		delete pointLights[i];
 	return 0;
 }

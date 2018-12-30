@@ -8,15 +8,24 @@ class GeometryPass :
 {
 private:
 
-	static const UINT ROOT_PARAMETERS = 3;
+	static const UINT ROOT_PARAMETERS = 4;
+	static const UINT NUM_BUFFERS = 2;
 
 	struct ObjectBuffer
 	{
-		DirectX::XMFLOAT4A CameraPosition;
-		DirectX::XMFLOAT4X4A WorldMatrix;
-		DirectX::XMFLOAT4X4A ViewProjection;
+		DirectX::XMFLOAT4A		CameraPosition;
+		DirectX::XMFLOAT4X4A	WorldMatrix;
+		DirectX::XMFLOAT4X4A	ViewProjection;
 		
-		DirectX::XMFLOAT4A Padding[40];
+		DirectX::XMFLOAT4A		Padding[40];
+	};
+
+	struct LightBuffer
+	{
+		DirectX::XMUINT4	Type[256];
+		DirectX::XMFLOAT4A	Position[256];
+		DirectX::XMFLOAT4A	Color[256];
+		DirectX::XMFLOAT4A	Vector[256];
 	};
 public:
 	GeometryPass(RenderingManager * renderingManager, const Window & window);
@@ -57,13 +66,20 @@ private:
 
 	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};
 
-	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
-	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
 
-	ObjectBuffer m_objectBuffer {};
+	//0 Camera
+	//1 Lights
+	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[NUM_BUFFERS][FRAME_BUFFER_COUNT] = { nullptr };
+	ID3D12Resource			* m_constantBuffer[NUM_BUFFERS][FRAME_BUFFER_COUNT] = { nullptr };
+
+	ObjectBuffer m_objectValues {};
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 
+	LightBuffer m_lightValues{};
+
+
 	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
+	UINT8* m_lightBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
 	   	
 	struct Vertex
 	{

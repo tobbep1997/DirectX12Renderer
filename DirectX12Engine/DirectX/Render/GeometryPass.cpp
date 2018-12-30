@@ -18,7 +18,7 @@ GeometryPass::~GeometryPass()
 HRESULT GeometryPass::Init()
 {
 	HRESULT hr = 0;
-
+	
 	if (SUCCEEDED(hr = _preInit()))
 	{
 		if (FAILED(hr = _signalGPU()))
@@ -38,22 +38,43 @@ HRESULT GeometryPass::Update(const Camera & camera)
 		1.0f, 0, 0,
 		nullptr);
 
-	m_objectBuffer.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
+	m_objectValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
 		camera.GetPosition().z,
 		camera.GetPosition().w);
-	m_objectBuffer.ViewProjection = camera.GetViewProjectionMatrix();
+	m_objectValues.ViewProjection = camera.GetViewProjectionMatrix();
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	for (UINT i = 0; i < drawQueueSize; i++)
 	{
-		m_objectBuffer.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
+		m_objectValues.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
 
-		memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectBuffer, sizeof(m_objectBuffer));
+		memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectValues, sizeof(m_objectValues));
 	}
+	const UINT lightQueueSize = static_cast<const UINT>(p_lightQueue->size());
+	for (UINT i = 0; i < lightQueueSize && i < 256; i++)
+	{
+		m_lightValues.Type[i] = DirectX::XMUINT4(lightQueueSize, 0, 0, 0);
+		m_lightValues.Position[i] = DirectX::XMFLOAT4A(p_lightQueue->at(i)->GetPosition().x,
+			p_lightQueue->at(i)->GetPosition().y,
+			p_lightQueue->at(i)->GetPosition().z,
+			p_lightQueue->at(i)->GetPosition().w);
+		m_lightValues.Color[i] = DirectX::XMFLOAT4A(p_lightQueue->at(i)->GetColor().x,
+			p_lightQueue->at(i)->GetColor().y,
+			p_lightQueue->at(i)->GetColor().z,
+			p_lightQueue->at(i)->GetColor().w);
 
+		if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
+		{
+			PointLight* pl = dynamic_cast<PointLight*>(p_lightQueue->at(i));
 
-	//memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_objectBuffer, sizeof(m_objectBuffer));
-
+			m_lightValues.Type[i].y = 1;
+			m_lightValues.Vector[i] = DirectX::XMFLOAT4A(pl->GetIntensity(),
+				pl->GetDropOff(),
+				pl->GetPow(),
+				0);
+		}
+	}
+	memcpy(m_lightBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_lightValues, sizeof(m_lightValues));
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -71,9 +92,7 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-	
-
-
+	p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(3, m_constantBuffer[1][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
 	return hr;
 }
 
@@ -98,7 +117,7 @@ HRESULT GeometryPass::Draw()
 
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
 
-		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[0][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
 		
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
@@ -120,11 +139,14 @@ HRESULT GeometryPass::Release()
 	SAFE_RELEASE(m_pipelineState);
 	SAFE_RELEASE(m_depthStencilBuffer);
 	SAFE_RELEASE(m_depthStencilDescriptorHeap);
-
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	for (UINT i = 0; i < NUM_BUFFERS; i++)
 	{
-		SAFE_RELEASE(m_constantBufferDescriptorHeap[i]);
-		SAFE_RELEASE(m_constantBuffer[i]);
+		for (UINT j = 0; j < FRAME_BUFFER_COUNT; j++)
+		{
+		
+			SAFE_RELEASE(m_constantBufferDescriptorHeap[i][j]);
+			SAFE_RELEASE(m_constantBuffer[i][j]);
+		}
 	}
 
 	return hr;
@@ -189,7 +211,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	textureRangeTable[0].BaseShaderRegister = 1;
 	textureRangeTable[0].RegisterSpace = 0;
 	textureRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
+	   
 	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
 	descriptorTable.NumDescriptorRanges = _countof(descriptorRangeTable);
 	descriptorTable.pDescriptorRanges = &descriptorRangeTable[0];
@@ -198,9 +220,15 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	textureTable.NumDescriptorRanges = _countof(textureRangeTable);
 	textureTable.pDescriptorRanges = &textureRangeTable[0];
 
+
+
 	D3D12_ROOT_DESCRIPTOR rootDescriptor;
 	rootDescriptor.RegisterSpace = 0;
 	rootDescriptor.ShaderRegister = 0;
+
+	D3D12_ROOT_DESCRIPTOR lightRootDescriptor;
+	lightRootDescriptor.RegisterSpace = 0;
+	lightRootDescriptor.ShaderRegister = 0;
 
 	m_rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	m_rootParameters[0].Descriptor = rootDescriptor;
@@ -213,6 +241,10 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[2].DescriptorTable = textureTable;
 	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameters[3].Descriptor = lightRootDescriptor;
+	m_rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
@@ -399,16 +431,17 @@ HRESULT GeometryPass::_createConstantBuffer()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		//D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		//heapDesc.NumDescriptors = BUFFER_SIZE;
-		//heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		//heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		//if (FAILED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-		//	&heapDesc,
-		//	IID_PPV_ARGS(&m_constantBufferDescriptorHeap[i]))))
-		//{
-		//	return hr;
-		//}
+		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		heapDesc.NumDescriptors = 1;
+		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		if (FAILED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
+			&heapDesc,
+			IID_PPV_ARGS(&m_constantBufferDescriptorHeap[1][i]))))
+		{
+			return hr;
+		}
+
 
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -416,27 +449,48 @@ HRESULT GeometryPass::_createConstantBuffer()
 			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&m_constantBuffer[i]))))
+			IID_PPV_ARGS(&m_constantBuffer[1][i]))))
 		{
-			SET_NAME(m_constantBuffer[i], L"ConstantBuffer Upload Resource Heap");
+			SET_NAME(m_constantBuffer[1][i], L"Light Upload Resource Heap");
 		}
 		else
 			return hr;
 
-		//D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		//cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
-		//cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = m_constantBuffer[1][i]->GetGPUVirtualAddress();
+		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
 
-		/*p_renderingManager->GetDevice()->CreateConstantBufferView(
+		p_renderingManager->GetDevice()->CreateConstantBufferView(
 			&cbvDesc,
-			m_constantBufferDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());*/
+			m_constantBufferDescriptorHeap[1][i]->GetCPUDescriptorHandleForHeapStart());
 
 		CD3DX12_RANGE readRange(0, 0);
-		if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
+		if (SUCCEEDED(hr = m_constantBuffer[1][i]->Map(
+			0, &readRange,
+			reinterpret_cast<void **>(&m_lightBufferGPUAddress[i]))))
+		{
+			memcpy(m_lightBufferGPUAddress[i], &m_lightValues, sizeof(m_lightValues));
+		}
+
+
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_constantBuffer[0][i]))))
+		{
+			SET_NAME(m_constantBuffer[0][i], L"ConstantBuffer Upload Resource Heap");
+		}
+		else
+			return hr;
+
+		if (SUCCEEDED(hr = m_constantBuffer[0][i]->Map(
 			0, &readRange,
 			reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
 		{
-			memcpy(m_cameraBufferGPUAddress[i], &m_objectBuffer, sizeof(m_objectBuffer));
+			memcpy(m_cameraBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
 		}
 	}
 	return hr;
