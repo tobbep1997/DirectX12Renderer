@@ -14,14 +14,16 @@ protected:
 		this->p_renderingManager = renderingManager;
 		this->p_window = &window;
 		p_drawQueue = new std::vector<Drawable*>();
+		p_lightQueue = new std::vector<ILight*>();
 	}
 
 	std::vector<Drawable*> * p_drawQueue;
-
+	std::vector<ILight*> * p_lightQueue;
 public:
 	virtual~IRender()
 	{
 		delete p_drawQueue;
+		delete p_lightQueue;
 	}
 
 
@@ -34,6 +36,11 @@ public:
 	void Queue(Drawable * drawable) const
 	{
 		p_drawQueue->push_back(drawable);
+	}
+
+	void QueueLight(ILight * light) const
+	{
+		p_lightQueue->push_back(light);
 	}
 	
 };

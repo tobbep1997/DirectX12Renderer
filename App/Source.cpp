@@ -59,6 +59,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	drawable->SetTexture(texture);
 	drawable->SetNormalMap(normal);
 
+	PointLight * pointLight = new PointLight();
+	pointLight->SetPosition(5, 0, -5);
+	pointLight->SetIntensity(10);
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -87,6 +90,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 			camera->Update();
 			drawable->Draw(renderingManager);
+			pointLight->Queue(renderingManager);
 			UpdateRenderingManger(renderingManager, *camera);
 		
 			if (Input::IsKeyPressed('P'))
@@ -104,5 +108,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	delete drawable;
 	delete texture;
 	delete normal;
+	delete pointLight;
 	return 0;
 }

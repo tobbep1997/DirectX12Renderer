@@ -24,9 +24,12 @@
 #include "DirectX/Objects/Camera.h"
 #include "DirectX/Objects/Drawable.h"
 #include "DirectX/Objects/Transform.h"
+#include "DirectX/Objects/Light/Template/ILight.h"
 #include "DirectX/Objects/Texture/Texture.h"
 
 #include "DirectX/Shaders/ShaderCreator.h"
+
+#include "DirectX/Objects/Light/PointLight.h"
 
 
 inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)

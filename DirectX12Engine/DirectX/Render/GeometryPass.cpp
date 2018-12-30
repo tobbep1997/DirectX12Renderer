@@ -109,6 +109,7 @@ HRESULT GeometryPass::Draw()
 HRESULT GeometryPass::Clear()
 {
 	this->p_drawQueue->clear();
+	this->p_lightQueue->clear();
 	return S_OK;
 }
 

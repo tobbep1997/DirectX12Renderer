@@ -159,6 +159,8 @@
     <ClInclude Include="DirectX\Objects\Texture\Texture.h" />
     <ClInclude Include="DirectX\Structs.h" />
     <ClInclude Include="DirectX\Objects\Drawable.h" />
+    <ClInclude Include="DirectX\Objects\Light\Template\ILight.h" />
+    <ClInclude Include="DirectX\Objects\Light\PointLight.h" />
     <ClInclude Include="Utility\DeltaTime.h" />
     <ClInclude Include="DirectX\Objects\Camera.h" />
     <ClInclude Include="DirectX12Engine.h" />
@@ -178,6 +180,8 @@
     <ClCompile Include="DirectX\Objects\Mesh\StaticMesh.cpp" />
     <ClCompile Include="DirectX\Objects\Drawable.cpp" />
     <ClCompile Include="DirectX\Objects\Texture\Texture.cpp" />
+    <ClCompile Include="DirectX\Objects\Light\Template\ILight.cpp" />
+    <ClCompile Include="DirectX\Objects\Light\PointLight.cpp" />
     <ClCompile Include="Utility\DeltaTime.cpp" />
     <ClCompile Include="DirectX\Objects\Camera.cpp" />
     <ClCompile Include="DirectX12EnginePCH.cpp">
