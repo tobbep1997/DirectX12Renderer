@@ -89,6 +89,12 @@ HRESULT GeometryPass::Draw()
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(1, p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 		}
+		if(p_drawQueue->at(i)->GetNormal())
+		{
+			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap() };
+			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(2, p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+		}
 
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
 
@@ -175,9 +181,21 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	descriptorRangeTable[0].RegisterSpace = 0;
 	descriptorRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+
+	D3D12_DESCRIPTOR_RANGE textureRangeTable[1];
+	textureRangeTable[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	textureRangeTable[0].NumDescriptors = 1;
+	textureRangeTable[0].BaseShaderRegister = 1;
+	textureRangeTable[0].RegisterSpace = 0;
+	textureRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
 	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
 	descriptorTable.NumDescriptorRanges = _countof(descriptorRangeTable);
 	descriptorTable.pDescriptorRanges = &descriptorRangeTable[0];
+
+	D3D12_ROOT_DESCRIPTOR_TABLE textureTable;
+	textureTable.NumDescriptorRanges = _countof(textureRangeTable);
+	textureTable.pDescriptorRanges = &textureRangeTable[0];
 
 	D3D12_ROOT_DESCRIPTOR rootDescriptor;
 	rootDescriptor.RegisterSpace = 0;
@@ -190,6 +208,10 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[1].DescriptorTable = descriptorTable;
 	m_rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[2].DescriptorTable = textureTable;
+	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT;

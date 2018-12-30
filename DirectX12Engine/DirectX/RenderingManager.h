@@ -16,7 +16,7 @@ public:
 	HRESULT Init(const Window & window, const BOOL & EnableDebugLayer = FALSE);
 	void Flush(const Camera & camera, const BOOL & present = TRUE);
 	void Present();
-	void Release(const BOOL & waitForFrames = TRUE);
+	void Release(const BOOL & waitForFrames = TRUE, const BOOL & reportMemoryLeaks = TRUE);
 	void WaitForFrames();
 
 

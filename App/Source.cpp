@@ -2,7 +2,11 @@
 
 void CameraMovment(Camera * camera, const float & deltaTime)
 {
-	const float moveSpeed = 2.0f;
+
+	float sprintMod = 1.0f;
+	if (Input::IsKeyPressed(16))
+		sprintMod = 2.0f;
+	const float moveSpeed = 2.0f * sprintMod;
 	const float rotSpeed = 2.0f;
 
 	if (Input::IsKeyPressed('A'))
@@ -41,26 +45,20 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	   
 	StaticMesh * staticCylinderMesh = new StaticMesh();
 	staticCylinderMesh->Init();
-	staticCylinderMesh->LoadStaticMesh("../Models/Cylinder.fbx");
-
-	StaticMesh * staticCubeMesh = new StaticMesh();
-	staticCubeMesh->Init();
-	staticCubeMesh->LoadStaticMesh("../Models/Cube.fbx");
-
-	Drawable * drawable = new Drawable();
-	drawable->SetPosition(-2, 0, 0);
-	drawable->SetMesh(*staticCylinderMesh);
-	drawable->Update();
-
-	Drawable * drawable2 = new Drawable();
-	drawable2->SetMesh(*staticCubeMesh);
-	drawable2->Update();
+	staticCylinderMesh->LoadStaticMesh("../Models/Cube.fbx");
 
 	Texture * texture = new Texture();
-	Texture * texture2 = new Texture();
+	Texture * normal = new Texture();
+	
 
+	Drawable * drawable = new Drawable();
+	drawable->SetPosition(0, 0, 0);
+	drawable->SetScale(5, 5, 5);
+	drawable->SetMesh(*staticCylinderMesh);
+	drawable->Update();
 	drawable->SetTexture(texture);
-	drawable2->SetTexture(texture2);
+	drawable->SetNormalMap(normal);
+
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -69,12 +67,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		TRUE))
+		TRUE,
+		FALSE))
 	{
 		staticCylinderMesh->CreateBuffer(renderingManager);
-		staticCubeMesh->CreateBuffer(renderingManager);
-		texture->LoadTexture("../car.bmp", renderingManager);
-		texture2->LoadTexture("../Joel.bmp", renderingManager);
+		texture->LoadTexture("../Texture/Bark/Bark_diffuse.bmp", renderingManager);
+		normal->LoadTexture("../Texture/Bark/Bark_normal.bmp", renderingManager);
 		
 		deltaTimer.Init();
 		while (window->IsOpen())
@@ -83,30 +81,28 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			if (window->Updating())
 			{
 			}
-
 			CameraMovment(camera, deltaTime);
+
 
 
 			camera->Update();
 			drawable->Draw(renderingManager);
-			drawable2->Draw(renderingManager);
-
 			UpdateRenderingManger(renderingManager, *camera);
+		
+			if (Input::IsKeyPressed('P'))
+				RestartRenderingManager(window, renderingManager, TRUE);
 		}	
 	}
 	renderingManager->WaitForFrames();
 	staticCylinderMesh->Release();
-	staticCubeMesh->Release();
 	texture->Release();
-	texture2->Release();
+	normal->Release();
 	renderingManager->Release(FALSE);
 
 	delete camera;
-	delete staticCubeMesh;
 	delete staticCylinderMesh;
 	delete drawable;
-	delete drawable2;
 	delete texture;
-	delete texture2;
+	delete normal;
 	return 0;
 }

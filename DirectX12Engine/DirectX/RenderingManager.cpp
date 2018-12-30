@@ -183,7 +183,7 @@ void RenderingManager::Present()
 	}
 }
 
-void RenderingManager::Release(const BOOL & waitForFrames)
+void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMemoryLeaks)
 {
 	if (waitForFrames)
 		WaitForFrames();
@@ -215,7 +215,7 @@ void RenderingManager::Release(const BOOL & waitForFrames)
 
 	if (m_device->Release() > 0)
 	{
-		if (m_debugLayerEnabled)
+		if (m_debugLayerEnabled && reportMemoryLeaks)
 		{
 			ID3D12DebugDevice * dbgDevice = nullptr;
 			if (SUCCEEDED(m_device->QueryInterface(IID_PPV_ARGS(&dbgDevice))))

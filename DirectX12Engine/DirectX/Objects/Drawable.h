@@ -26,11 +26,15 @@ public:
 	const BOOL & GetIsVisible() const;
 
 	void SetTexture(Texture * texture);
+	void SetNormalMap(Texture * normal);
+	
 	const Texture * GetTexture() const;
+	const Texture * GetNormal() const;
 
 private:	
 	StaticMesh * m_mesh;
 	Texture * m_texture;
+	Texture * m_normal;
 	BOOL m_isVisible = TRUE;
 
 };

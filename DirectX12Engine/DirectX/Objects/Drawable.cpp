@@ -7,6 +7,7 @@ Drawable::Drawable()
 {
 	m_mesh = nullptr;
 	m_texture = nullptr;
+	m_normal = nullptr;
 }
 
 
@@ -58,8 +59,18 @@ void Drawable::SetTexture(Texture* texture)
 	this->m_texture = texture;
 }
 
+void Drawable::SetNormalMap(Texture* normal)
+{
+	this->m_normal = normal;
+}
+
 const Texture* Drawable::GetTexture() const
 {
 	return this->m_texture;
+}
+
+const Texture* Drawable::GetNormal() const
+{
+	return this->m_normal;
 }
 

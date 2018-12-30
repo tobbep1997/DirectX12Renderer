@@ -38,10 +38,11 @@ inline BOOL InitDirectX12Engine(Window *& window,
 	const UINT & width,
 	const UINT & height,
 	const BOOL & fullscreen = FALSE,
-	const BOOL & debuggingTools = FALSE)
+	const BOOL & debuggingTools = FALSE,
+	const BOOL & enableConsole = FALSE)
 {
 	DEBUG::_SetDbgFlag();
-	if (debuggingTools)
+	if (enableConsole)
 		DEBUG::_AlocConsole();
 
 	HRESULT hr;
@@ -81,7 +82,7 @@ inline BOOL RestartRenderingManager(Window *& window, RenderingManager *& render
 	if (!window || !renderingManager)
 		return FALSE;
 
-	renderingManager->Release();
+	renderingManager->Release(TRUE, FALSE);
 
 	if (SUCCEEDED(hr = renderingManager->Init(*window, debuggingTools)))
 	{
