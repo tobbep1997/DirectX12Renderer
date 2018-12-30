@@ -69,6 +69,16 @@ void Drawable::SetMetallicMap(Texture* metallic)
 	this->m_metallic = metallic;
 }
 
+void Drawable::SetDisplacementMap(Texture* displacement)
+{
+	this->m_displacement = displacement;
+}
+
+const Texture* Drawable::GetDisplacement() const
+{
+	return this->m_displacement;
+}
+
 const Texture* Drawable::GetMetallic() const
 {
 	return this->m_metallic;

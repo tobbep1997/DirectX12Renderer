@@ -3,9 +3,9 @@
 void CameraMovment(Camera * camera, const float & deltaTime)
 {
 
-	float sprintMod = 1.0f;
+	float sprintMod = 0.5f;
 	if (Input::IsKeyPressed(16))
-		sprintMod = 2.0f;
+		sprintMod = 4.0f;
 	const float moveSpeed = 2.0f * sprintMod;
 	const float rotSpeed = 2.0f;
 
@@ -38,17 +38,19 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	Window * window = nullptr;
 	RenderingManager * renderingManager = nullptr;
 
-	Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .1f, 100.0f);
+	Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);
 	camera->SetPosition(0, 0, -5);
 
 	DeltaTime deltaTimer;
 	   
 	StaticMesh * staticCylinderMesh = new StaticMesh();
 	staticCylinderMesh->Init();
-	staticCylinderMesh->LoadStaticMesh("../Models/Cube.fbx");
+	staticCylinderMesh->LoadStaticMesh("../Models/Sphere.fbx");
 
 	Texture * texture = new Texture();
 	Texture * normal = new Texture();
+	Texture * metallic = new Texture();
+	Texture * displacement = new Texture();
 	
 
 	Drawable * drawable = new Drawable();
@@ -58,6 +60,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	drawable->Update();
 	drawable->SetTexture(texture);
 	drawable->SetNormalMap(normal);
+	drawable->SetMetallicMap(metallic);
+	drawable->SetDisplacementMap(displacement);
 
 
 	const UINT pointLightSize = 1;
@@ -66,7 +70,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	{
 		pointLights[i] = new PointLight();
 		pointLights[i]->SetPosition(0, 0, -2.5);  
-		pointLights[i]->SetIntensity(7.5);  
+		pointLights[i]->SetIntensity(2.5);  
 	}
 
 
@@ -78,11 +82,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		720, 
 		FALSE,
 		TRUE,
-		TRUE))
+		FALSE))
 	{
 		staticCylinderMesh->CreateBuffer(renderingManager);
 		texture->LoadTexture("../Texture/Brick/Brick_diffuse.bmp", renderingManager);
 		normal->LoadTexture("../Texture/Brick/Brick_normal.bmp", renderingManager);
+		metallic->LoadTexture("../Texture/Brick/Brick_metallic.bmp", renderingManager);
+		displacement->LoadTexture("../Texture/Brick/Brick_height.bmp", renderingManager);
 		
 		deltaTimer.Init();
 		while (window->IsOpen())
@@ -95,7 +101,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			CameraMovment(camera, deltaTime);
 			camera->Update();
 
-			drawable->SetRotation(0, drawable->GetRotation().y + deltaTime * 0.5, 0);
+			drawable->SetRotation(0, drawable->GetRotation().y + deltaTime * 0.25f, 0);
 			drawable->Update();
 			drawable->Draw(renderingManager);
 			for (UINT i = 0; i < pointLightSize; i++)
@@ -113,6 +119,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	staticCylinderMesh->Release();
 	texture->Release();
 	normal->Release();
+	metallic->Release();
+	displacement->Release();
 	renderingManager->Release(FALSE);
 
 	delete camera;
@@ -120,6 +128,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	delete drawable;
 	delete texture;
 	delete normal;
+	delete metallic;
+	delete displacement;
 	for (UINT i = 0; i < pointLightSize; i++)
 		delete pointLights[i];
 	return 0;

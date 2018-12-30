@@ -93,10 +93,11 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
 	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
 	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
-	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 
-	p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(4, m_constantBuffer[1][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
+	p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(5, m_constantBuffer[1][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
 	return hr;
 }
 
@@ -110,24 +111,32 @@ HRESULT GeometryPass::Draw()
 		{
 			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap() };
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(1, p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(2, p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 		}
 		if(p_drawQueue->at(i)->GetNormal())
 		{
 			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap() };
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(2, p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(3, p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 		}
 		if (p_drawQueue->at(i)->GetMetallic())
 		{
 			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetMetallic()->GetId3D12DescriptorHeap() };
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(3, p_drawQueue->at(i)->GetMetallic()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(4, p_drawQueue->at(i)->GetMetallic()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+		}
+
+		if (p_drawQueue->at(i)->GetDisplacement())
+		{
+			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetDisplacement()->GetId3D12DescriptorHeap() };
+			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(6, p_drawQueue->at(i)->GetDisplacement()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 		}
 
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
 
 		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[0][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(1, m_constantBuffer[0][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
 		
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
@@ -229,6 +238,12 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	metallicRangeTable[0].RegisterSpace = 0;
 	metallicRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+	D3D12_DESCRIPTOR_RANGE displacementRangeTable[1];
+	displacementRangeTable[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	displacementRangeTable[0].NumDescriptors = 1;
+	displacementRangeTable[0].BaseShaderRegister = 0;
+	displacementRangeTable[0].RegisterSpace = 0;
+	displacementRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
 	descriptorTable.NumDescriptorRanges = _countof(descriptorRangeTable);
@@ -239,8 +254,12 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	textureTable.pDescriptorRanges = &textureRangeTable[0];
 
 	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
-	metallicTable.NumDescriptorRanges = _countof(textureRangeTable);
+	metallicTable.NumDescriptorRanges = _countof(metallicRangeTable);
 	metallicTable.pDescriptorRanges = &metallicRangeTable[0];
+
+	D3D12_ROOT_DESCRIPTOR_TABLE displacementTable;
+	displacementTable.NumDescriptorRanges = _countof(displacementRangeTable);
+	displacementTable.pDescriptorRanges = &displacementRangeTable[0];
 
 	D3D12_ROOT_DESCRIPTOR rootDescriptor;
 	rootDescriptor.RegisterSpace = 0;
@@ -254,21 +273,29 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[0].Descriptor = rootDescriptor;
 	m_rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-	m_rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[1].DescriptorTable = descriptorTable;
-	m_rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	m_rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameters[1].Descriptor = rootDescriptor;
+	m_rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
 
 	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[2].DescriptorTable = textureTable;
+	m_rootParameters[2].DescriptorTable = descriptorTable;
 	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[3].DescriptorTable = metallicTable;
+	m_rootParameters[3].DescriptorTable = textureTable;
 	m_rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-	m_rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	m_rootParameters[4].Descriptor = lightRootDescriptor;
+	m_rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[4].DescriptorTable = metallicTable;
 	m_rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	    
+	m_rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameters[5].Descriptor = lightRootDescriptor;
+	m_rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[6].DescriptorTable = displacementTable;
+	m_rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
@@ -285,14 +312,30 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	sampler.RegisterSpace = 0;
 	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+	D3D12_STATIC_SAMPLER_DESC domainSampler{};
+	domainSampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+	domainSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	domainSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	domainSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	domainSampler.MipLODBias = 0;
+	domainSampler.MaxAnisotropy = 0;
+	domainSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	domainSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	domainSampler.MinLOD = 0.0f;
+	domainSampler.MaxLOD = D3D12_FLOAT32_MAX;
+	domainSampler.ShaderRegister = 0;
+	domainSampler.RegisterSpace = 0;
+	domainSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+
+	D3D12_STATIC_SAMPLER_DESC samplers[] = { sampler, domainSampler };
+
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(m_rootParameters),
 		m_rootParameters, 
-		1, 
-		&sampler,
+		2, 
+		samplers,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |		
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
 
 	ID3DBlob * signature = nullptr;
@@ -327,11 +370,24 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	graphicsPipelineStateDesc.InputLayout = m_inputLayoutDesc;
 	graphicsPipelineStateDesc.pRootSignature = m_rootSignature;
 	graphicsPipelineStateDesc.VS = m_vertexShader;
+	graphicsPipelineStateDesc.HS = m_hullShader;
+	graphicsPipelineStateDesc.DS = m_domainShader;
 	graphicsPipelineStateDesc.PS = m_pixelShader;
-	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
 	graphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_WIREFRAME,
+			D3D12_CULL_MODE_NONE,
+			FALSE,
+			0,
+			0.0f,
+			0.0f,
+			TRUE,
+			FALSE,
+			FALSE,
+			0,
+			D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
 	graphicsPipelineStateDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -368,6 +424,26 @@ HRESULT GeometryPass::_initShaders()
 	{
 		m_vertexShader.BytecodeLength = blob->GetBufferSize();
 		m_vertexShader.pShaderBytecode = blob->GetBufferPointer();
+	}
+
+	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryHull.hlsl", blob, "hs_5_1")))
+	{
+		return hr;
+	}
+	else
+	{
+		m_hullShader.BytecodeLength = blob->GetBufferSize();
+		m_hullShader.pShaderBytecode = blob->GetBufferPointer();
+	}
+
+	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryDomain.hlsl", blob, "ds_5_1")))
+	{
+		return hr;
+	}
+	else
+	{
+		m_domainShader.BytecodeLength = blob->GetBufferSize();
+		m_domainShader.pShaderBytecode = blob->GetBufferPointer();
 	}
 
 	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryPixel.hlsl", blob, "ps_5_1")))

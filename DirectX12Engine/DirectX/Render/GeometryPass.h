@@ -8,7 +8,7 @@ class GeometryPass :
 {
 private:
 
-	static const UINT ROOT_PARAMETERS = 5;
+	static const UINT ROOT_PARAMETERS = 7;
 	static const UINT NUM_BUFFERS = 2;
 
 	struct ObjectBuffer
@@ -63,6 +63,8 @@ private:
 	D3D12_RECT		m_rect;
 
 	D3D12_SHADER_BYTECODE m_vertexShader;
+	D3D12_SHADER_BYTECODE m_hullShader;
+	D3D12_SHADER_BYTECODE m_domainShader;
 	D3D12_SHADER_BYTECODE m_pixelShader;
 
 	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};

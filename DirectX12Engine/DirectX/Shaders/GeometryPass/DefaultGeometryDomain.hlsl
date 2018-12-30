@@ -1,0 +1,77 @@
+struct DS_OUTPUT
+{
+    float4 pos : SV_POSITION;
+    float4 worldPos : WORLDPOS;
+    float4 normal : NORMAL;
+    float3x3 TBN : TBN;
+    float4 texCord : TEXCORD;
+};
+
+// Output control point
+struct HS_OUTPUT
+{
+    float4 pos : SV_POSITION;
+    float4 worldPos : WORLDPOS;
+    float4 normal : NORMAL;
+    float3x3 TBN : TBN;
+    float4 texCord : TEXCORD;
+};
+
+// Output patch constant data.
+struct HS_CONSTANT_DATA_OUTPUT
+{
+	float EdgeTessFactor[3]			: SV_TessFactor; // e.g. would be [4] for a quad domain
+	float InsideTessFactor			: SV_InsideTessFactor; // e.g. would be Inside[2] for a quad domain
+	// TODO: change/add other stuff
+};
+
+#define NUM_CONTROL_POINTS 3
+
+cbuffer CAMERA_BUFFER : register(b0)
+{
+    float4 CameraPos;
+    float4x4 WorldMatrix;
+    float4x4 ViewProjection;
+    
+    float4 Padding[40];
+}
+
+SamplerState defaultSampler : register(s0);
+Texture2D displacementMap : register(t0);
+
+[domain("tri")]
+DS_OUTPUT main(
+	HS_CONSTANT_DATA_OUTPUT input,
+	float3 domain : SV_DomainLocation,
+	const OutputPatch<HS_OUTPUT, NUM_CONTROL_POINTS> patch)
+{
+    DS_OUTPUT output = (DS_OUTPUT)0;
+
+    output.worldPos = domain.x * patch[0].worldPos + 
+        domain.y * patch[1].worldPos + 
+        domain.z * patch[2].worldPos;
+    output.worldPos.w = 1;
+    
+    output.normal = domain.x * patch[0].normal +
+        domain.y * patch[1].normal +
+        domain.z * patch[2].normal;
+    output.normal = normalize(output.normal);
+
+    output.texCord = domain.x * patch[0].texCord +
+        domain.y * patch[1].texCord +
+        domain.z * patch[2].texCord;
+    output.texCord.z = 0;
+    output.texCord.w = 0;
+
+    output.TBN = patch[0].TBN;
+
+
+    float height = length(displacementMap.SampleLevel(defaultSampler, output.texCord.xy, 0).rgb);
+    height = clamp(height, 0.0f, 1.0f);
+
+    output.worldPos += (0.05f * (height - 1.0f)) * output.normal;
+
+    output.pos = mul(output.worldPos, ViewProjection);
+	return output;
+}
+

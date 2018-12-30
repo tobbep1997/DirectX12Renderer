@@ -1,4 +1,4 @@
-struct VS_OUTPUT
+struct HS_OUTPUT
 {
     float4 pos : SV_POSITION;
     float4 worldPos : WORLDPOS;
@@ -50,7 +50,7 @@ float4 LightCalculation(float4 albedo, float4 worldPos, float4 normal, float4 me
     return finalColor;
 }
 
-float4 main(VS_OUTPUT input) : SV_TARGET
+float4 main(HS_OUTPUT input) : SV_TARGET
 {
     float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f);
 

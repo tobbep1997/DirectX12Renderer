@@ -120,5 +120,7 @@
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryPixel.hlsl" />
+    <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryDomain.hlsl" />
+    <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryHull.hlsl" />
   </ItemGroup>
 </Project>

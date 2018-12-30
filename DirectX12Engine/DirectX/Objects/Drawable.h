@@ -28,16 +28,19 @@ public:
 	void SetTexture(Texture * texture);
 	void SetNormalMap(Texture * normal);
 	void SetMetallicMap(Texture * metallic);
-	
+	void SetDisplacementMap(Texture * displacement);
+
 	const Texture * GetTexture() const;
 	const Texture * GetNormal() const;
 	const Texture * GetMetallic() const;
+	const Texture * GetDisplacement() const;
 
 private:	
 	StaticMesh * m_mesh;
 	Texture * m_texture;
 	Texture * m_normal;
 	Texture * m_metallic;
+	Texture * m_displacement;
 	BOOL m_isVisible = TRUE;
 
 };
