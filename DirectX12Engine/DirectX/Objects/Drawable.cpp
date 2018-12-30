@@ -64,6 +64,16 @@ void Drawable::SetNormalMap(Texture* normal)
 	this->m_normal = normal;
 }
 
+void Drawable::SetMetallicMap(Texture* metallic)
+{
+	this->m_metallic = metallic;
+}
+
+const Texture* Drawable::GetMetallic() const
+{
+	return this->m_metallic;
+}
+
 const Texture* Drawable::GetTexture() const
 {
 	return this->m_texture;

@@ -8,7 +8,7 @@ class GeometryPass :
 {
 private:
 
-	static const UINT ROOT_PARAMETERS = 4;
+	static const UINT ROOT_PARAMETERS = 5;
 	static const UINT NUM_BUFFERS = 2;
 
 	struct ObjectBuffer
@@ -22,6 +22,7 @@ private:
 
 	struct LightBuffer
 	{
+		DirectX::XMFLOAT4A	CameraPosition;
 		DirectX::XMUINT4	Type[256];
 		DirectX::XMFLOAT4A	Position[256];
 		DirectX::XMFLOAT4A	Color[256];

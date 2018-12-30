@@ -53,7 +53,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	Drawable * drawable = new Drawable();
 	drawable->SetPosition(0, 0, 0);
-	drawable->SetScale(5, 5, 5);
+	drawable->SetScale(1, 1, 1);
 	drawable->SetMesh(*staticCylinderMesh);
 	drawable->Update();
 	drawable->SetTexture(texture);
@@ -62,11 +62,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	const UINT pointLightSize = 1;
 	std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
-	const UINT sqroot = static_cast<UINT>(sqrt(pointLightSize));
 	for (UINT i = 0; i < pointLightSize; i++)
 	{
 		pointLights[i] = new PointLight();
-		pointLights[i]->SetPosition(0, 0, -7.5);  
+		pointLights[i]->SetPosition(0, 0, -2.5);  
 		pointLights[i]->SetIntensity(7.5);  
 	}
 
@@ -81,11 +80,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		TRUE,
 		TRUE))
 	{
-
-
 		staticCylinderMesh->CreateBuffer(renderingManager);
-		texture->LoadTexture("../Texture/Bark/Bark_diffuse.bmp", renderingManager);
-		normal->LoadTexture("../Texture/Bark/Bark_normal.bmp", renderingManager);
+		texture->LoadTexture("../Texture/Brick/Brick_diffuse.bmp", renderingManager);
+		normal->LoadTexture("../Texture/Brick/Brick_normal.bmp", renderingManager);
 		
 		deltaTimer.Init();
 		while (window->IsOpen())
@@ -97,8 +94,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 			CameraMovment(camera, deltaTime);
 			camera->Update();
-			 
 
+			drawable->SetRotation(0, drawable->GetRotation().y + deltaTime * 0.5, 0);
+			drawable->Update();
 			drawable->Draw(renderingManager);
 			for (UINT i = 0; i < pointLightSize; i++)
 			{

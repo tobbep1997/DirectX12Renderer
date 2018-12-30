@@ -27,14 +27,17 @@ public:
 
 	void SetTexture(Texture * texture);
 	void SetNormalMap(Texture * normal);
+	void SetMetallicMap(Texture * metallic);
 	
 	const Texture * GetTexture() const;
 	const Texture * GetNormal() const;
+	const Texture * GetMetallic() const;
 
 private:	
 	StaticMesh * m_mesh;
 	Texture * m_texture;
 	Texture * m_normal;
+	Texture * m_metallic;
 	BOOL m_isVisible = TRUE;
 
 };
