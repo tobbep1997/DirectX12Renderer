@@ -136,6 +136,13 @@ ID3D12DescriptorHeap* Texture::GetId3D12DescriptorHeap() const
 	return m_textureDescriptorHeap;
 }
 
+void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootParameterIndex) const
+{
+	ID3D12DescriptorHeap* descriptorHeaps[] = { m_textureDescriptorHeap };
+	renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(rootParameterIndex, m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+}
+
 HRESULT Texture::_uploadTexture()
 {
 	HRESULT hr = 0;
@@ -154,19 +161,19 @@ int Texture::_loadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resou
 
 	static IWICImagingFactory * wicFactory = nullptr;
 
-	IWICBitmapDecoder *wicDecoder = NULL;
-	IWICBitmapFrameDecode *wicFrame = NULL;
-	IWICFormatConverter *wicConverter = NULL;
+	IWICBitmapDecoder *wicDecoder = nullptr;
+	IWICBitmapFrameDecode *wicFrame = nullptr;
+	IWICFormatConverter *wicConverter = nullptr;
 
 	BOOL imageConverted = FALSE;
 
 	if (wicFactory == nullptr)
 	{
-		CoInitialize(NULL);
+		CoInitialize(nullptr);
 
 		if (FAILED(hr = CoCreateInstance(
 			CLSID_WICImagingFactory,
-			NULL,
+			nullptr,
 			CLSCTX_INPROC_SERVER,
 			IID_PPV_ARGS(&wicFactory))))
 		{
@@ -176,7 +183,7 @@ int Texture::_loadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resou
 
 	if (SUCCEEDED(hr = wicFactory->CreateDecoderFromFilename(
 		filename,
-		NULL,
+		nullptr,
 		GENERIC_READ,
 		WICDecodeMetadataCacheOnLoad,
 		&wicDecoder)))
@@ -207,22 +214,22 @@ int Texture::_loadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resou
 						hr = wicConverter->CanConvert(pixelFormat, convertToPixelFormat, &canConvert);
 						if (FAILED(hr) || !canConvert) return 0;
 
-						hr = wicConverter->Initialize(wicFrame, convertToPixelFormat, WICBitmapDitherTypeErrorDiffusion, 0, 0, WICBitmapPaletteTypeCustom);
+						hr = wicConverter->Initialize(wicFrame, convertToPixelFormat, WICBitmapDitherTypeErrorDiffusion, nullptr, 0, WICBitmapPaletteTypeCustom);
 						if (FAILED(hr)) return 0;
 
 						imageConverted = true;
 					}
 
-					int bitsPerPixel = _getDxgiFormatBitsPerPixel(dxgiFormat);
+					const int bitsPerPixel = _getDxgiFormatBitsPerPixel(dxgiFormat);
 
 					bytesPerRow = (textureWidth * bitsPerPixel) / 8;
-					int imageSize = bytesPerRow * textureHeight;
+					const int imageSize = bytesPerRow * textureHeight;
 
-					*imageData = (BYTE*)malloc(imageSize);
+					*imageData = static_cast<BYTE*>(malloc(imageSize));
 
 					if (imageConverted)
 					{
-						if (FAILED(hr = wicConverter->CopyPixels(0,
+						if (FAILED(hr = wicConverter->CopyPixels(nullptr,
 							bytesPerRow,
 							imageSize,
 							*imageData)))
@@ -232,7 +239,7 @@ int Texture::_loadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resou
 					}
 					else
 					{
-						if (FAILED(hr = wicFrame->CopyPixels(0,
+						if (FAILED(hr = wicFrame->CopyPixels(nullptr,
 							bytesPerRow,
 							imageSize,
 							*imageData)))
@@ -247,7 +254,7 @@ int Texture::_loadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resou
 					resourceDesc.Width = textureWidth; // width of the texture
 					resourceDesc.Height = textureHeight; // height of the texture
 					resourceDesc.DepthOrArraySize = 1; // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D textures (we only have one image, so we set 1)
-					resourceDesc.MipLevels = 1; // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
+					resourceDesc.MipLevels = 1; // Number of MipMaps. We are not generating MipMaps for this texture, so we have only one level
 					resourceDesc.Format = dxgiFormat; // This is the dxgi format of the image (format of the pixels)
 					resourceDesc.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
 					resourceDesc.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance

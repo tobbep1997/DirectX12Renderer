@@ -8,6 +8,8 @@ Drawable::Drawable()
 	m_mesh = nullptr;
 	m_texture = nullptr;
 	m_normal = nullptr;
+	m_metallic = nullptr;
+	m_displacement = nullptr;
 }
 
 

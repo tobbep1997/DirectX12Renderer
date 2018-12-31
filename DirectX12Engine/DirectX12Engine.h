@@ -1,6 +1,5 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
-#include "Utility/DeltaTime.h"
 
 
 #ifdef _DEBUG
@@ -9,11 +8,11 @@
 #define DBG_NEW new
 #endif
 
-namespace DEBUG
+namespace DEBUG //NOLINT
 {
 	
 
-	inline void _SetDbgFlag()
+	inline void SetDbgFlag()
 	{
 	#ifdef _DEBUG
 		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
@@ -21,7 +20,7 @@ namespace DEBUG
 	#endif
 	}
 
-	inline void _AlocConsole() {
+	inline void AlocConsole() {
 	#ifdef _DEBUG
 		AllocConsole();
 		FILE* fp;
@@ -33,17 +32,17 @@ namespace DEBUG
 }
 inline BOOL InitDirectX12Engine(Window *& window,
 	RenderingManager *& renderingManager,
-	const HINSTANCE hInstance,
-	const std::string & windowName,
+	const HINSTANCE hInstance,					// NOLINT
+	const std::string & windowName,  
 	const UINT & width,
 	const UINT & height,
 	const BOOL & fullscreen = FALSE,
 	const BOOL & debuggingTools = FALSE,
 	const BOOL & enableConsole = FALSE)
 {
-	DEBUG::_SetDbgFlag();
+	DEBUG::SetDbgFlag();
 	if (enableConsole)
-		DEBUG::_AlocConsole();
+		DEBUG::AlocConsole();
 
 	HRESULT hr;
 	if (window || renderingManager)

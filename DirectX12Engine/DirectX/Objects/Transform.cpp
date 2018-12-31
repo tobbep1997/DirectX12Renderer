@@ -5,7 +5,7 @@
 
 Transform::Transform() : IObject()
 {
-	this->Init();
+	Transform::Init();
 }
 
 Transform::~Transform()

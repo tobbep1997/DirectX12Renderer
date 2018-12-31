@@ -19,7 +19,7 @@ GeometryPass::~GeometryPass()
 
 HRESULT GeometryPass::Init()
 {
-	HRESULT hr = 0;
+	HRESULT hr;
 	m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window);
 	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
 	if (SUCCEEDED(hr = _preInit()))
@@ -33,8 +33,7 @@ HRESULT GeometryPass::Init()
 }
 
 HRESULT GeometryPass::Update(const Camera & camera)
-{
-	HRESULT hr = 0;
+{	
 	m_depthStencil->ClearDepthStencil();
 
 	m_objectValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
@@ -46,9 +45,9 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	for (UINT i = 0; i < drawQueueSize; i++)
 	{
 		m_objectValues.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
-
 		memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectValues, sizeof(m_objectValues));
 	}
+
 	const UINT lightQueueSize = static_cast<const UINT>(p_lightQueue->size());
 	for (UINT i = 0; i < lightQueueSize && i < 256; i++)
 	{
@@ -78,7 +77,6 @@ HRESULT GeometryPass::Update(const Camera & camera)
 		}
 	}
 
-	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
@@ -96,47 +94,33 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 
+	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 	m_lightBuffer->SetGraphicsRootConstantBufferView(2);
-	return hr;
+	return S_OK;
 }
 
 HRESULT GeometryPass::Draw()
-{
-	HRESULT hr = 0;
+{	
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	for (UINT i = 0; i < drawQueueSize; i++)
 	{	
-		if (p_drawQueue->at(i)->GetTexture())
-		{
-			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap() };
-			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(3, p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-		}
-		if(p_drawQueue->at(i)->GetNormal())
-		{
-			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap() };
-			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(4, p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-		}
-		if (p_drawQueue->at(i)->GetMetallic())
-		{
-			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetMetallic()->GetId3D12DescriptorHeap() };
-			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(5, p_drawQueue->at(i)->GetMetallic()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-		}
+		if (p_drawQueue->at(i)->GetTexture())				
+			p_drawQueue->at(i)->GetTexture()->MapTexture(p_renderingManager, 3);
+		
+		if(p_drawQueue->at(i)->GetNormal())		
+			p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 4);
+		
+		if (p_drawQueue->at(i)->GetMetallic())		
+			p_drawQueue->at(i)->GetMetallic()->MapTexture(p_renderingManager, 5);
+		
 
 		if (p_drawQueue->at(i)->GetDisplacement())
 		{
-			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetDisplacement()->GetId3D12DescriptorHeap() };
-			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(6, p_drawQueue->at(i)->GetDisplacement()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+			p_drawQueue->at(i)->GetDisplacement()->MapTexture(p_renderingManager, 6);
 
-			if (p_drawQueue->at(i)->GetNormal())
-			{
-				ID3D12DescriptorHeap* normalDescriptorHeaps[] = { p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap() };
-				p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(normalDescriptorHeaps), normalDescriptorHeaps);
-				p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(7, p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-			}		
+			if (p_drawQueue->at(i)->GetNormal())			
+				p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 7);
+				
 		}
 
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
@@ -147,7 +131,7 @@ HRESULT GeometryPass::Draw()
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
 
-	return hr;
+	return S_OK;
 }
 
 HRESULT GeometryPass::Clear()
@@ -158,8 +142,7 @@ HRESULT GeometryPass::Clear()
 }
 
 HRESULT GeometryPass::Release()
-{
-	HRESULT hr = 0;
+{	
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
 
@@ -177,12 +160,12 @@ HRESULT GeometryPass::Release()
 	}
 	
 
-	return hr;
+	return S_OK;
 }
 
 HRESULT GeometryPass::_preInit()
 {
-	HRESULT hr = 0;
+	HRESULT hr;
 	
 	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
 	{
@@ -211,9 +194,9 @@ HRESULT GeometryPass::_preInit()
 	return hr;
 }
 
-HRESULT GeometryPass::_signalGPU()
+HRESULT GeometryPass::_signalGPU() const
 {
-	HRESULT hr = 0;
+	HRESULT hr;
 
 	if (SUCCEEDED(hr = p_renderingManager->SignalGPU()))
 	{	}
@@ -223,7 +206,7 @@ HRESULT GeometryPass::_signalGPU()
 
 HRESULT GeometryPass::_initID3D12RootSignature()
 {
-	HRESULT hr = 0;
+	HRESULT hr;
 	
 	D3D12_DESCRIPTOR_RANGE albedoRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE albedoTable;
@@ -317,7 +300,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 
 HRESULT GeometryPass::_initID3D12PipelineState()
 {
-	HRESULT hr = 0;
+	HRESULT hr;
 
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 	{
@@ -378,7 +361,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 
 HRESULT GeometryPass::_initShaders()
 {
-	HRESULT hr = 0;
+	HRESULT hr;
 	ID3DBlob * blob = nullptr;
 
 	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryVertex.hlsl", blob, "vs_5_1")))
@@ -425,8 +408,7 @@ HRESULT GeometryPass::_initShaders()
 }
 
 HRESULT GeometryPass::_createViewport()
-{
-	HRESULT hr = 0;
+{	
 	// Fill out the Viewport
 	m_viewport.TopLeftX = 0;
 	m_viewport.TopLeftY = 0;
@@ -440,13 +422,13 @@ HRESULT GeometryPass::_createViewport()
 	m_rect.top = 0;
 	m_rect.right = p_window->GetWidth();
 	m_rect.bottom = p_window->GetHeight();
-	return hr;
+	return S_OK;
 }
 
 
 HRESULT GeometryPass::_createConstantBuffer()
 {
-	HRESULT hr = 0;
+	HRESULT hr;
 
 	if (SUCCEEDED(hr = m_lightBuffer->CreateBuffer(L"LightBuffer", &m_objectValues, sizeof(LightBuffer))))
 	{

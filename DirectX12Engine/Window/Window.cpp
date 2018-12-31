@@ -10,19 +10,19 @@ HRESULT Window::CreateError(const HRESULT& hr)
 	return CreateError(err.ErrorMessage());
 }
 
-HRESULT Window::CreateError(const std::string& errormsg)
+HRESULT Window::CreateError(const std::string& errorMsg)
 {
-	return CreateError(std::wstring(errormsg.begin(), errormsg.end()));
+	return CreateError(std::wstring(errorMsg.begin(), errorMsg.end()));
 }
 
-HRESULT Window::CreateError(const std::wstring& errormsg)
+HRESULT Window::CreateError(const std::wstring& errorMsg)
 {
-	return CreateError(LPCWSTR(errormsg.c_str()));
+	return CreateError(LPCWSTR(errorMsg.c_str()));
 }
 
-HRESULT Window::CreateError(const LPCWSTR& errormsg)
+HRESULT Window::CreateError(const LPCWSTR& errorMsg)
 {
-	MessageBoxW(NULL, errormsg,
+	MessageBoxW(nullptr, errorMsg,
 		L"Error", MB_OK | MB_ICONERROR);
 	return E_FAIL;
 }
@@ -46,12 +46,12 @@ HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const
 {
 	if (fullscreen)
 	{
-		HMONITOR hmonitor = MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST);
-		MONITORINFO monitorinfo = { sizeof(monitorinfo) };
-		GetMonitorInfo(hmonitor, &monitorinfo);
+		const HMONITOR hmonitor = MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST);  // NOLINT
+		MONITORINFO monitorInfo = { sizeof(monitorInfo) };// NOLINT
+		GetMonitorInfo(hmonitor, &monitorInfo);
 
-		this->m_width = monitorinfo.rcMonitor.right - monitorinfo.rcMonitor.left;
-		this->m_height = monitorinfo.rcMonitor.bottom- monitorinfo.rcMonitor.top;
+		this->m_width = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+		this->m_height = monitorInfo.rcMonitor.bottom- monitorInfo.rcMonitor.top;
 	}
 	else
 	{
@@ -70,12 +70,12 @@ HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const
 	wc.cbClsExtra = NULL;
 	wc.cbWndExtra = NULL;
 	wc.hInstance = hInstance;
-	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 2);
-	wc.lpszMenuName = NULL;
+	wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 2);
+	wc.lpszMenuName = nullptr;
 	wc.lpszClassName = this->m_windowName;
-	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+	wc.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
 
 	if (RegisterClassEx(&wc))
 	{
@@ -114,16 +114,16 @@ HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const
 	return S_OK;
 }
 
-const BOOL& Window::IsOpen() const
+const BOOL& Window::IsOpen()
 {
-	return this->m_windowOpen;
+	return m_windowOpen;
 }
 
 BOOL Window::Updating()
 {
 	MSG msg;
 	ZeroMemory(&msg, sizeof(MSG));
-	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -157,20 +157,20 @@ LRESULT Window::StaticWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	Window* pParent;
 	if (msg == WM_CREATE)
 	{
-		pParent = (Window*)((LPCREATESTRUCT)lParam)->lpCreateParams;
-		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pParent);
+		pParent = static_cast<Window*>(reinterpret_cast<LPCREATESTRUCT>(lParam)->lpCreateParams);
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pParent));
 	}
 	else
 	{
-		pParent = (Window*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+		pParent = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 		if (!pParent) return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 
 	pParent->m_hwnd = hWnd;
-	return pParent->WndProc(hWnd, msg, wParam, lParam);
+	return pParent->_wndProc(hWnd, msg, wParam, lParam);
 }
 
-LRESULT Window::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT Window::_wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
 {
 	switch (msg)
 	{
@@ -188,6 +188,9 @@ LRESULT Window::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		CloseWindow();
 		return 0;
+
+	default: 
+		break;
 	}
 	return DefWindowProc(this->m_hwnd,
 		msg,

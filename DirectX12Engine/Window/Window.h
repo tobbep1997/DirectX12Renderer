@@ -6,9 +6,9 @@ class Window
 {
 public:
 	static HRESULT CreateError(const HRESULT & hr);
-	static HRESULT CreateError(const std::string & errormsg);
-	static HRESULT CreateError(const std::wstring & errormsg);
-	static HRESULT CreateError(const LPCWSTR & errormsg);
+	static HRESULT CreateError(const std::string & errorMsg);
+	static HRESULT CreateError(const std::wstring & errorMsg);
+	static HRESULT CreateError(const LPCWSTR & errorMsg);
 	static Window * GetInstance();
 	static void CloseWindow();
 
@@ -17,8 +17,8 @@ public:
 				const UINT & width, 
 				const UINT & height,
 				const BOOL & fullscreen = FALSE);
-	const BOOL & IsOpen() const;
-	BOOL Updating();
+	static const BOOL & IsOpen();
+	static BOOL Updating();
 
 	const UINT & GetWidth() const;
 	const UINT & GetHeight() const;
@@ -34,10 +34,10 @@ private:
 	UINT m_width = 0;
 	UINT m_height = 0;
 	
-	BOOL m_fullscreen;
+	BOOL m_fullscreen = FALSE;
 	static BOOL m_windowOpen;
 
 	static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	LRESULT WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	LRESULT _wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
 
 };

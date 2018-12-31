@@ -42,7 +42,7 @@ public:
 
 private:
 	HRESULT _preInit();
-	HRESULT _signalGPU();
+	HRESULT _signalGPU() const;
 
 	HRESULT _initID3D12RootSignature();
 	HRESULT _initID3D12PipelineState();
@@ -56,34 +56,28 @@ private:
 
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
 
-	X12DepthStencil * m_depthStencil;
+	X12DepthStencil * m_depthStencil = nullptr;
 
-	D3D12_VIEWPORT	m_viewport;
-	D3D12_RECT		m_rect;
+	D3D12_VIEWPORT	m_viewport{};
+	D3D12_RECT		m_rect{};
 
-	D3D12_SHADER_BYTECODE m_vertexShader;
-	D3D12_SHADER_BYTECODE m_hullShader;
-	D3D12_SHADER_BYTECODE m_domainShader;
-	D3D12_SHADER_BYTECODE m_pixelShader;
+	D3D12_SHADER_BYTECODE m_vertexShader{};
+	D3D12_SHADER_BYTECODE m_hullShader{};
+	D3D12_SHADER_BYTECODE m_domainShader{};
+	D3D12_SHADER_BYTECODE m_pixelShader{};
 
 	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};
-
-
-	//0 Camera
-	//1 Lights
-	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
+	   
+	X12ConstantBuffer * m_lightBuffer = nullptr;
 	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
-
-	X12ConstantBuffer * m_lightBuffer;
+	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
+	
+	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
+	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };	
 
 	ObjectBuffer m_objectValues {};
-	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
-
 	LightBuffer m_lightValues{};
 
-
-	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };	
-	   	
 	struct Vertex
 	{
 		Vertex(const DirectX::XMFLOAT4 & position = DirectX::XMFLOAT4(0,0,0,0), 

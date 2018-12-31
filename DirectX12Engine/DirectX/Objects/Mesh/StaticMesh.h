@@ -29,7 +29,7 @@ private:
 	void _createMesh(const aiScene * scene);
 
 	UINT m_vertexBufferSize = 0;
-	D3D12_VERTEX_BUFFER_VIEW		m_vertexBufferView;
+	D3D12_VERTEX_BUFFER_VIEW		m_vertexBufferView{};
 	ID3D12Resource *				m_vertexBuffer		= nullptr;
 	ID3D12Resource *				m_vertexHeapBuffer	= nullptr;
 	std::vector<StaticVertex>	m_staticMesh;

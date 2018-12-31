@@ -161,19 +161,19 @@ HRESULT RenderingManager::_flush(const Camera & camera)
 	return hr;
 }
 
-HRESULT RenderingManager::_present()
+HRESULT RenderingManager::_present() const
 {
 	HRESULT hr = 0;
 	hr = m_swapChain->Present(0, 0);
 	return hr;
 }
 
-void RenderingManager::_clear()
+void RenderingManager::_clear() const
 {
 	m_geometryPass->Clear();
 }
 
-void RenderingManager::Present()
+void RenderingManager::Present() const
 {
 	HRESULT hr = 0;
 	if (FAILED(hr = this->_present()))
@@ -189,8 +189,8 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 		WaitForFrames();
 
 	BOOL fs = false;
-	if (m_swapChain->GetFullscreenState(&fs, NULL))
-		m_swapChain->SetFullscreenState(false, NULL);
+	if (m_swapChain->GetFullscreenState(&fs, nullptr))
+		m_swapChain->SetFullscreenState(false, nullptr);
 
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_commandQueue);
@@ -347,7 +347,7 @@ HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
 	return hr;
 }
 
-HRESULT RenderingManager::_checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory)
+HRESULT RenderingManager::_checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const
 {
 	HRESULT hr = 0;
 	if (adapter || dxgiFactory)
@@ -375,7 +375,6 @@ HRESULT RenderingManager::_checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFact
 				nullptr)))
 			{
 				return S_OK;
-				break;
 			}
 			SAFE_RELEASE(adapter);
 		}

@@ -15,7 +15,7 @@ public:
 
 	HRESULT Init(const Window & window, const BOOL & EnableDebugLayer = FALSE);
 	void Flush(const Camera & camera, const BOOL & present = TRUE);
-	void Present();
+	void Present() const;
 	void Release(const BOOL & waitForFrames = TRUE, const BOOL & reportMemoryLeaks = TRUE);
 	void WaitForFrames();
 
@@ -58,13 +58,13 @@ private:
 	UINT m_rtvDescriptorSize = 0;
 
 	HRESULT _flush(const Camera & camera);
-	HRESULT _present();
-	void _clear();
+	HRESULT _present() const;
+	void _clear() const;
 
 	HRESULT _updatePipeline(const Camera & camera);
 	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE);
 
-	HRESULT _checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory);
+	HRESULT _checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const;
 	HRESULT _createCommandQueue();
 	HRESULT _createSwapChain(const Window & window, IDXGIFactory4 * dxgiFactory);
 	HRESULT _createRenderTargetDescriptorHeap();

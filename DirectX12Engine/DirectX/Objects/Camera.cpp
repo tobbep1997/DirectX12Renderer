@@ -55,7 +55,7 @@ Camera::Camera(const float& fov, const float& aspectRatio, const float& nearPlan
 	this->m_aspectRatio = aspectRatio;
 	this->m_nearPlane	= nearPlane;
 	this->m_farPlane	= farPlane;
-	Init();
+	Camera::Init();
 }
 
 Camera::~Camera()
@@ -105,9 +105,7 @@ void Camera::Rotate(const DirectX::XMFLOAT4& rotation)
 	vRot = DirectX::XMVectorAdd(vRot, vDir);
 
 	const DirectX::XMMATRIX mRot = DirectX::XMMatrixRotationRollPitchYawFromVector(vRot);
-
-	vDir = DirectX::XMLoadFloat4(&this->m_direction);
-
+	
 	const DirectX::XMVECTOR vNewDir = DirectX::XMVector3Normalize(DirectX::XMVector3Transform(vLastDir, mRot));
 	vUp = DirectX::XMLoadFloat4(&m_up);
 
