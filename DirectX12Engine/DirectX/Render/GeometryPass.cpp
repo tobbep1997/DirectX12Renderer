@@ -2,6 +2,7 @@
 #include "GeometryPass.h"
 #include "WrapperFunctions/RenderingHelpClass.h"
 #include "WrapperFunctions/X12DepthStencil.h"
+#include "WrapperFunctions/X12ConstantBuffer.h"
 
 GeometryPass::GeometryPass(RenderingManager * renderingManager, 
 	const Window & window) :
@@ -20,6 +21,7 @@ HRESULT GeometryPass::Init()
 {
 	HRESULT hr = 0;
 	m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window);
+	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
 	if (SUCCEEDED(hr = _preInit()))
 	{
 		if (FAILED(hr = _signalGPU()))
@@ -75,7 +77,8 @@ HRESULT GeometryPass::Update(const Camera & camera)
 				0);
 		}
 	}
-	memcpy(m_lightBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_lightValues, sizeof(m_lightValues));
+
+	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
@@ -90,11 +93,10 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
 	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
 	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
-	//p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 
-	p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(2, m_constantBuffer[1][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
+	m_lightBuffer->SetGraphicsRootConstantBufferView(2);
 	return hr;
 }
 
@@ -132,8 +134,8 @@ HRESULT GeometryPass::Draw()
 
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
 
-		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[0][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
-		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(1, m_constantBuffer[0][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(1, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
 		
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
@@ -157,15 +159,16 @@ HRESULT GeometryPass::Release()
 	m_depthStencil->Release();
 	delete m_depthStencil;
 
-	for (UINT i = 0; i < NUM_BUFFERS; i++)
+	m_lightBuffer->Release();
+	delete m_lightBuffer;
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		for (UINT j = 0; j < FRAME_BUFFER_COUNT; j++)
-		{
-		
-			SAFE_RELEASE(m_constantBufferDescriptorHeap[i][j]);
-			SAFE_RELEASE(m_constantBuffer[i][j]);
-		}
+	
+		SAFE_RELEASE(m_constantBufferDescriptorHeap[i]);
+		SAFE_RELEASE(m_constantBuffer[i]);
 	}
+	
 
 	return hr;
 }
@@ -431,68 +434,30 @@ HRESULT GeometryPass::_createConstantBuffer()
 {
 	HRESULT hr = 0;
 
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	if (SUCCEEDED(hr = m_lightBuffer->CreateBuffer(L"LightBuffer", &m_objectValues, sizeof(LightBuffer))))
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = 1;
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-			&heapDesc,
-			IID_PPV_ARGS(&m_constantBufferDescriptorHeap[1][i]))))
+		for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 		{
-			return hr;
-		}
+			if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&m_constantBuffer[i]))))
+			{
+				SET_NAME(m_constantBuffer[i], L"ConstantBuffer Upload Resource Heap");
+			}
+			else
+				return hr;
 
-
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_constantBuffer[1][i]))))
-		{
-			SET_NAME(m_constantBuffer[1][i], L"Light Upload Resource Heap");
-		}
-		else
-			return hr;
-
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		cbvDesc.BufferLocation = m_constantBuffer[1][i]->GetGPUVirtualAddress();
-		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
-
-		p_renderingManager->GetDevice()->CreateConstantBufferView(
-			&cbvDesc,
-			m_constantBufferDescriptorHeap[1][i]->GetCPUDescriptorHandleForHeapStart());
-
-		CD3DX12_RANGE readRange(0, 0);
-		if (SUCCEEDED(hr = m_constantBuffer[1][i]->Map(
-			0, &readRange,
-			reinterpret_cast<void **>(&m_lightBufferGPUAddress[i]))))
-		{
-			memcpy(m_lightBufferGPUAddress[i], &m_lightValues, sizeof(m_lightValues));
-		}
-
-
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_constantBuffer[0][i]))))
-		{
-			SET_NAME(m_constantBuffer[0][i], L"ConstantBuffer Upload Resource Heap");
-		}
-		else
-			return hr;
-
-		if (SUCCEEDED(hr = m_constantBuffer[0][i]->Map(
-			0, &readRange,
-			reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
-		{
-			memcpy(m_cameraBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
+			CD3DX12_RANGE readRange(0, 0);
+			if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
+				0, &readRange,
+				reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
+			{
+				memcpy(m_cameraBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
+			}
 		}
 	}
 	return hr;

@@ -178,6 +178,7 @@
     <ClInclude Include="DirectX\Objects\Transform.h" />
     <ClInclude Include="Window\Window.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12DepthStencil.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectX\Objects\Mesh\StaticMesh.cpp" />
@@ -204,6 +205,7 @@
     <ClCompile Include="Window\Input.cpp" />
     <ClCompile Include="Window\Window.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12DepthStencil.cpp" />
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryDomain.hlsl">

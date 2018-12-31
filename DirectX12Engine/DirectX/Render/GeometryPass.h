@@ -1,6 +1,7 @@
 #pragma once
 #include "Template/IRender.h"
 
+class X12ConstantBuffer;
 class X12DepthStencil;
 
 class GeometryPass :
@@ -70,8 +71,10 @@ private:
 
 	//0 Camera
 	//1 Lights
-	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[NUM_BUFFERS][FRAME_BUFFER_COUNT] = { nullptr };
-	ID3D12Resource			* m_constantBuffer[NUM_BUFFERS][FRAME_BUFFER_COUNT] = { nullptr };
+	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
+	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
+
+	X12ConstantBuffer * m_lightBuffer;
 
 	ObjectBuffer m_objectValues {};
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
@@ -79,8 +82,7 @@ private:
 	LightBuffer m_lightValues{};
 
 
-	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
-	UINT8* m_lightBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
+	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };	
 	   	
 	struct Vertex
 	{
