@@ -42,7 +42,8 @@ float4 LightCalculation(float4 albedo, float4 worldPos, float4 normal, float4 me
             finalColor += max(dot(normal, normalize(posToLight)), 0.0f) * LightColor[i] * albedo * attenuation;
 
             halfWayDir = normalize(posToLight + worldToCamera);
-            specular += pow(max(dot(normal, halfWayDir), 0.0f), 32.0f) * length(metallic);
+            
+            specular += pow(max(dot(normal, halfWayDir), 0.0f), 32.0f) * length(metallic.rgb);
 
         }
     }

@@ -130,6 +130,13 @@ HRESULT GeometryPass::Draw()
 			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetDisplacement()->GetId3D12DescriptorHeap() };
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(6, p_drawQueue->at(i)->GetDisplacement()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+
+			if (p_drawQueue->at(i)->GetNormal())
+			{
+				ID3D12DescriptorHeap* normalDescriptorHeaps[] = { p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap() };
+				p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(normalDescriptorHeaps), normalDescriptorHeaps);
+				p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(7, p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+			}		
 		}
 
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
@@ -187,7 +194,7 @@ HRESULT GeometryPass::_preInit()
 				{
 					if (SUCCEEDED(hr = _createViewport()))
 					{
-						if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil()))
+						if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry")))
 						{
 							if (SUCCEEDED(hr = _createConstantBuffer()))
 							{
@@ -218,13 +225,13 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 {
 	HRESULT hr = 0;
 	
-	D3D12_DESCRIPTOR_RANGE descriptorRangeTable;
-	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
-	RenderingHelpClass::CreateRootDescriptorTable(descriptorRangeTable, descriptorTable, 0);
+	D3D12_DESCRIPTOR_RANGE albedoRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE albedoTable;
+	RenderingHelpClass::CreateRootDescriptorTable(albedoRangeTable, albedoTable, 0);
 
-	D3D12_DESCRIPTOR_RANGE textureRangeTable;
-	D3D12_ROOT_DESCRIPTOR_TABLE textureTable;
-	RenderingHelpClass::CreateRootDescriptorTable(textureRangeTable, textureTable, 1);
+	D3D12_DESCRIPTOR_RANGE normalRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE normalTable;
+	RenderingHelpClass::CreateRootDescriptorTable(normalRangeTable, normalTable, 1);
 	
 	D3D12_DESCRIPTOR_RANGE metallicRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
@@ -234,6 +241,9 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	D3D12_ROOT_DESCRIPTOR_TABLE displacementTable;
 	RenderingHelpClass::CreateRootDescriptorTable(displacementRangeTable, displacementTable, 0);
 
+	D3D12_DESCRIPTOR_RANGE displacementNormalRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE displacementNormalTable;
+	RenderingHelpClass::CreateRootDescriptorTable(displacementNormalRangeTable, displacementNormalTable, 1);
 
 	D3D12_ROOT_DESCRIPTOR rootDescriptor;
 	rootDescriptor.RegisterSpace = 0;
@@ -256,13 +266,13 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[3].DescriptorTable = descriptorTable;
+	m_rootParameters[3].DescriptorTable = albedoTable;
 	m_rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[4].DescriptorTable = textureTable;
+	m_rootParameters[4].DescriptorTable = normalTable;
 	m_rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
+	
 	m_rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[5].DescriptorTable = metallicTable;
 	m_rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
@@ -270,7 +280,11 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[6].DescriptorTable = displacementTable;
 	m_rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
-	
+
+	m_rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[7].DescriptorTable = displacementNormalTable;
+	m_rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);

@@ -11,7 +11,7 @@ X12DepthStencil::~X12DepthStencil()
 {
 }
 
-HRESULT X12DepthStencil::CreateDepthStencil()
+HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name)
 {
 	HRESULT hr = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
@@ -23,6 +23,7 @@ HRESULT X12DepthStencil::CreateDepthStencil()
 	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
 		&dsvHeapDesc, IID_PPV_ARGS(&m_depthStencilDescriptorHeap))))
 	{
+		SET_NAME(m_depthStencilDescriptorHeap, name + L" DepthStencil DescriptorHeap");
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
 		depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
 		depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
@@ -45,6 +46,7 @@ HRESULT X12DepthStencil::CreateDepthStencil()
 			&depthOptimizedClearValue,
 			IID_PPV_ARGS(&m_depthStencilBuffer))))
 		{
+			SET_NAME(m_depthStencilBuffer, name + L" DepthStencil Resource");
 			p_renderingManager->GetDevice()->CreateDepthStencilView(
 				m_depthStencilBuffer,
 				&depthStencilDesc,

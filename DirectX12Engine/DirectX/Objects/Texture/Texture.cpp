@@ -62,6 +62,7 @@ BOOL Texture::LoadTexture(const std::string& path, RenderingManager * renderingM
 			nullptr, // used for render targets and depth/stencil buffers
 			IID_PPV_ARGS(&m_textureBuffer))))
 		{
+			SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture Buffer");
 			UINT64 textureUploadBufferSize;
 			m_renderingManager->GetDevice()->GetCopyableFootprints(&textureDesc,
 				0, 1, 0,
@@ -78,6 +79,8 @@ BOOL Texture::LoadTexture(const std::string& path, RenderingManager * renderingM
 				nullptr,
 				IID_PPV_ARGS(&m_textureUploadHeap))))
 			{
+				SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture Upload Heap");
+
 				D3D12_SUBRESOURCE_DATA textureData = {};
 				textureData.pData = &m_imageData[0]; // pointer to our image data
 				textureData.RowPitch = imageBytesPerRow; // size of all our triangle vertex data
@@ -103,6 +106,8 @@ BOOL Texture::LoadTexture(const std::string& path, RenderingManager * renderingM
 					&heapDesc,
 					IID_PPV_ARGS(&m_textureDescriptorHeap))))
 				{
+					SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
+
 					D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 					srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 					srvDesc.Format = textureDesc.Format;

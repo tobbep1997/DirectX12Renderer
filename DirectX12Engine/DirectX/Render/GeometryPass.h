@@ -9,7 +9,7 @@ class GeometryPass :
 {
 private:
 
-	static const UINT ROOT_PARAMETERS = 7;
+	static const UINT ROOT_PARAMETERS = 8;
 	static const UINT NUM_BUFFERS = 2;
 
 	struct ObjectBuffer

@@ -38,6 +38,7 @@ cbuffer CAMERA_BUFFER : register(b0)
 
 SamplerState defaultSampler : register(s0);
 Texture2D displacementMap : register(t0);
+Texture2D displacementNormalMap : register(t1);
 
 [domain("tri")]
 DS_OUTPUT main(
@@ -69,7 +70,9 @@ DS_OUTPUT main(
     float height = length(displacementMap.SampleLevel(defaultSampler, output.texCord.xy, 0).rgb);
     height = clamp(height, 0.0f, 1.0f);
 
-    output.worldPos += (0.05f * (height - 1.0f)) * output.normal;
+    float4 normal = float4(normalize(output.normal.xyz + mul((2.0f * displacementNormalMap.SampleLevel(defaultSampler, output.texCord.xy, 0).xyz - 1.0f), output.TBN)), 0);
+
+    output.worldPos += (0.05f * (height - 1.0f)) * normal;
 
     output.pos = mul(output.worldPos, ViewProjection);
 	return output;
