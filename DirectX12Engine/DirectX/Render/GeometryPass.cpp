@@ -1,6 +1,6 @@
 #include "DirectX12EnginePCH.h"
 #include "GeometryPass.h"
-
+#include "WrapperFunctions/RenderingHelpClass.h"
 
 GeometryPass::GeometryPass(RenderingManager * renderingManager, 
 	const Window & window) :
@@ -215,51 +215,23 @@ HRESULT GeometryPass::_signalGPU()
 HRESULT GeometryPass::_initID3D12RootSignature()
 {
 	HRESULT hr = 0;
-
-	D3D12_DESCRIPTOR_RANGE descriptorRangeTable[1];
-	descriptorRangeTable[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	descriptorRangeTable[0].NumDescriptors = 1;
-	descriptorRangeTable[0].BaseShaderRegister = 0;
-	descriptorRangeTable[0].RegisterSpace = 0;
-	descriptorRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-
-	D3D12_DESCRIPTOR_RANGE textureRangeTable[1];
-	textureRangeTable[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	textureRangeTable[0].NumDescriptors = 1;
-	textureRangeTable[0].BaseShaderRegister = 1;
-	textureRangeTable[0].RegisterSpace = 0;
-	textureRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	D3D12_DESCRIPTOR_RANGE metallicRangeTable[1];
-	metallicRangeTable[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	metallicRangeTable[0].NumDescriptors = 1;
-	metallicRangeTable[0].BaseShaderRegister = 2;
-	metallicRangeTable[0].RegisterSpace = 0;
-	metallicRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	D3D12_DESCRIPTOR_RANGE displacementRangeTable[1];
-	displacementRangeTable[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	displacementRangeTable[0].NumDescriptors = 1;
-	displacementRangeTable[0].BaseShaderRegister = 0;
-	displacementRangeTable[0].RegisterSpace = 0;
-	displacementRangeTable[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
+	
+	D3D12_DESCRIPTOR_RANGE descriptorRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
-	descriptorTable.NumDescriptorRanges = _countof(descriptorRangeTable);
-	descriptorTable.pDescriptorRanges = &descriptorRangeTable[0];
+	RenderingHelpClass::CreateRootDescriptorTable(descriptorRangeTable, descriptorTable, 0);
 
+	D3D12_DESCRIPTOR_RANGE textureRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE textureTable;
-	textureTable.NumDescriptorRanges = _countof(textureRangeTable);
-	textureTable.pDescriptorRanges = &textureRangeTable[0];
-
+	RenderingHelpClass::CreateRootDescriptorTable(textureRangeTable, textureTable, 1);
+	
+	D3D12_DESCRIPTOR_RANGE metallicRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
-	metallicTable.NumDescriptorRanges = _countof(metallicRangeTable);
-	metallicTable.pDescriptorRanges = &metallicRangeTable[0];
+	RenderingHelpClass::CreateRootDescriptorTable(metallicRangeTable, metallicTable, 2);
 
+	D3D12_DESCRIPTOR_RANGE displacementRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE displacementTable;
-	displacementTable.NumDescriptorRanges = _countof(displacementRangeTable);
-	displacementTable.pDescriptorRanges = &displacementRangeTable[0];
+	RenderingHelpClass::CreateRootDescriptorTable(displacementRangeTable, displacementTable, 0);
+
 
 	D3D12_ROOT_DESCRIPTOR rootDescriptor;
 	rootDescriptor.RegisterSpace = 0;

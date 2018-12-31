@@ -54,6 +54,9 @@
     <ClCompile Include="DirectX\Objects\Light\Template\ILight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\WrapperFunctions\RenderingHelpClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -114,6 +117,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DirectX\Objects\Light\Template\ILight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX\Render\WrapperFunctions\RenderingHelpClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

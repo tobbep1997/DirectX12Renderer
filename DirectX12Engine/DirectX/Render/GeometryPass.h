@@ -1,7 +1,6 @@
 #pragma once
 #include "Template/IRender.h"
-//#include <WICTextureLoader.h>
-#include <wincodec.h>
+
 
 class GeometryPass :
 	public IRender
