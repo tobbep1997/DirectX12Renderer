@@ -27,11 +27,11 @@ public:
 	}
 
 
-	virtual HRESULT Init()		= 0;
-	virtual HRESULT Update(const Camera & camera)	= 0;
-	virtual HRESULT Draw()		= 0;
-	virtual HRESULT Clear()		= 0;
-	virtual HRESULT Release()	= 0;
+	virtual HRESULT Init()	= 0;
+	virtual void Update(const Camera & camera)	= 0;
+	virtual void Draw()		= 0;
+	virtual void Clear()	= 0;
+	virtual void Release()	= 0;
 
 	void Queue(Drawable * drawable) const
 	{

@@ -35,10 +35,10 @@ public:
 	
 	
 	HRESULT Init() override;
-	HRESULT Update(const Camera & camera) override;
-	HRESULT Draw() override;
-	HRESULT Clear() override;
-	HRESULT Release() override;
+	void Update(const Camera & camera) override;
+	void Draw() override;
+	void Clear() override;
+	void Release() override;
 
 private:
 	HRESULT _preInit();

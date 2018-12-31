@@ -1,6 +1,7 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
 
+class ShadowPass;
 class GeometryPass;
 class Camera;
 
@@ -35,6 +36,7 @@ public:
 	UINT * GetRTVDescriptorSize();
 
 	GeometryPass * GetGeometryPass() const;
+	ShadowPass * GetShadowPass() const;
 
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
@@ -72,7 +74,8 @@ private:
 	HRESULT _createCommandList();
 	HRESULT _createFenceAndFenceEvent();
 
-	GeometryPass * m_geometryPass = nullptr;
+	GeometryPass *	m_geometryPass = nullptr;
+	ShadowPass *	m_shadowPass = nullptr;
 
 private:
 	//DEBUG LAYER

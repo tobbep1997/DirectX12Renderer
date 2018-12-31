@@ -163,6 +163,7 @@
     <ClInclude Include="DirectX\Objects\Light\Template\ILight.h" />
     <ClInclude Include="DirectX\Objects\Light\PointLight.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\RenderingHelpClass.h" />
+    <ClInclude Include="DirectX\Render\ShadowPass.h" />
     <ClInclude Include="Utility\DeltaTime.h" />
     <ClInclude Include="DirectX\Objects\Camera.h" />
     <ClInclude Include="DirectX12Engine.h" />
@@ -187,6 +188,7 @@
     <ClCompile Include="DirectX\Objects\Light\Template\ILight.cpp" />
     <ClCompile Include="DirectX\Objects\Light\PointLight.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\RenderingHelpClass.cpp" />
+    <ClCompile Include="DirectX\Render\ShadowPass.cpp" />
     <ClCompile Include="Utility\DeltaTime.cpp" />
     <ClCompile Include="DirectX\Objects\Camera.cpp" />
     <ClCompile Include="DirectX12EnginePCH.cpp">
@@ -239,6 +241,16 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
     </FxCompile>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryVertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="DirectX\Shaders\ShadowPass\DefaultShadowVertex.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>

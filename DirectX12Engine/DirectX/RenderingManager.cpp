@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "Render/GeometryPass.h"
+#include "Render/ShadowPass.h"
 
 RenderingManager::RenderingManager()
 = default;
@@ -23,6 +24,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	IDXGIFactory4 * dxgiFactory = nullptr;
 
 	m_geometryPass = new GeometryPass(this, window);
+	m_shadowPass = new ShadowPass(this, window);
 
 	if (SUCCEEDED(hr = this->_checkD3D12Support(adapter, dxgiFactory)))
 	{
@@ -57,7 +59,10 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 									{		
 										if (SUCCEEDED(hr = m_geometryPass->Init()))
 										{
-
+											if (SUCCEEDED(hr = m_shadowPass->Init()))
+											{
+												
+											}
 										}
 									}
 								}
@@ -125,8 +130,10 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 
 	//---------------------------------------------------------------------
 	//UPDATE HERE
+	m_shadowPass->Update(camera);
 	m_geometryPass->Update(camera);
 	//DRAW HERE
+	m_shadowPass->Draw();
 	m_geometryPass->Draw();
 
 	//---------------------------------------------------------------------
@@ -171,6 +178,7 @@ HRESULT RenderingManager::_present() const
 void RenderingManager::_clear() const
 {
 	m_geometryPass->Clear();
+	m_shadowPass->Clear();
 }
 
 void RenderingManager::Present() const
@@ -212,6 +220,10 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_geometryPass->Release();
 	delete m_geometryPass;
 	m_geometryPass = nullptr;
+
+	m_shadowPass->Release();
+	delete m_shadowPass;
+	m_shadowPass = nullptr;
 
 	if (m_device->Release() > 0)
 	{
@@ -284,6 +296,11 @@ UINT* RenderingManager::GetRTVDescriptorSize()
 GeometryPass* RenderingManager::GetGeometryPass() const
 {
 	return this->m_geometryPass;
+}
+
+ShadowPass* RenderingManager::GetShadowPass() const
+{
+	return this->m_shadowPass;
 }
 
 HRESULT RenderingManager::OpenCommandList()

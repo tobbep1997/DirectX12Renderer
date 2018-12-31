@@ -32,7 +32,7 @@ HRESULT GeometryPass::Init()
 	return hr;
 }
 
-HRESULT GeometryPass::Update(const Camera & camera)
+void GeometryPass::Update(const Camera & camera)
 {	
 	m_depthStencil->ClearDepthStencil();
 
@@ -96,10 +96,9 @@ HRESULT GeometryPass::Update(const Camera & camera)
 
 	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 	m_lightBuffer->SetGraphicsRootConstantBufferView(2);
-	return S_OK;
 }
 
-HRESULT GeometryPass::Draw()
+void GeometryPass::Draw()
 {	
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	for (UINT i = 0; i < drawQueueSize; i++)
@@ -131,17 +130,15 @@ HRESULT GeometryPass::Draw()
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
 
-	return S_OK;
 }
 
-HRESULT GeometryPass::Clear()
+void GeometryPass::Clear()
 {
 	this->p_drawQueue->clear();
 	this->p_lightQueue->clear();
-	return S_OK;
 }
 
-HRESULT GeometryPass::Release()
+void GeometryPass::Release()
 {	
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
@@ -160,7 +157,6 @@ HRESULT GeometryPass::Release()
 	}
 	
 
-	return S_OK;
 }
 
 HRESULT GeometryPass::_preInit()
@@ -287,9 +283,16 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
 
 	ID3DBlob * signature = nullptr;
-	if (SUCCEEDED(hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, nullptr)))
+	if (SUCCEEDED(hr = D3D12SerializeRootSignature(&rootSignatureDesc, 
+		D3D_ROOT_SIGNATURE_VERSION_1, 
+		&signature, 
+		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature))))
+		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+			0, 
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			IID_PPV_ARGS(&m_rootSignature))))
 		{
 			SAFE_RELEASE(m_rootSignature);
 		}
@@ -325,17 +328,6 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
 	graphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_WIREFRAME,
-			D3D12_CULL_MODE_NONE,
-			FALSE,
-			0,
-			0.0f,
-			0.0f,
-			TRUE,
-			FALSE,
-			FALSE,
-			0,
-			D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
 	graphicsPipelineStateDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -409,7 +401,6 @@ HRESULT GeometryPass::_initShaders()
 
 HRESULT GeometryPass::_createViewport()
 {	
-	// Fill out the Viewport
 	m_viewport.TopLeftX = 0;
 	m_viewport.TopLeftY = 0;
 	m_viewport.Width = static_cast<FLOAT>(p_window->GetWidth());
@@ -417,7 +408,6 @@ HRESULT GeometryPass::_createViewport()
 	m_viewport.MinDepth = 0.0f;
 	m_viewport.MaxDepth = 1.0f;
 
-	// Fill out a scissor rect
 	m_rect.left = 0;
 	m_rect.top = 0;
 	m_rect.right = p_window->GetWidth();

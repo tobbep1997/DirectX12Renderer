@@ -63,6 +63,9 @@
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\ShadowPass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -137,11 +140,15 @@
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DirectX\Render\ShadowPass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryPixel.hlsl" />
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryDomain.hlsl" />
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryHull.hlsl" />
+    <FxCompile Include="DirectX\Shaders\ShadowPass\DefaultShadowVertex.hlsl" />
   </ItemGroup>
 </Project>
