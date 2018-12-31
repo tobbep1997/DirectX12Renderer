@@ -1,6 +1,7 @@
 #pragma once
 #include "Template/IRender.h"
 
+class X12DepthStencil;
 
 class GeometryPass :
 	public IRender
@@ -46,7 +47,6 @@ private:
 	HRESULT _initID3D12PipelineState();
 	HRESULT _initShaders();
 	HRESULT _createViewport();
-	HRESULT _createDepthStencil();
 	HRESULT _createConstantBuffer();
 	
 
@@ -55,8 +55,7 @@ private:
 
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
 
-	ID3D12Resource		* m_depthStencilBuffer  = nullptr;
-	ID3D12DescriptorHeap* m_depthStencilDescriptorHeap = nullptr;
+	X12DepthStencil * m_depthStencil;
 
 	D3D12_VIEWPORT	m_viewport;
 	D3D12_RECT		m_rect;

@@ -1,6 +1,7 @@
 #include "DirectX12EnginePCH.h"
 #include "GeometryPass.h"
 #include "WrapperFunctions/RenderingHelpClass.h"
+#include "WrapperFunctions/X12DepthStencil.h"
 
 GeometryPass::GeometryPass(RenderingManager * renderingManager, 
 	const Window & window) :
@@ -18,7 +19,7 @@ GeometryPass::~GeometryPass()
 HRESULT GeometryPass::Init()
 {
 	HRESULT hr = 0;
-	
+	m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window);
 	if (SUCCEEDED(hr = _preInit()))
 	{
 		if (FAILED(hr = _signalGPU()))
@@ -32,11 +33,7 @@ HRESULT GeometryPass::Init()
 HRESULT GeometryPass::Update(const Camera & camera)
 {
 	HRESULT hr = 0;
-	p_renderingManager->GetCommandList()->ClearDepthStencilView(
-		m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-		D3D12_CLEAR_FLAG_DEPTH,
-		1.0f, 0, 0,
-		nullptr);
+	m_depthStencil->ClearDepthStencil();
 
 	m_objectValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
@@ -80,7 +77,7 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	}
 	memcpy(m_lightBufferGPUAddress[*p_renderingManager->GetFrameIndex()], &m_lightValues, sizeof(m_lightValues));
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		p_renderingManager->GetRTVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -156,8 +153,10 @@ HRESULT GeometryPass::Release()
 	HRESULT hr = 0;
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
-	SAFE_RELEASE(m_depthStencilBuffer);
-	SAFE_RELEASE(m_depthStencilDescriptorHeap);
+
+	m_depthStencil->Release();
+	delete m_depthStencil;
+
 	for (UINT i = 0; i < NUM_BUFFERS; i++)
 	{
 		for (UINT j = 0; j < FRAME_BUFFER_COUNT; j++)
@@ -185,7 +184,7 @@ HRESULT GeometryPass::_preInit()
 				{
 					if (SUCCEEDED(hr = _createViewport()))
 					{
-						if (SUCCEEDED(hr = _createDepthStencil()))
+						if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil()))
 						{
 							if (SUCCEEDED(hr = _createConstantBuffer()))
 							{
@@ -427,52 +426,6 @@ HRESULT GeometryPass::_createViewport()
 	return hr;
 }
 
-HRESULT GeometryPass::_createDepthStencil()
-{
-	HRESULT hr = 0;
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-
-	dsvHeapDesc.NumDescriptors = 1;
-	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&dsvHeapDesc, IID_PPV_ARGS(&m_depthStencilDescriptorHeap))))
-	{
-		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-		depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-		depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
-
-		D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-		depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-		depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-		depthOptimizedClearValue.DepthStencil.Stencil = 0;
-
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-				&CD3DX12_RESOURCE_DESC::Tex2D(
-					DXGI_FORMAT_D32_FLOAT,
-					p_window->GetWidth(), p_window->GetHeight(),
-					1, 0, 1, 0, 
-					D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
-			D3D12_RESOURCE_STATE_DEPTH_WRITE,
-			&depthOptimizedClearValue,
-			IID_PPV_ARGS(&m_depthStencilBuffer))))
-		{
-			p_renderingManager->GetDevice()->CreateDepthStencilView(
-				m_depthStencilBuffer,
-				&depthStencilDesc,
-				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-			
-				
-			
-		}
-	}
-
-	return hr;
-}
 
 HRESULT GeometryPass::_createConstantBuffer()
 {

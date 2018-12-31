@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="DirectX\Objects\Mesh\StaticMesh.h" />
     <ClInclude Include="DirectX\Objects\Texture\Texture.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\Template\IX12Object.h" />
     <ClInclude Include="DirectX\Structs.h" />
     <ClInclude Include="DirectX\Objects\Drawable.h" />
     <ClInclude Include="DirectX\Objects\Light\Template\ILight.h" />
@@ -176,6 +177,7 @@
     <ClInclude Include="Submodule\DirectXHelpContent\Libraries\D3DX12\d3dx12.h" />
     <ClInclude Include="DirectX\Objects\Transform.h" />
     <ClInclude Include="Window\Window.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12DepthStencil.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectX\Objects\Mesh\StaticMesh.cpp" />
@@ -201,6 +203,7 @@
     <ClCompile Include="DirectX\Objects\Transform.cpp" />
     <ClCompile Include="Window\Input.cpp" />
     <ClCompile Include="Window\Window.cpp" />
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12DepthStencil.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryDomain.hlsl">
