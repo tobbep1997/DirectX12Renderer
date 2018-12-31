@@ -97,7 +97,7 @@ HRESULT GeometryPass::Update(const Camera & camera)
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 
-	p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(5, m_constantBuffer[1][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
+	p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(2, m_constantBuffer[1][*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
 	return hr;
 }
 
@@ -111,19 +111,19 @@ HRESULT GeometryPass::Draw()
 		{
 			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap() };
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(2, p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(3, p_drawQueue->at(i)->GetTexture()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 		}
 		if(p_drawQueue->at(i)->GetNormal())
 		{
 			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap() };
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(3, p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(4, p_drawQueue->at(i)->GetNormal()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 		}
 		if (p_drawQueue->at(i)->GetMetallic())
 		{
 			ID3D12DescriptorHeap* descriptorHeaps[] = { p_drawQueue->at(i)->GetMetallic()->GetId3D12DescriptorHeap() };
 			p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(4, p_drawQueue->at(i)->GetMetallic()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+			p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(5, p_drawQueue->at(i)->GetMetallic()->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 		}
 
 		if (p_drawQueue->at(i)->GetDisplacement())
@@ -249,25 +249,26 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[1].Descriptor = rootDescriptor;
 	m_rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
 
-	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[2].DescriptorTable = descriptorTable;
+	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameters[2].Descriptor = lightRootDescriptor;
 	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[3].DescriptorTable = textureTable;
+	m_rootParameters[3].DescriptorTable = descriptorTable;
 	m_rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[4].DescriptorTable = metallicTable;
+	m_rootParameters[4].DescriptorTable = textureTable;
 	m_rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	    
-	m_rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	m_rootParameters[5].Descriptor = lightRootDescriptor;
-	m_rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+	m_rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[5].DescriptorTable = metallicTable;
+	m_rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	    
 	m_rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[6].DescriptorTable = displacementTable;
 	m_rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+	
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
