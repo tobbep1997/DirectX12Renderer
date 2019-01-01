@@ -70,7 +70,6 @@ private:
 	   
 	X12ConstantBuffer * m_lightBuffer = nullptr;
 	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
-	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
 	
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };	

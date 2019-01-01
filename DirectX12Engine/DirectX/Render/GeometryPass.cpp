@@ -106,7 +106,7 @@ void GeometryPass::Draw()
 		if (p_drawQueue->at(i)->GetTexture())				
 			p_drawQueue->at(i)->GetTexture()->MapTexture(p_renderingManager, 3);
 		
-		if(p_drawQueue->at(i)->GetNormal())		
+		if (p_drawQueue->at(i)->GetNormal())		
 			p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 4);
 		
 		if (p_drawQueue->at(i)->GetMetallic())		
@@ -150,9 +150,7 @@ void GeometryPass::Release()
 	delete m_lightBuffer;
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
-	{
-	
-		SAFE_RELEASE(m_constantBufferDescriptorHeap[i]);
+	{			
 		SAFE_RELEASE(m_constantBuffer[i]);
 	}
 	
@@ -432,7 +430,7 @@ HRESULT GeometryPass::_createConstantBuffer()
 				nullptr,
 				IID_PPV_ARGS(&m_constantBuffer[i]))))
 			{
-				SET_NAME(m_constantBuffer[i], L"ConstantBuffer Upload Resource Heap");
+				SET_NAME(m_constantBuffer[i], L"Geometry ConstantBuffer Upload Resource Heap");
 			}
 			else
 				return hr;

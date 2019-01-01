@@ -6,7 +6,12 @@ struct VS_INPUT
     float4 texCord : TEXCORD;
 };
 
+cbuffer CAMERA_BUFFER : register(b0)
+{
+    float4x4 WorldMatrix;
+}
+
 float4 main(VS_INPUT input) : SV_POSITION
 {
-    return input.pos;
+    return mul(input.pos, WorldMatrix);
 }

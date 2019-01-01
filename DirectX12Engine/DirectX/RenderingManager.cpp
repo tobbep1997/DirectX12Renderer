@@ -23,6 +23,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	IDXGIAdapter1 * adapter = nullptr;
 	IDXGIFactory4 * dxgiFactory = nullptr;
 
+
 	m_geometryPass = new GeometryPass(this, window);
 	m_shadowPass = new ShadowPass(this, window);
 
@@ -38,6 +39,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 			
 			
 		}
+		
 		if (SUCCEEDED(hr))
 		{
 			if (SUCCEEDED(hr = D3D12CreateDevice(
@@ -129,11 +131,11 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 	//---------------------------------------------------------------------
-	//UPDATE HERE
+
 	m_shadowPass->Update(camera);
-	m_geometryPass->Update(camera);
-	//DRAW HERE
 	m_shadowPass->Draw();
+
+	m_geometryPass->Update(camera);
 	m_geometryPass->Draw();
 
 	//---------------------------------------------------------------------

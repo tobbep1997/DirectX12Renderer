@@ -11,7 +11,10 @@ ILight::~ILight()
 void ILight::Queue(RenderingManager* renderingManager)
 {
 	if (m_intensity > 0)
+	{
 		reinterpret_cast<IRender*>(renderingManager->GetGeometryPass())->QueueLight(this);
+		reinterpret_cast<IRender*>(renderingManager->GetShadowPass())->QueueLight(this);
+	}
 }
 
 void ILight::SetIntensity(const float& intensity)

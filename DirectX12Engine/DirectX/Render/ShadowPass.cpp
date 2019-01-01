@@ -33,22 +33,69 @@ HRESULT ShadowPass::Init()
 void ShadowPass::Update(const Camera& camera)
 {
 
+	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
+
+	for (UINT i = 0; i < drawQueueSize; i++)
+	{
+		m_objectValues.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
+		memcpy(m_constantBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectValues, sizeof(m_objectValues));
+	}
+
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+		m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+		*p_renderingManager->GetFrameIndex(),
+		m_rtvDescriptorSize);
+
+	const float clearColor[] = { 1.0f, 0.0f, 1.0f, 1.0f };
+	p_renderingManager->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	m_depthStencil->ClearDepthStencil();
+
+
+	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
+	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
+	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
+	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
+	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 }
 
 void ShadowPass::Draw()
 {
+	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
+	for (UINT i = 0; i < drawQueueSize; i++)
+	{
+		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());
 
+		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+
+		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
+	}
 }
 
 void ShadowPass::Clear()
 {
-
+	p_drawQueue->clear();
+	p_lightQueue->clear();
 }
 
 void ShadowPass::Release()
 {
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
+
+	SAFE_RELEASE(m_rtvDescriptorHeap);
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		SAFE_RELEASE(m_renderTargets[i]);
+		SAFE_RELEASE(m_constantBuffer[i]);
+	}
+
 	m_depthStencil->Release();
 }
 
@@ -58,16 +105,22 @@ HRESULT ShadowPass::_preInit()
 
 	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
 	{
-		if (SUCCEEDED(hr = _initRootSignature()))
+		if (SUCCEEDED(hr = _createRenderTarget()))
 		{
-			if (SUCCEEDED(hr = _initShaders()))
+			if (SUCCEEDED(hr = _initRootSignature()))
 			{
-				if (SUCCEEDED(hr = _initPipelineState()))
+				if (SUCCEEDED(hr = _initShaders()))
 				{
-					_createViewport();
-					if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Shadow")))
+					if (SUCCEEDED(hr = _initPipelineState()))
 					{
-						
+						if (SUCCEEDED(hr = _createConstantBuffer()))
+						{						
+							_createViewport();
+							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Shadow")))
+							{
+								
+							}
+						}
 					}
 				}
 			}
@@ -86,17 +139,57 @@ HRESULT ShadowPass::_signalGPU() const
 	return hr;
 }
 
+HRESULT ShadowPass::_createRenderTarget()
+{
+	HRESULT hr = 0;
+
+	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+	rtvHeapDesc.NumDescriptors = FRAME_BUFFER_COUNT;
+	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
+		&rtvHeapDesc,
+		IID_PPV_ARGS(&m_rtvDescriptorHeap))))
+	{
+		m_rtvDescriptorSize = p_renderingManager->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+		for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+		{
+			if (FAILED(hr = p_renderingManager->GetSwapChain()->GetBuffer(i, IID_PPV_ARGS(&m_renderTargets[i]))))
+			{
+				break;
+			}
+			p_renderingManager->GetDevice()->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
+			rtvHandle.Offset(1, m_rtvDescriptorSize);
+		}
+
+	}
+
+	return hr;
+}
+
+
+
 HRESULT ShadowPass::_initRootSignature()
 {
 	HRESULT hr = 0;
 
+	D3D12_ROOT_DESCRIPTOR objectDescriptor;
+	objectDescriptor.RegisterSpace = 0;
+	objectDescriptor.ShaderRegister = 0;
+
+	m_rootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameter[0].Descriptor = objectDescriptor;
+	m_rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(0,
-		nullptr,
+	rootSignatureDesc.Init(_countof(m_rootParameter),
+		m_rootParameter,
 		0,
 		nullptr,
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT	|
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS		|
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT	|				
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS			|
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS		|
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS		|
@@ -184,6 +277,36 @@ HRESULT ShadowPass::_initPipelineState()
 		SAFE_RELEASE(m_pipelineState);
 	}
 
+	return hr;
+}
+
+HRESULT ShadowPass::_createConstantBuffer()
+{
+	HRESULT hr = 0;
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_constantBuffer[i]))))
+		{
+			SET_NAME(m_constantBuffer[i], L"Shadow ConstantBuffer Upload Resource Heap");
+		}
+		else
+			return hr;
+
+		CD3DX12_RANGE readRange(0, 0);
+		if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
+			0, & readRange,
+			reinterpret_cast<void**>(&m_constantBufferGPUAddress[i]))))
+		{
+			memcpy(m_constantBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
+		}
+	}
 	return hr;
 }
 

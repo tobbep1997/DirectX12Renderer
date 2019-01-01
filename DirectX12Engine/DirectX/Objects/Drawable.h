@@ -25,6 +25,9 @@ public:
 	void SetIsVisible(const BOOL & visible);
 	const BOOL & GetIsVisible() const;
 
+	void SetCastShadows(const BOOL & castShadows);
+	const BOOL & GetCastShadows() const;
+
 	void SetTexture(Texture * texture);
 	void SetNormalMap(Texture * normal);
 	void SetMetallicMap(Texture * metallic);
@@ -41,7 +44,8 @@ private:
 	Texture * m_normal;
 	Texture * m_metallic;
 	Texture * m_displacement;
-	BOOL m_isVisible = TRUE;
 
+	BOOL m_isVisible = TRUE;
+	BOOL m_castShadows = TRUE;
 };
 

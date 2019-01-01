@@ -13,6 +13,8 @@ Drawable::Drawable()
 }
 
 
+
+
 Drawable::~Drawable()
 {
 }
@@ -44,6 +46,9 @@ void Drawable::Draw(RenderingManager * renderingManager)
 {
 	if (this->m_isVisible)
 		reinterpret_cast<IRender*>(renderingManager->GetGeometryPass())->Queue(this);
+
+	if (this->m_castShadows)
+		reinterpret_cast<IRender*>(renderingManager->GetShadowPass())->Queue(this);
 }
 
 void Drawable::SetIsVisible(const BOOL& visible)
@@ -54,6 +59,16 @@ void Drawable::SetIsVisible(const BOOL& visible)
 const BOOL& Drawable::GetIsVisible() const
 {
 	return this->m_isVisible;
+}
+
+void Drawable::SetCastShadows(const BOOL& castShadows)
+{
+	this->m_castShadows = castShadows;
+}
+
+const BOOL& Drawable::GetCastShadows() const
+{
+	return this->m_castShadows;
 }
 
 void Drawable::SetTexture(Texture* texture)
