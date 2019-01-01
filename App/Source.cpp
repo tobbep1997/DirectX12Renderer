@@ -74,6 +74,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		pointLights[i]->SetIntensity(2.5);  
 	}
 
+	DirectionalLight* directionalLight = new DirectionalLight();
+	directionalLight->SetPosition(0, 5, 0);
+	directionalLight->SetDirection(0, -1, 0);
+	directionalLight->GetCamera()->SetUp(0, 0, 1);
+	directionalLight->GetCamera()->Update();
+	directionalLight->SetIntensity(.5f);
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -92,10 +98,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		displacement->LoadTexture("../Texture/Brick/Brick_height.bmp", renderingManager);
 		
 		deltaTimer.Init();
-		while (window->IsOpen())
+		while (Window::IsOpen())
 		{
 			const float deltaTime = static_cast<const float>(deltaTimer.GetDeltaTimeInSeconds());
-			if (window->Updating())
+			if (Window::Updating())
 			{
 			}
 
@@ -109,7 +115,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			{
 				pointLights[i]->Queue(renderingManager);
 			}
-			
+			directionalLight->Queue(renderingManager);
 		
 			UpdateRenderingManger(renderingManager, *camera);
 			if (Input::IsKeyPressed('P'))
@@ -122,6 +128,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	normal->Release();
 	metallic->Release();
 	displacement->Release();
+	directionalLight->Release();
 	renderingManager->Release(FALSE);
 
 	delete camera;
@@ -131,6 +138,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	delete normal;
 	delete metallic;
 	delete displacement;
+	delete directionalLight;
 	for (UINT i = 0; i < pointLightSize; i++)
 		delete pointLights[i];
 	return 0;

@@ -55,7 +55,9 @@ void GeometryPass::Update(const Camera & camera)
 			camera.GetPosition().y,
 			camera.GetPosition().z,
 			camera.GetPosition().w);
-		m_lightValues.Type[i] = DirectX::XMUINT4(lightQueueSize, 0, 0, 0);
+		m_lightValues.Type[i] = DirectX::XMUINT4(lightQueueSize, 
+			p_lightQueue->at(i)->GetType(),
+			p_lightQueue->at(i)->GetIntensity(), 0);
 		m_lightValues.Position[i] = DirectX::XMFLOAT4A(p_lightQueue->at(i)->GetPosition().x,
 			p_lightQueue->at(i)->GetPosition().y,
 			p_lightQueue->at(i)->GetPosition().z,
@@ -68,12 +70,21 @@ void GeometryPass::Update(const Camera & camera)
 		if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
 		{
 			PointLight* pl = dynamic_cast<PointLight*>(p_lightQueue->at(i));
-
-			m_lightValues.Type[i].y = 1;
+						
 			m_lightValues.Vector[i] = DirectX::XMFLOAT4A(pl->GetIntensity(),
 				pl->GetDropOff(),
 				pl->GetPow(),
 				0);
+		}
+		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
+		{
+			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
+						
+			m_lightValues.Vector[i] = DirectX::XMFLOAT4A(
+				directionalLight->GetCamera()->GetDirection().x,
+				directionalLight->GetCamera()->GetDirection().y,
+				directionalLight->GetCamera()->GetDirection().z,
+				directionalLight->GetCamera()->GetDirection().w);
 		}
 	}
 

@@ -79,7 +79,12 @@ const DirectX::XMFLOAT4X4A& Camera::GetViewProjectionMatrix() const
 
 void Camera::SetDirection(const DirectX::XMFLOAT4& direction)
 {
-	this->m_direction = direction;
+	using namespace DirectX;
+	XMVECTOR vDir = XMLoadFloat4(&direction);
+	XMVector3Normalize(vDir);
+	XMStoreFloat4(&this->m_direction, vDir);
+
+	this->m_direction.w = direction.w;
 }
 
 void Camera::SetDirection(const float& x, const float& y, const float& z, const float& w)

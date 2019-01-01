@@ -1,9 +1,10 @@
 ﻿#include "DirectX12EnginePCH.h"
 #include "DirectionalLight.h"
 
-DirectionalLight::DirectionalLight()
+DirectionalLight::DirectionalLight() : ILight()
 {
-	m_camera = new Camera();	
+	p_lightType = 1;
+	m_camera = new Camera();
 }
 
 DirectionalLight::~DirectionalLight()
@@ -40,4 +41,9 @@ void DirectionalLight::SetDirection(const DirectX::XMFLOAT4& direction)
 void DirectionalLight::SetDirection(const float& x, const float& y, const float& z, const float& w)
 {
 	this->SetDirection(DirectX::XMFLOAT4(x, y, z, w));
+}
+
+const UINT& DirectionalLight::GetType() const
+{
+	return p_lightType;
 }

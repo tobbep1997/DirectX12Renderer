@@ -29,6 +29,7 @@
 #include "DirectX/Shaders/ShaderCreator.h"
 
 #include "DirectX/Objects/Light/PointLight.h"
+#include "DirectX/Objects/Light/DirectionalLight.h"
 
 
 inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)

@@ -1,18 +1,23 @@
 #include "DirectX12EnginePCH.h"
 #include "ShadowPass.h"
 #include "WrapperFunctions/X12DepthStencil.h"
+#include "WrapperFunctions/X12ConstantBuffer.h"
 
 
 ShadowPass::ShadowPass(RenderingManager* renderingManager, const Window& window)
 	: IRender(renderingManager, window)
 {
 	m_depthStencil = new X12DepthStencil(renderingManager, window);
+	m_lightConstantBuffer = new X12ConstantBuffer(renderingManager, window);
 }
 
 ShadowPass::~ShadowPass()
 {
 	delete m_depthStencil;
 	m_depthStencil = nullptr;
+
+	delete m_lightConstantBuffer;
+	m_lightConstantBuffer = nullptr;
 }
 
 HRESULT ShadowPass::Init()
@@ -34,13 +39,23 @@ void ShadowPass::Update(const Camera& camera)
 {
 
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
-
 	for (UINT i = 0; i < drawQueueSize; i++)
 	{
 		m_objectValues.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
 		memcpy(m_constantBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectValues, sizeof(m_objectValues));
 	}
 
+	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
+	for (UINT i = 0; i < lightQueueSize; i++)
+	{
+		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
+		{
+			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
+
+			m_lightValues.LightViewProjection[i] = directionalLight->GetCamera()->GetViewProjectionMatrix();
+		}
+	}
+	
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
@@ -62,6 +77,8 @@ void ShadowPass::Update(const Camera& camera)
 	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	m_lightConstantBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
+	m_lightConstantBuffer->SetGraphicsRootConstantBufferView(1);
 }
 
 void ShadowPass::Draw()
@@ -97,12 +114,14 @@ void ShadowPass::Release()
 	}
 
 	m_depthStencil->Release();
+	m_lightConstantBuffer->Release();
 }
 
 HRESULT ShadowPass::_preInit()
 {
 	HRESULT hr = 0;
 
+	_createViewport();
 	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
 	{
 		if (SUCCEEDED(hr = _createRenderTarget()))
@@ -115,10 +134,12 @@ HRESULT ShadowPass::_preInit()
 					{
 						if (SUCCEEDED(hr = _createConstantBuffer()))
 						{						
-							_createViewport();
 							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Shadow")))
 							{
-								
+								if (SUCCEEDED(hr = m_lightConstantBuffer->CreateBuffer(L"Shadow", &m_lightValues, sizeof(LightBuffer))))
+								{
+									
+								}
 							}
 						}
 					}
@@ -180,9 +201,17 @@ HRESULT ShadowPass::_initRootSignature()
 	objectDescriptor.RegisterSpace = 0;
 	objectDescriptor.ShaderRegister = 0;
 
+	D3D12_ROOT_DESCRIPTOR lightDescriptor;
+	lightDescriptor.RegisterSpace = 0;
+	lightDescriptor.ShaderRegister = 1;
+
 	m_rootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	m_rootParameter[0].Descriptor = objectDescriptor;
 	m_rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	m_rootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameter[1].Descriptor = lightDescriptor;
+	m_rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(m_rootParameter),
@@ -314,8 +343,8 @@ void ShadowPass::_createViewport()
 {
 	m_viewport.TopLeftX = 0;
 	m_viewport.TopLeftY = 0;
-	m_viewport.Width = static_cast<FLOAT>(p_window->GetWidth());
-	m_viewport.Height = static_cast<FLOAT>(p_window->GetHeight());
+	m_viewport.Width	= static_cast<FLOAT>(1024U);
+	m_viewport.Height	= static_cast<FLOAT>(1024U);
 	m_viewport.MinDepth = 0.0f;
 	m_viewport.MaxDepth = 1.0f;
 

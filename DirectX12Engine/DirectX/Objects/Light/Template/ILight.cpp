@@ -4,7 +4,9 @@
 
 
 ILight::ILight()
-= default;
+{
+	this->m_intensity = 1;
+}
 ILight::~ILight()
 = default;
 

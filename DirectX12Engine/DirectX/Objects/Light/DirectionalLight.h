@@ -16,6 +16,7 @@ public:
 	void SetDirection(const DirectX::XMFLOAT4 & direction);
 	void SetDirection(const float & x, const float & y, const float & z, const float & w = 0.0f);
 
+	const UINT& GetType() const override;
 private:
 	Camera * m_camera;
 };

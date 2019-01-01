@@ -4,6 +4,8 @@
 
 PointLight::PointLight()
 {
+	p_lightType = 0U;
+
 	m_dropOff = 1.0f;
 	m_pow = 2.0f;
 }
@@ -31,4 +33,9 @@ const float& PointLight::GetDropOff() const
 const float& PointLight::GetPow() const
 {
 	return this->m_pow;
+}
+
+const UINT & PointLight::GetType() const
+{
+	return p_lightType;
 }

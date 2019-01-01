@@ -2,12 +2,13 @@
 #include "Template/IRender.h"
 
 class X12DepthStencil;
+class X12ConstantBuffer;
 
 class ShadowPass :
 	public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 1;
+	static const UINT ROOT_PARAMETERS = 2;
 
 	struct ObjectBuffer
 	{
@@ -15,11 +16,16 @@ private:
 
 		DirectX::XMFLOAT4A		Padding[45];
 	};
+	struct LightBuffer
+	{
+		DirectX::XMFLOAT4X4A LightViewProjection[256];
+	};
 public:
 	ShadowPass(RenderingManager * renderingManager, const Window & window);
 	~ShadowPass();
 
 	X12DepthStencil * m_depthStencil;
+	X12ConstantBuffer * m_lightConstantBuffer;
 
 	HRESULT Init() override;
 	void Update(const Camera& camera) override;
@@ -58,6 +64,7 @@ private:
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 	UINT8* m_constantBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
 
-	ObjectBuffer m_objectValues{};
+	ObjectBuffer	m_objectValues{};
+	LightBuffer		m_lightValues{};
 };
 

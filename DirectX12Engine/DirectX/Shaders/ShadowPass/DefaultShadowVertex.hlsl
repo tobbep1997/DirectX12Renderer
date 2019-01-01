@@ -10,6 +10,10 @@ cbuffer CAMERA_BUFFER : register(b0)
 {
     float4x4 WorldMatrix;
 }
+cbuffer LIGHT_BUFFER : register(b1)
+{
+    float4x4 ViewProjection[256];
+}
 
 float4 main(VS_INPUT input) : SV_POSITION
 {

@@ -3,6 +3,7 @@
 class PointLight :
 	public ILight
 {
+
 public:
 	PointLight();
 	~PointLight();
@@ -13,6 +14,7 @@ public:
 	const float & GetDropOff() const;
 	const float & GetPow() const;
 
+	const UINT & GetType() const override;
 private:
 	float m_dropOff;
 	float m_pow;
