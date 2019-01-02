@@ -46,6 +46,9 @@ private:
 	HRESULT _createConstantBuffer();
 	void _createViewport();
 
+	UINT m_width = 1024U;
+	UINT m_height = 1024U;
+
 	UINT m_rtvDescriptorSize = 0;
 	ID3D12DescriptorHeap *	m_rtvDescriptorHeap = nullptr;
 	ID3D12Resource *		m_renderTargets[FRAME_BUFFER_COUNT]{nullptr};

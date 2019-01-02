@@ -6,7 +6,7 @@ public:
 	X12DepthStencil(RenderingManager * renderingManager, const Window & window);
 	~X12DepthStencil();
 
-	HRESULT CreateDepthStencil(const std::wstring & name);
+	HRESULT CreateDepthStencil(const std::wstring & name, const UINT & width = 0, const UINT & height = 0);
 	void Release() override;
 
 	ID3D12Resource * GetResource() const;

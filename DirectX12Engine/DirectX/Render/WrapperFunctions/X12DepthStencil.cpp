@@ -11,10 +11,18 @@ X12DepthStencil::~X12DepthStencil()
 {
 }
 
-HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name)
+HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name, const UINT & width, const UINT & height)
 {
 	HRESULT hr = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+
+	UINT w = width, h = height;
+
+	if (width == 0 || height == 0)
+	{
+		w = p_window->GetWidth();
+		h = p_window->GetHeight();
+	}
 
 	dsvHeapDesc.NumDescriptors = 1;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
@@ -39,7 +47,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name)
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Tex2D(
 				DXGI_FORMAT_D32_FLOAT,
-				p_window->GetWidth(), p_window->GetHeight(),
+				w, h,
 				1, 0, 1, 0,
 				D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
