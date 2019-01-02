@@ -96,7 +96,9 @@ void ShadowPass::Draw()
 
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
-	p_renderingManager->GetGeometryPass()->AddShadowMap(m_depthStencil->GetTextureResource(), m_depthStencil->GetTextureDescriptorHeap(), dynamic_cast<DirectionalLight*>(p_lightQueue->at(0))->GetCamera()->GetViewProjectionMatrix());
+	p_renderingManager->GetGeometryPass()->AddShadowMap(m_depthStencil->GetTextureResource(),
+		m_depthStencil->GetTextureDescriptorHeap(),
+		dynamic_cast<DirectionalLight*>(p_lightQueue->at(0))->GetCamera()->GetViewProjectionMatrix());
 }
 
 void ShadowPass::Clear()
