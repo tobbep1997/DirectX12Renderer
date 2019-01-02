@@ -64,43 +64,26 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 			
 			if (createTextureHeap)
 			{
-				UINT64 textureUploadBufferSize;
-				p_renderingManager->GetDevice()->GetCopyableFootprints(&m_depthStencilBuffer->GetDesc(),
-					0, 1, 0,
-					nullptr,
-					nullptr,
-					nullptr,
-					&textureUploadBufferSize);
+				D3D12_DESCRIPTOR_HEAP_DESC textureHeapDesc = {};
+				textureHeapDesc.NumDescriptors = 1;
+				textureHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+				textureHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-					D3D12_HEAP_FLAG_NONE,
-					&CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize),
-					D3D12_RESOURCE_STATE_GENERIC_READ,
-					nullptr,
-					IID_PPV_ARGS(&m_depthTextureUploadHeap))))
+				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
+					&textureHeapDesc, IID_PPV_ARGS(&m_depthStencilTextureDescriptorHeap))))
 				{
-					D3D12_DESCRIPTOR_HEAP_DESC textureHeapDesc = {};
-					textureHeapDesc.NumDescriptors = 1;
-					textureHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-					textureHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+					D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+					srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+					srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+					srvDesc.Texture2D.MipLevels = 1;
 
-					if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-						&textureHeapDesc, IID_PPV_ARGS(&m_depthStencilTextureDescriptorHeap))))
-					{
-						D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-						srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-						srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-						srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-						srvDesc.Texture2D.MipLevels = 1;
-
-						p_renderingManager->GetDevice()->CreateShaderResourceView(
-							m_depthStencilBuffer, 
-							&srvDesc,
-							m_depthStencilTextureDescriptorHeap->GetCPUDescriptorHandleForHeapStart()
-						);
-					}
-				}
+					p_renderingManager->GetDevice()->CreateShaderResourceView(
+						m_depthStencilBuffer, 
+						&srvDesc,
+						m_depthStencilTextureDescriptorHeap->GetCPUDescriptorHandleForHeapStart()
+					);
+				}			
 			}
 		}
 	}

@@ -112,7 +112,6 @@ void GeometryPass::Update(const Camera & camera)
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_shadowMaps->at(0)->Map };
 	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(8, m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart());
-	//p_renderingManager->GetCommandList()->SetGraphicsRootShaderResourceView(8, m_shadowMaps->at(0)->Resource->GetGPUVirtualAddress());
 }
 
 void GeometryPass::Draw()

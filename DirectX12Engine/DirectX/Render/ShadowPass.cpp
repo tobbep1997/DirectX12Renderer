@@ -392,13 +392,13 @@ void ShadowPass::_createViewport()
 {
 	m_viewport.TopLeftX = 0;
 	m_viewport.TopLeftY = 0;
-	m_viewport.Width	= static_cast<FLOAT>(1024U);
-	m_viewport.Height	= static_cast<FLOAT>(1024U);
+	m_viewport.Width	= static_cast<FLOAT>(m_width);
+	m_viewport.Height	= static_cast<FLOAT>(m_height);
 	m_viewport.MinDepth = 0.0f;
 	m_viewport.MaxDepth = 1.0f;
 
 	m_rect.left = 0;
 	m_rect.top = 0;
-	m_rect.right = p_window->GetWidth();
-	m_rect.bottom = p_window->GetHeight();
+	m_rect.right = m_width;
+	m_rect.bottom = m_height;
 }
