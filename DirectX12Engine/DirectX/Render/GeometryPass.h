@@ -9,7 +9,7 @@ class GeometryPass :
 {
 private:
 
-	static const UINT ROOT_PARAMETERS = 8;
+	static const UINT ROOT_PARAMETERS = 9;
 	static const UINT NUM_BUFFERS = 2;
 
 	struct ObjectBuffer
@@ -20,7 +20,6 @@ private:
 		
 		DirectX::XMFLOAT4A		Padding[40];
 	};
-
 	struct LightBuffer
 	{
 		DirectX::XMFLOAT4A	CameraPosition;
@@ -28,6 +27,12 @@ private:
 		DirectX::XMFLOAT4A	Position[256];
 		DirectX::XMFLOAT4A	Color[256];
 		DirectX::XMFLOAT4A	Vector[256];
+	};
+	struct ShadowMap
+	{
+		ID3D12Resource * Resource;
+		ID3D12DescriptorHeap * Map;
+		DirectX::XMFLOAT4X4A ViewProjection;
 	};
 public:
 	GeometryPass(RenderingManager * renderingManager, const Window & window);
@@ -39,6 +44,8 @@ public:
 	void Draw() override;
 	void Clear() override;
 	void Release() override;
+
+	void AddShadowMap(ID3D12Resource * resource, ID3D12DescriptorHeap * map, DirectX::XMFLOAT4X4A ViewProjection) const;
 
 private:
 	HRESULT _preInit();
@@ -88,5 +95,7 @@ private:
 		DirectX::XMFLOAT4 Position;
 		DirectX::XMFLOAT4 Color;
 	};
+
+	std::vector<ShadowMap*>* m_shadowMaps;
 };
 

@@ -22,6 +22,7 @@ HRESULT GeometryPass::Init()
 	HRESULT hr;
 	m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window);
 	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
+	m_shadowMaps = new std::vector<ShadowMap*>();
 	if (SUCCEEDED(hr = _preInit()))
 	{
 		if (FAILED(hr = _signalGPU()))
@@ -57,7 +58,7 @@ void GeometryPass::Update(const Camera & camera)
 			camera.GetPosition().w);
 		m_lightValues.Type[i] = DirectX::XMUINT4(lightQueueSize, 
 			p_lightQueue->at(i)->GetType(),
-			p_lightQueue->at(i)->GetIntensity(), 0);
+			0, 0);
 		m_lightValues.Position[i] = DirectX::XMFLOAT4A(p_lightQueue->at(i)->GetPosition().x,
 			p_lightQueue->at(i)->GetPosition().y,
 			p_lightQueue->at(i)->GetPosition().z,
@@ -84,7 +85,7 @@ void GeometryPass::Update(const Camera & camera)
 				directionalLight->GetCamera()->GetDirection().x,
 				directionalLight->GetCamera()->GetDirection().y,
 				directionalLight->GetCamera()->GetDirection().z,
-				directionalLight->GetCamera()->GetDirection().w);
+				p_lightQueue->at(i)->GetIntensity());
 		}
 	}
 
@@ -107,6 +108,11 @@ void GeometryPass::Update(const Camera & camera)
 
 	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 	m_lightBuffer->SetGraphicsRootConstantBufferView(2);
+	
+	ID3D12DescriptorHeap* descriptorHeaps[] = { m_shadowMaps->at(0)->Map };
+	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(8, m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart());
+	//p_renderingManager->GetCommandList()->SetGraphicsRootShaderResourceView(8, m_shadowMaps->at(0)->Resource->GetGPUVirtualAddress());
 }
 
 void GeometryPass::Draw()
@@ -133,6 +139,7 @@ void GeometryPass::Draw()
 				
 		}
 
+
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
 
 		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
@@ -147,6 +154,13 @@ void GeometryPass::Clear()
 {
 	this->p_drawQueue->clear();
 	this->p_lightQueue->clear();
+
+	for (UINT i = 0; i < this->m_shadowMaps->size(); i++)
+	{
+		delete this->m_shadowMaps->at(i);
+	}
+	this->m_shadowMaps->clear();
+	
 }
 
 void GeometryPass::Release()
@@ -164,8 +178,18 @@ void GeometryPass::Release()
 	{			
 		SAFE_RELEASE(m_constantBuffer[i]);
 	}
-	
+	delete m_shadowMaps;
 
+}
+
+void GeometryPass::AddShadowMap(ID3D12Resource * resource, ID3D12DescriptorHeap* map, DirectX::XMFLOAT4X4A ViewProjection) const
+{
+	ShadowMap * sm = new ShadowMap();
+	sm->Resource = resource;
+	sm->Map = map;
+	sm->ViewProjection = ViewProjection;
+
+	m_shadowMaps->push_back(sm);
 }
 
 HRESULT GeometryPass::_preInit()
@@ -225,6 +249,10 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
 	RenderingHelpClass::CreateRootDescriptorTable(metallicRangeTable, metallicTable, 2);
 
+	D3D12_DESCRIPTOR_RANGE shadowRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE shadowTable;
+	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 0, 1);
+
 	D3D12_DESCRIPTOR_RANGE displacementRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE displacementTable;
 	RenderingHelpClass::CreateRootDescriptorTable(displacementRangeTable, displacementTable, 0);
@@ -273,6 +301,9 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[7].DescriptorTable = displacementNormalTable;
 	m_rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
 
+	m_rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[8].DescriptorTable = shadowTable;
+	m_rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);

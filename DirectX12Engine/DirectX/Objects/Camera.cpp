@@ -32,13 +32,27 @@ void Camera::_calcView()
 void Camera::_calcProjection()
 {
 	using namespace DirectX;
-	XMStoreFloat4x4A(&this->m_projection, 
-		XMMatrixTranspose(
-			XMMatrixPerspectiveFovLH(
-				m_fov, 
-				m_aspectRatio, 
-				m_nearPlane, 
-				m_farPlane)));
+
+	if (m_usePerspective)
+	{
+		XMStoreFloat4x4A(&this->m_projection,
+			XMMatrixTranspose(
+				XMMatrixPerspectiveFovLH(
+					m_fov,
+					m_aspectRatio,
+					m_nearPlane,
+					m_farPlane)));	
+	}
+	else
+	{
+		XMStoreFloat4x4A(&this->m_projection,
+			XMMatrixTranspose(
+				XMMatrixOrthographicLH(
+					32, 
+					32,
+					m_nearPlane, 
+					m_farPlane)));	
+	}
 }
 
 void Camera::_calcViewProjection()
@@ -49,12 +63,13 @@ void Camera::_calcViewProjection()
 		XMLoadFloat4x4A(&this->m_projection) * XMLoadFloat4x4A(&this->m_view));
 }
 
-Camera::Camera(const float& fov, const float& aspectRatio, const float& nearPlane, const float& farPlane)
+Camera::Camera(const float& fov, const float& aspectRatio, const float& nearPlane, const float& farPlane, const BOOL & perspective)
 {
 	this->m_fov			= fov;
 	this->m_aspectRatio = aspectRatio;
 	this->m_nearPlane	= nearPlane;
 	this->m_farPlane	= farPlane;
+	this->m_usePerspective = perspective;
 	Camera::Init();
 }
 

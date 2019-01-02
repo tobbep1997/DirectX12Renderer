@@ -53,7 +53,6 @@ BOOL Texture::LoadTexture(const std::string& path, RenderingManager * renderingM
 	}
 	if (SUCCEEDED(hr = m_renderingManager->OpenCommandList()))
 	{
-
 		if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
 			D3D12_HEAP_FLAG_NONE, // no flags
@@ -109,12 +108,15 @@ BOOL Texture::LoadTexture(const std::string& path, RenderingManager * renderingM
 					SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
 					D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-					srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 					srvDesc.Format = textureDesc.Format;
 					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+					srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 					srvDesc.Texture2D.MipLevels = 1;
+
 					m_renderingManager->GetDevice()->CreateShaderResourceView(
-						m_textureBuffer, &srvDesc, m_textureDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+						m_textureBuffer, 
+						&srvDesc, 
+						m_textureDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 					if (SUCCEEDED(hr = _uploadTexture()))
 					{

@@ -17,5 +17,5 @@ cbuffer LIGHT_BUFFER : register(b1)
 
 float4 main(VS_INPUT input) : SV_POSITION
 {
-    return mul(input.pos, WorldMatrix);
+    return mul(input.pos, mul(WorldMatrix, ViewProjection[0]));
 }

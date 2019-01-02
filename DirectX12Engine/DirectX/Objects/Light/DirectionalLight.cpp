@@ -4,7 +4,7 @@
 DirectionalLight::DirectionalLight() : ILight()
 {
 	p_lightType = 1;
-	m_camera = new Camera();
+	m_camera = new Camera(0, 0, 1, 100, FALSE);
 }
 
 DirectionalLight::~DirectionalLight()

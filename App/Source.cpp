@@ -48,6 +48,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	staticCylinderMesh->Init();
 	staticCylinderMesh->LoadStaticMesh("../Models/Sphere.fbx");
 
+	StaticMesh * staticCubeMesh = new StaticMesh();
+	staticCubeMesh->Init();
+	staticCubeMesh->LoadStaticMesh("../Models/Cube.fbx");
+
 	Texture * texture = new Texture();
 	Texture * normal = new Texture();
 	Texture * metallic = new Texture();
@@ -64,6 +68,15 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	drawable->SetMetallicMap(metallic);
 	drawable->SetDisplacementMap(displacement);
 
+	Drawable * floor = new Drawable();
+	floor->SetPosition(0, -2, 0);
+	floor->SetScale(50, 1, 50);
+	floor->SetMesh(*staticCubeMesh);
+	floor->Update();
+	floor->SetTexture(texture);
+	floor->SetNormalMap(normal);
+	floor->SetMetallicMap(metallic);
+	floor->SetDisplacementMap(displacement);
 
 	const UINT pointLightSize = 1;
 	std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
@@ -75,7 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 	DirectionalLight* directionalLight = new DirectionalLight();
-	directionalLight->SetPosition(0, 5, 0);
+	directionalLight->SetPosition(0, 10, 0);
 	directionalLight->SetDirection(0, -1, 0);
 	directionalLight->GetCamera()->SetUp(0, 0, 1);
 	directionalLight->GetCamera()->Update();
@@ -92,6 +105,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		FALSE))
 	{
 		staticCylinderMesh->CreateBuffer(renderingManager);
+		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadTexture("../Texture/Brick/Brick_diffuse.bmp", renderingManager);
 		normal->LoadTexture("../Texture/Brick/Brick_normal.bmp", renderingManager);
 		metallic->LoadTexture("../Texture/Brick/Brick_metallic.bmp", renderingManager);
@@ -111,11 +125,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			drawable->SetRotation(0, drawable->GetRotation().y + deltaTime * 0.25f, 0);
 			drawable->Update();
 			drawable->Draw(renderingManager);
+			floor->Draw(renderingManager);
+			directionalLight->Queue(renderingManager);
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
 				pointLights[i]->Queue(renderingManager);
 			}
-			directionalLight->Queue(renderingManager);
 		
 			UpdateRenderingManger(renderingManager, *camera);
 			if (Input::IsKeyPressed('P'))
@@ -124,6 +139,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 	renderingManager->WaitForFrames();
 	staticCylinderMesh->Release();
+	staticCubeMesh->Release();
 	texture->Release();
 	normal->Release();
 	metallic->Release();
@@ -133,7 +149,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	delete camera;
 	delete staticCylinderMesh;
+	delete staticCubeMesh;
 	delete drawable;
+	delete floor;
 	delete texture;
 	delete normal;
 	delete metallic;

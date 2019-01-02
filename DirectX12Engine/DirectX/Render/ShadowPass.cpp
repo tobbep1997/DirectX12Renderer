@@ -2,6 +2,7 @@
 #include "ShadowPass.h"
 #include "WrapperFunctions/X12DepthStencil.h"
 #include "WrapperFunctions/X12ConstantBuffer.h"
+#include "GeometryPass.h"
 
 
 ShadowPass::ShadowPass(RenderingManager* renderingManager, const Window& window)
@@ -92,6 +93,7 @@ void ShadowPass::Draw()
 
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
+	p_renderingManager->GetGeometryPass()->AddShadowMap(m_depthStencil->GetTextureResource(), m_depthStencil->GetTextureDescriptorHeap(), dynamic_cast<DirectionalLight*>(p_lightQueue->at(0))->GetCamera()->GetViewProjectionMatrix());
 }
 
 void ShadowPass::Clear()
@@ -134,7 +136,7 @@ HRESULT ShadowPass::_preInit()
 					{
 						if (SUCCEEDED(hr = _createConstantBuffer()))
 						{						
-							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Shadow", m_width, m_height)))
+							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Shadow", m_width, m_height, TRUE)))
 							{
 								if (SUCCEEDED(hr = m_lightConstantBuffer->CreateBuffer(L"Shadow", &m_lightValues, sizeof(LightBuffer))))
 								{
@@ -177,7 +179,7 @@ HRESULT ShadowPass::_createRenderTarget()
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-	D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = p_renderingManager->GetDevice()->GetResourceAllocationInfo(0, 1, &resourceDesc);
+	const D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = p_renderingManager->GetDevice()->GetResourceAllocationInfo(0, 1, &resourceDesc);
 
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
 	rtvHeapDesc.NumDescriptors = FRAME_BUFFER_COUNT;

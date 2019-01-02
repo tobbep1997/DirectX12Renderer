@@ -19,6 +19,9 @@ cbuffer LIGHT_BUFFER : register(b0)
 Texture2D albedo : register(t0);
 Texture2D normalmap : register(t1);
 Texture2D metallicMap : register(t2);
+
+Texture2D shadowMap : register(t0, space1);
+
 SamplerState defaultSampler : register(s0);
 
 float4 LightCalculation(float4 albedo, float4 worldPos, float4 normal, float4 metallic, out float specular)
@@ -48,8 +51,8 @@ float4 LightCalculation(float4 albedo, float4 worldPos, float4 normal, float4 me
         }
         else if (LightType[i].y == 1) //Dir
         {
-            attenuation = LightType[i].z;
-            finalColor += max(dot(normal, normalize(-LightVector[i])), 0.0f) * LightColor[i] * albedo * attenuation;
+            attenuation = LightVector[i].w;
+            finalColor += max(dot(normal, normalize(-float4(LightVector[i].xyz, 0))), 0.0f) * LightColor[i] * albedo * attenuation;
 
             //halfWayDir = normalize(posToLight + worldToCamera);
             
@@ -68,7 +71,7 @@ float4 main(HS_OUTPUT input) : SV_TARGET
     float4 texColor = albedo.Sample(defaultSampler, input.texCord.xy);
     float4 normal = float4(normalize(input.normal.xyz + mul((2.0f * normalmap.Sample(defaultSampler, input.texCord.xy).xyz - 1.0f), input.TBN)), 0);
     float4 metallic = metallicMap.Sample(defaultSampler, input.texCord.xy);
-       
+    float sMap = shadowMap.Sample(defaultSampler, input.texCord.xy).r;
 
     float specular;
     float4 finalColor = LightCalculation(texColor, input.worldPos, normal, metallic, specular);
