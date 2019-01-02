@@ -142,6 +142,7 @@ void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootPar
 {
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_textureDescriptorHeap };
 	renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(rootParameterIndex, m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }
 

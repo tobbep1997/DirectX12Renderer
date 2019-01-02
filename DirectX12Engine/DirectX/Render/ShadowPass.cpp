@@ -63,8 +63,9 @@ void ShadowPass::Update(const Camera& camera)
 	}
 	
 
+	m_depthStencil->SwitchToDSV();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
-
+	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 		*p_renderingManager->GetFrameIndex(),
@@ -83,6 +84,7 @@ void ShadowPass::Update(const Camera& camera)
 
 	m_lightConstantBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 	m_lightConstantBuffer->SetGraphicsRootConstantBufferView(1);
+
 }
 
 void ShadowPass::Draw()
@@ -96,6 +98,7 @@ void ShadowPass::Draw()
 
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
+	m_depthStencil->SwitchToSRV();
 	p_renderingManager->GetGeometryPass()->AddShadowMap(m_depthStencil->GetTextureResource(),
 		m_depthStencil->GetTextureDescriptorHeap(),
 		dynamic_cast<DirectionalLight*>(p_lightQueue->at(0))->GetCamera()->GetViewProjectionMatrix());
@@ -111,12 +114,9 @@ void ShadowPass::Release()
 {
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
-
-	//SAFE_RELEASE(m_rtvDescriptorHeap);
-
+	   
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		//SAFE_RELEASE(m_renderTargets[i]);
 		SAFE_RELEASE(m_constantBuffer[i]);
 	}
 

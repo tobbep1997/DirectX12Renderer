@@ -20,7 +20,7 @@ Texture2D albedo : register(t0);
 Texture2D normalmap : register(t1);
 Texture2D metallicMap : register(t2);
 
-Texture2D shadowMap : register(t0, space1);
+Texture2D shadowMap : register(t3);
 
 SamplerState defaultSampler : register(s0);
 

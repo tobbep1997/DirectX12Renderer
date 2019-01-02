@@ -19,11 +19,16 @@ public:
 
 	void ClearDepthStencil() const;
 
+	void SwitchToDSV();
+	void SwitchToSRV();
+
 private:
 	ID3D12Resource		* m_depthStencilBuffer = nullptr;
 	ID3D12DescriptorHeap* m_depthStencilDescriptorHeap = nullptr;
 
 	ID3D12Resource		* m_depthTextureUploadHeap = nullptr;
 	ID3D12DescriptorHeap* m_depthStencilTextureDescriptorHeap = nullptr;
+
+	D3D12_RESOURCE_STATES m_currentState;
 };
 

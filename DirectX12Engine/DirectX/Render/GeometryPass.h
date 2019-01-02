@@ -96,6 +96,6 @@ private:
 		DirectX::XMFLOAT4 Color;
 	};
 
-	std::vector<ShadowMap*>* m_shadowMaps;
+	std::vector<ShadowMap*>* m_shadowMaps = nullptr;
 };
 

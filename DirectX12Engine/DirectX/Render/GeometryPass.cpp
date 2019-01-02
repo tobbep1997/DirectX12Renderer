@@ -11,6 +11,7 @@ GeometryPass::GeometryPass(RenderingManager * renderingManager,
 	if (!renderingManager)
 		Window::CreateError("GeometryPass : Missing RenderingManager");
 	m_inputLayoutDesc = {};
+	
 }
 
 
@@ -111,7 +112,8 @@ void GeometryPass::Update(const Camera & camera)
 	
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_shadowMaps->at(0)->Map };
 	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(8, m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart());
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart();
+	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(8, handle);
 }
 
 void GeometryPass::Draw()
@@ -137,6 +139,7 @@ void GeometryPass::Draw()
 				p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 7);
 				
 		}
+
 
 
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
@@ -250,7 +253,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 
 	D3D12_DESCRIPTOR_RANGE shadowRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE shadowTable;
-	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 0, 1);
+	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 3);
 
 	D3D12_DESCRIPTOR_RANGE displacementRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE displacementTable;

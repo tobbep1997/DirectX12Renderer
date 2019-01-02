@@ -5,6 +5,7 @@
 X12DepthStencil::X12DepthStencil(RenderingManager* renderingManager, const Window& window)
 	: IX12Object(renderingManager, window)
 {
+	m_currentState = {};
 }
 
 X12DepthStencil::~X12DepthStencil()
@@ -61,13 +62,15 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 				m_depthStencilBuffer,
 				&depthStencilDesc,
 				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-			
+			m_currentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 			if (createTextureHeap)
 			{
 				D3D12_DESCRIPTOR_HEAP_DESC textureHeapDesc = {};
 				textureHeapDesc.NumDescriptors = 1;
 				textureHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 				textureHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+				SwitchToSRV();
 
 				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
 					&textureHeapDesc, IID_PPV_ARGS(&m_depthStencilTextureDescriptorHeap))))
@@ -118,6 +121,20 @@ void X12DepthStencil::ClearDepthStencil() const
 		D3D12_CLEAR_FLAG_DEPTH,
 		1.0f, 0, 0,
 		nullptr);
+}
+
+void X12DepthStencil::SwitchToDSV()
+{
+	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState)
+		p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+	m_currentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+}
+
+void X12DepthStencil::SwitchToSRV()
+{
+	if (D3D12_RESOURCE_STATE_DEPTH_WRITE == m_currentState)
+		p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
 
