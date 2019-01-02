@@ -181,6 +181,7 @@
     <ClInclude Include="Window\Window.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12DepthStencil.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12RenderTargetView.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectX\Objects\Light\DirectionalLight.cpp" />
@@ -210,6 +211,7 @@
     <ClCompile Include="Window\Window.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12DepthStencil.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.cpp" />
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12RenderTargetView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryDomain.hlsl">

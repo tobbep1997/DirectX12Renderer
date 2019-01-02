@@ -3,6 +3,7 @@
 
 class X12DepthStencil;
 class X12ConstantBuffer;
+class X12RenderTargetView;
 
 class ShadowPass :
 	public IRender
@@ -24,8 +25,7 @@ public:
 	ShadowPass(RenderingManager * renderingManager, const Window & window);
 	~ShadowPass();
 
-	X12DepthStencil * m_depthStencil;
-	X12ConstantBuffer * m_lightConstantBuffer;
+	
 
 	HRESULT Init() override;
 	void Update(const Camera& camera) override;
@@ -37,9 +37,6 @@ private:
 	HRESULT _preInit();
 	HRESULT _signalGPU() const;
 
-	HRESULT _createRenderTarget();
-	
-
 	HRESULT _initRootSignature();
 	HRESULT _initShaders();
 	HRESULT _initPipelineState();
@@ -49,9 +46,9 @@ private:
 	UINT m_width = 1024U;
 	UINT m_height = 1024U;
 
-	UINT m_rtvDescriptorSize = 0;
-	ID3D12DescriptorHeap *	m_rtvDescriptorHeap = nullptr;
-	ID3D12Resource *		m_renderTargets[FRAME_BUFFER_COUNT]{nullptr};
+	X12DepthStencil * m_depthStencil = nullptr;
+	X12ConstantBuffer * m_lightConstantBuffer = nullptr;
+	X12RenderTargetView * m_renderTarget = nullptr;
 
 	ID3D12RootSignature *	m_rootSignature = nullptr;
 	D3D12_ROOT_PARAMETER	m_rootParameter[ROOT_PARAMETERS]{};
