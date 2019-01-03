@@ -27,8 +27,8 @@ cbuffer CAMERA_BUFFER : register(b0)
     float4 Padding[40];
 }
 
-#define MAX_TESS 32
-#define MIN_TESS 1
+#define MAX_TESS 128
+#define MIN_TESS 128
 #define MIN_TESS_DIST 2
 #define MAX_TESS_DIST 10
 
@@ -36,7 +36,6 @@ VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output = (VS_OUTPUT) 0;
     output.pos = mul(input.pos, mul(WorldMatrix, ViewProjection));
-    //output.pos = float4(0,0,0,0);
     output.worldPos = mul(input.pos, WorldMatrix);
     output.normal = normalize(mul(input.normal, WorldMatrix));
 
@@ -44,8 +43,8 @@ VS_OUTPUT main(VS_INPUT input)
     tangent = normalize(tangent - dot(tangent, output.normal.xyz) * output.normal.xyz).xyz;
     float3 bitangent = cross(output.normal.xyz, tangent);
     float3x3 TBN = float3x3(tangent, bitangent, output.normal.xyz);
-    output.TBN = TBN;
 
+    output.TBN = TBN;
     output.texCord = input.texCord;
 
     float distanceToCamera = length(CameraPos - output.worldPos);

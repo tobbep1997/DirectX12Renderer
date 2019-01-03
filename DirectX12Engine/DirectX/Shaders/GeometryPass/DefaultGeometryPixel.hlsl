@@ -25,9 +25,11 @@ cbuffer SHADOW_BUFFER : register(b1, space1)
 Texture2D albedo : register(t0);
 Texture2D normalmap : register(t1);
 Texture2D metallicMap : register(t2);
-Texture2D shadowMap : register(t3);
+
+Texture2D shadowMap : register(t0, space1);
 
 SamplerState defaultSampler : register(s0);
+SamplerComparisonState shadowSampler : register(s0, space1);
 
 float4 LightCalculation(float4 albedo, float4 worldPos, float4 normal, float4 metallic, out float specular)
 {
@@ -57,12 +59,7 @@ float4 LightCalculation(float4 albedo, float4 worldPos, float4 normal, float4 me
         else if (LightType[i].y == 1) //Dir
         {
             attenuation = LightVector[i].w;
-            finalColor += max(dot(normal, normalize(-float4(LightVector[i].xyz, 0))), 0.0f) * LightColor[i] * albedo * attenuation;
-
-            //halfWayDir = normalize(posToLight + worldToCamera);
-            
-            //specular += pow(max(dot(normal, halfWayDir), 0.0f), 32.0f) * length(metallic.rgb);
-
+            finalColor += max(dot(normal, normalize(-float4(LightVector[i].xyz, 0))), 0.0f) * LightColor[i] * albedo * attenuation; 
         }
     }
 
@@ -71,7 +68,7 @@ float4 LightCalculation(float4 albedo, float4 worldPos, float4 normal, float4 me
 
 void ShadowCalculations(float4 worldPos, out float shadowCoeff, float min = 0.0f, float max = 1.0f)
 {   
-    shadowCoeff = 1.0f;
+    shadowCoeff = 0.0f;
     float4 fragmentLightPosition = mul(worldPos, ShadowViewProjection);
     fragmentLightPosition.xyz /= fragmentLightPosition.w;
     float2 smTex = float2(0.5f * fragmentLightPosition.x + 0.5f, -0.5f * fragmentLightPosition.y + 0.5f);
@@ -81,8 +78,25 @@ void ShadowCalculations(float4 worldPos, out float shadowCoeff, float min = 0.0f
         abs(fragmentLightPosition.y) > 1.0f)            
         return;
 
-    float epsilon = 0.1;
-    shadowCoeff = (shadowMap.Sample(defaultSampler, smTex).r - epsilon < depth) ? min : max;
+    float width, height, element;
+    shadowMap.GetDimensions(0, width, height, element);
+    float texelSize = 1.0f / width;
+
+    float epsilon = 0.01f;
+    float divider = 0.0f;
+    int sampleSize = 1;
+
+    for (int x = -sampleSize; x <= sampleSize; ++x)
+    {
+        for (int y = -sampleSize; y <= sampleSize; ++y)
+        {
+            shadowCoeff += shadowMap.SampleCmpLevelZero(shadowSampler, smTex + (float2(x, y) * texelSize), depth - epsilon).r;
+            divider += 1.0f;
+        }
+    }
+
+    shadowCoeff /= divider;
+
 }
 
 float4 main(HS_OUTPUT input) : SV_TARGET
@@ -93,9 +107,9 @@ float4 main(HS_OUTPUT input) : SV_TARGET
 
     float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f) * texColor;
 
-    float specular;
-    float shadowCoeff;
-    ShadowCalculations(input.worldPos, shadowCoeff, -1.0f);
+    float specular = 1.0f;
+    float shadowCoeff = 1.0f;
+    ShadowCalculations(input.worldPos, shadowCoeff, 0.0f);
     float4 finalColor = LightCalculation(texColor, input.worldPos, normal, metallic, specular);
     return saturate((finalColor + specular) * shadowCoeff + ambient);
 }

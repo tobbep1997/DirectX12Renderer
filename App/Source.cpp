@@ -70,7 +70,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	Drawable * floor = new Drawable();
 	floor->SetPosition(0, -2, 0);
-	floor->SetScale(50, 1, 50);
+	floor->SetScale(10, 1, 10);
 	floor->SetMesh(*staticCubeMesh);
 	floor->Update();
 	floor->SetTexture(texture);

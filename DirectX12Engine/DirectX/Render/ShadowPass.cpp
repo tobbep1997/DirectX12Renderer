@@ -259,7 +259,7 @@ HRESULT ShadowPass::_initPipelineState()
 	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
-	graphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	graphicsPipelineStateDesc.RasterizerState = //CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.NumRenderTargets = 1;

@@ -262,7 +262,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 
 	D3D12_DESCRIPTOR_RANGE shadowRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE shadowTable;
-	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 3);
+	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 0, 1);
 
 	D3D12_DESCRIPTOR_RANGE displacementRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE displacementTable;
@@ -326,16 +326,25 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	   
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
-	
+
+	D3D12_STATIC_SAMPLER_DESC shadowSampler{};
+	RenderingHelpClass::CreateSampler(shadowSampler, 0, 1, D3D12_SHADER_VISIBILITY_PIXEL, 
+		D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT, 
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER, 
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER, 
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER, 
+		0, 0, 
+		D3D12_COMPARISON_FUNC_LESS_EQUAL);
+
 	D3D12_STATIC_SAMPLER_DESC domainSampler{};
 	RenderingHelpClass::CreateSampler(domainSampler, 0, 0, D3D12_SHADER_VISIBILITY_DOMAIN);
 	   
-	D3D12_STATIC_SAMPLER_DESC samplers[] = { sampler, domainSampler };
+	D3D12_STATIC_SAMPLER_DESC samplers[] = { sampler, shadowSampler, domainSampler };
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(m_rootParameters),
 		m_rootParameters, 
-		2, 
+		3, 
 		samplers,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |		
@@ -387,6 +396,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
 	graphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_WIREFRAME, D3D12_CULL_MODE_NONE, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
 	graphicsPipelineStateDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
