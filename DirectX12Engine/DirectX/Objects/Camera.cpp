@@ -23,11 +23,22 @@ void Camera::Release()
 void Camera::_calcView()
 {
 	using namespace DirectX;
-	XMStoreFloat4x4A(&this->m_view, XMMatrixTranspose(
-		XMMatrixLookToLH(
-			XMLoadFloat4(&GetPosition()), 
-			XMLoadFloat4(&m_direction), 
-			XMLoadFloat4(&m_up))));
+	if (m_focusPoint)
+	{
+		XMStoreFloat4x4A(&this->m_view, XMMatrixTranspose(
+			XMMatrixLookAtLH(
+				XMLoadFloat4(&GetPosition()),
+				XMLoadFloat4(&m_direction),
+				XMLoadFloat4(&m_up))));
+	}
+	else
+	{
+		XMStoreFloat4x4A(&this->m_view, XMMatrixTranspose(
+			XMMatrixLookToLH(
+				XMLoadFloat4(&GetPosition()),
+				XMLoadFloat4(&m_direction),
+				XMLoadFloat4(&m_up))));
+	}
 }
 
 void Camera::_calcProjection()
@@ -54,6 +65,7 @@ void Camera::_calcProjection()
 					m_nearPlane, 
 					m_farPlane)));	
 	}
+
 }
 
 void Camera::_calcViewProjection()
@@ -206,6 +218,16 @@ void Camera::SetNearPlane(const float& nearPlane)
 void Camera::SetFarPlane(const float& farPlane)
 {
 	this->m_farPlane = farPlane;
+}
+
+void Camera::SetPerspective(const BOOL& perspective)
+{
+	this->m_usePerspective = perspective;
+}
+
+void Camera::SetFocusPoint(const BOOL& focusPoint)
+{
+	this->m_focusPoint = focusPoint;
 }
 
 const float& Camera::GetFov() const

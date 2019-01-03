@@ -21,6 +21,7 @@ private:
 	float m_farPlane;
 
 	BOOL m_usePerspective;
+	BOOL m_focusPoint = FALSE;
 
 	void _calcView();
 	void _calcProjection();
@@ -46,6 +47,9 @@ public:
 	void SetAspectRatio(const float & aspectRatio);
 	void SetNearPlane(const float & nearPlane);
 	void SetFarPlane(const float & farPlane);
+
+	void SetPerspective(const BOOL & perspective);
+	void SetFocusPoint(const BOOL & focusPoint);
 
 	const float & GetFov() const;
 	const float & GetAspectRatio() const;

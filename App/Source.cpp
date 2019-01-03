@@ -89,10 +89,11 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	DirectionalLight* directionalLight = new DirectionalLight();
 	directionalLight->SetPosition(0, 5, 0);
-	directionalLight->SetDirection(0, -1, 0);
+	directionalLight->SetDirection(0, 0, 0);
+	directionalLight->GetCamera()->SetFocusPoint(TRUE);
 	directionalLight->GetCamera()->SetUp(1, 0, 0);
 	directionalLight->GetCamera()->Update();
-	directionalLight->SetIntensity(1.f);
+	directionalLight->SetIntensity(0.75f);
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -130,6 +131,18 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			{
 				pointLights[i]->Queue(renderingManager);
 			}
+			if (Input::IsKeyPressed(104))
+				directionalLight->SetPosition(0, 5, -5);
+			else if (Input::IsKeyPressed(98))
+				directionalLight->SetPosition(0, 5, 5);
+			else if (Input::IsKeyPressed(100))
+				directionalLight->SetPosition(5, 5, 0);
+			else if (Input::IsKeyPressed(102))
+				directionalLight->SetPosition(-5, 5, 0);
+			else
+				directionalLight->SetPosition(0, 5, 0);
+			directionalLight->GetCamera()->Update();
+
 		
 			UpdateRenderingManger(renderingManager, *camera);
 			if (Input::IsKeyPressed('P'))
