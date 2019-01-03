@@ -9,7 +9,7 @@ class GeometryPass :
 {
 private:
 
-	static const UINT ROOT_PARAMETERS = 9;
+	static const UINT ROOT_PARAMETERS = 10;
 	static const UINT NUM_BUFFERS = 2;
 
 	struct ObjectBuffer
@@ -27,6 +27,12 @@ private:
 		DirectX::XMFLOAT4A	Position[256];
 		DirectX::XMFLOAT4A	Color[256];
 		DirectX::XMFLOAT4A	Vector[256];
+	};
+
+	struct ShadowLightBuffer
+	{
+		DirectX::XMINT4 values;
+		DirectX::XMFLOAT4X4A ViewProjection;
 	};
 	struct ShadowMap
 	{
@@ -63,6 +69,7 @@ private:
 
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
 
+	X12ConstantBuffer * m_shadowBuffer = nullptr;
 	X12DepthStencil * m_depthStencil = nullptr;
 
 	D3D12_VIEWPORT	m_viewport{};
@@ -76,14 +83,14 @@ private:
 	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};
 	   
 	X12ConstantBuffer * m_lightBuffer = nullptr;
-	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
+	ID3D12Resource	* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
 	
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };	
 
 	ObjectBuffer m_objectValues {};
 	LightBuffer m_lightValues{};
-
+	ShadowLightBuffer m_shadowLight{};
 	struct Vertex
 	{
 		Vertex(const DirectX::XMFLOAT4 & position = DirectX::XMFLOAT4(0,0,0,0), 

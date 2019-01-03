@@ -90,9 +90,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	DirectionalLight* directionalLight = new DirectionalLight();
 	directionalLight->SetPosition(0, 5, 0);
 	directionalLight->SetDirection(0, -1, 0);
-	directionalLight->GetCamera()->SetUp(0, 0, 1);
+	directionalLight->GetCamera()->SetUp(1, 0, 0);
 	directionalLight->GetCamera()->Update();
-	directionalLight->SetIntensity(.5f);
+	directionalLight->SetIntensity(1.f);
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 

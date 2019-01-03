@@ -23,6 +23,7 @@ HRESULT GeometryPass::Init()
 	HRESULT hr;
 	m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window);
 	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
+	m_shadowBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
 	m_shadowMaps = new std::vector<ShadowMap*>();
 	if (SUCCEEDED(hr = _preInit()))
 	{
@@ -110,10 +111,16 @@ void GeometryPass::Update(const Camera & camera)
 
 	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 	m_lightBuffer->SetGraphicsRootConstantBufferView(2);
+
 	
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_shadowMaps->at(0)->Map };
 	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(6, m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart());
+
+	m_shadowLight.ViewProjection = m_shadowMaps->at(0)->ViewProjection;
+
+	m_shadowBuffer->Copy(&m_shadowLight, sizeof(m_shadowLight));
+	m_shadowBuffer->SetGraphicsRootConstantBufferView(9);
 }
 
 void GeometryPass::Draw()
@@ -174,6 +181,9 @@ void GeometryPass::Release()
 
 	m_lightBuffer->Release();
 	delete m_lightBuffer;
+
+	m_shadowBuffer->Release();
+	delete m_shadowBuffer;
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{			
@@ -270,6 +280,10 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	lightRootDescriptor.RegisterSpace = 1;
 	lightRootDescriptor.ShaderRegister = 0;
 
+	D3D12_ROOT_DESCRIPTOR shadowRootDescriptor;
+	shadowRootDescriptor.RegisterSpace = 1;
+	shadowRootDescriptor.ShaderRegister = 1;
+
 	m_rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	m_rootParameters[0].Descriptor = rootDescriptor;
 	m_rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -305,6 +319,10 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[8].DescriptorTable = displacementNormalTable;
 	m_rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+
+	m_rootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameters[9].Descriptor = shadowRootDescriptor;
+	m_rootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	   
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
@@ -463,27 +481,30 @@ HRESULT GeometryPass::_createConstantBuffer()
 
 	if (SUCCEEDED(hr = m_lightBuffer->CreateBuffer(L"LightBuffer", &m_objectValues, sizeof(LightBuffer))))
 	{
-		for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+		if (SUCCEEDED(hr = m_shadowBuffer->CreateBuffer(L"Geometry Shadow", &m_shadowLight, sizeof(ShadowLightBuffer))))
 		{
-			if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-				D3D12_HEAP_FLAG_NONE,
-				&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				nullptr,
-				IID_PPV_ARGS(&m_constantBuffer[i]))))
+			for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 			{
-				SET_NAME(m_constantBuffer[i], L"Geometry ConstantBuffer Upload Resource Heap");
-			}
-			else
-				return hr;
+				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+					D3D12_HEAP_FLAG_NONE,
+					&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					nullptr,
+					IID_PPV_ARGS(&m_constantBuffer[i]))))
+				{
+					SET_NAME(m_constantBuffer[i], L"Geometry ConstantBuffer Upload Resource Heap");
+				}
+				else
+					return hr;
 
-			CD3DX12_RANGE readRange(0, 0);
-			if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
-				0, &readRange,
-				reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
-			{
-				memcpy(m_cameraBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
+				CD3DX12_RANGE readRange(0, 0);
+				if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
+					0, &readRange,
+					reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
+				{
+					memcpy(m_cameraBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
+				}
 			}
 		}
 	}

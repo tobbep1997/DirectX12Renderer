@@ -27,8 +27,8 @@ cbuffer CAMERA_BUFFER : register(b0)
     float4 Padding[40];
 }
 
-#define MAX_TESS 1024
-#define MIN_TESS 32
+#define MAX_TESS 32
+#define MIN_TESS 1
 #define MIN_TESS_DIST 2
 #define MAX_TESS_DIST 10
 

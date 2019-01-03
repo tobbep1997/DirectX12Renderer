@@ -41,8 +41,8 @@ private:
 	HRESULT _createConstantBuffer();
 	void _createViewport();
 
-	UINT m_width = 1024U;
-	UINT m_height = 1024U;
+	UINT m_width	= 4096U;
+	UINT m_height	= 4096U;
 
 	X12DepthStencil * m_depthStencil = nullptr;
 	X12ConstantBuffer * m_lightConstantBuffer = nullptr;

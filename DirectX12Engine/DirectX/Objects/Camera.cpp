@@ -10,6 +10,7 @@ void Camera::Init()
 
 void Camera::Update()
 {
+	Transform::Update();
 	_calcView();
 	_calcProjection();
 	_calcViewProjection();
@@ -48,8 +49,8 @@ void Camera::_calcProjection()
 		XMStoreFloat4x4A(&this->m_projection,
 			XMMatrixTranspose(
 				XMMatrixOrthographicLH(
-					16, 
-					16,
+					64, 
+					64,
 					m_nearPlane, 
 					m_farPlane)));	
 	}
@@ -96,7 +97,7 @@ void Camera::SetDirection(const DirectX::XMFLOAT4& direction)
 {
 	using namespace DirectX;
 	XMVECTOR vDir = XMLoadFloat4(&direction);
-	XMVector3Normalize(vDir);
+	vDir = XMVector3Normalize(vDir);
 	XMStoreFloat4(&this->m_direction, vDir);
 
 	this->m_direction.w = direction.w;
