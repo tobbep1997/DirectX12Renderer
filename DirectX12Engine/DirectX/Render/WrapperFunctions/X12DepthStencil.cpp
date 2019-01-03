@@ -57,19 +57,14 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 			&depthOptimizedClearValue,
 			IID_PPV_ARGS(&m_depthStencilBuffer))))
 		{
-			SET_NAME(m_depthStencilBuffer, name + L" DepthStencil Resource");
-			p_renderingManager->GetDevice()->CreateDepthStencilView(
-				m_depthStencilBuffer,
-				&depthStencilDesc,
-				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-			m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 			if (createTextureHeap)
 			{
+				
 				D3D12_DESCRIPTOR_HEAP_DESC textureHeapDesc = {};
 				textureHeapDesc.NumDescriptors = 1;
 				textureHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 				textureHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-				
+
 				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
 					&textureHeapDesc, IID_PPV_ARGS(&m_depthStencilTextureDescriptorHeap))))
 				{
@@ -80,12 +75,20 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 					srvDesc.Texture2D.MipLevels = 1;
 
 					p_renderingManager->GetDevice()->CreateShaderResourceView(
-						m_depthStencilBuffer, 
+						m_depthStencilBuffer,
 						&srvDesc,
 						m_depthStencilTextureDescriptorHeap->GetCPUDescriptorHandleForHeapStart()
 					);
-				}			
+				}
 			}
+
+			SET_NAME(m_depthStencilBuffer, name + L" DepthStencil Resource");
+			p_renderingManager->GetDevice()->CreateDepthStencilView(
+				m_depthStencilBuffer,
+				&depthStencilDesc,
+				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+			m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		
 			SwitchToDSV();
 		}
 	}
@@ -129,6 +132,8 @@ void X12DepthStencil::SwitchToSRV()
 	if (D3D12_RESOURCE_STATE_DEPTH_WRITE == m_currentState)
 		p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	
+ 
 }
 
 

@@ -61,7 +61,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	Drawable * drawable = new Drawable();
 	drawable->SetPosition(0, 0, 0);
 	drawable->SetScale(1, 1, 1);
-	drawable->SetMesh(*staticCylinderMesh);
+	drawable->SetMesh(*staticCubeMesh);
 	drawable->Update();
 	drawable->SetTexture(texture);
 	drawable->SetNormalMap(normal);
@@ -104,7 +104,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		TRUE,
 		FALSE))
 	{
-		staticCylinderMesh->CreateBuffer(renderingManager);
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadTexture("../Texture/Brick/Brick_diffuse.bmp", renderingManager);
 		normal->LoadTexture("../Texture/Brick/Brick_normal.bmp", renderingManager);

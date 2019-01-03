@@ -113,8 +113,7 @@ void GeometryPass::Update(const Camera & camera)
 	
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_shadowMaps->at(0)->Map };
 	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart();
-	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(8, handle);
+	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(6, m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart());
 }
 
 void GeometryPass::Draw()
@@ -131,13 +130,12 @@ void GeometryPass::Draw()
 		if (p_drawQueue->at(i)->GetMetallic())		
 			p_drawQueue->at(i)->GetMetallic()->MapTexture(p_renderingManager, 5);
 		
-
 		if (p_drawQueue->at(i)->GetDisplacement())
 		{
-			p_drawQueue->at(i)->GetDisplacement()->MapTexture(p_renderingManager, 6);
+			p_drawQueue->at(i)->GetDisplacement()->MapTexture(p_renderingManager, 7);
 
 			if (p_drawQueue->at(i)->GetNormal())			
-				p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 7);
+				p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 8);
 				
 		}
 
@@ -269,7 +267,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	rootDescriptor.ShaderRegister = 0;
 
 	D3D12_ROOT_DESCRIPTOR lightRootDescriptor;
-	lightRootDescriptor.RegisterSpace = 0;
+	lightRootDescriptor.RegisterSpace = 1;
 	lightRootDescriptor.ShaderRegister = 0;
 
 	m_rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -295,19 +293,19 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[5].DescriptorTable = metallicTable;
 	m_rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	    
+
 	m_rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[6].DescriptorTable = displacementTable;
-	m_rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+	m_rootParameters[6].DescriptorTable = shadowTable;
+	m_rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[7].DescriptorTable = displacementNormalTable;
+	m_rootParameters[7].DescriptorTable = displacementTable;
 	m_rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
 
 	m_rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[8].DescriptorTable = shadowTable;
-	m_rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
+	m_rootParameters[8].DescriptorTable = displacementNormalTable;
+	m_rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+	   
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
 	

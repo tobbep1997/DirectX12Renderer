@@ -7,7 +7,7 @@ struct HS_OUTPUT
     float4 texCord : TEXCORD;
 };
 
-cbuffer LIGHT_BUFFER : register(b0)
+cbuffer LIGHT_BUFFER : register(b0, space1)
 {
     float4 CameraPosition;
     uint4  LightType[256];
@@ -19,7 +19,6 @@ cbuffer LIGHT_BUFFER : register(b0)
 Texture2D albedo : register(t0);
 Texture2D normalmap : register(t1);
 Texture2D metallicMap : register(t2);
-
 Texture2D shadowMap : register(t3);
 
 SamplerState defaultSampler : register(s0);
@@ -75,5 +74,6 @@ float4 main(HS_OUTPUT input) : SV_TARGET
 
     float specular;
     float4 finalColor = LightCalculation(texColor, input.worldPos, normal, metallic, specular);
+    specular *= sMap;
     return saturate((finalColor + specular) + ambient);
 }

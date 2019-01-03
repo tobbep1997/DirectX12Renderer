@@ -43,8 +43,6 @@ HRESULT ShadowPass::Init()
 
 void ShadowPass::Update(const Camera& camera)
 {
-	//p_renderingManager->GetCommandList()->Reset(&p_renderingManager->GetCommandAllocator()[*p_renderingManager->GetFrameIndex()], m_pipelineState);
-	
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	for (UINT i = 0; i < drawQueueSize; i++)
 	{
@@ -103,8 +101,6 @@ void ShadowPass::Draw()
 	p_renderingManager->GetGeometryPass()->AddShadowMap(nullptr,
 		m_depthStencil->GetTextureDescriptorHeap(),
 		dynamic_cast<DirectionalLight*>(p_lightQueue->at(0))->GetCamera()->GetViewProjectionMatrix());
-	//p_renderingManager->GetCommandList()->Close();
-
 }
 
 void ShadowPass::Clear()

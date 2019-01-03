@@ -114,7 +114,7 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 	{
 		return hr;
 	}
-
+		
 	m_commandList->ResourceBarrier(1, 
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			m_renderTargets[m_frameIndex],
@@ -134,7 +134,7 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 
 	m_shadowPass->Update(camera);
 	m_shadowPass->Draw();
-	   
+
 	m_geometryPass->Update(camera);
 	m_geometryPass->Draw();
 

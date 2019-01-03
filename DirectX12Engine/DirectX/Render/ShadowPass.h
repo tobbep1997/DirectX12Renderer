@@ -25,8 +25,6 @@ public:
 	ShadowPass(RenderingManager * renderingManager, const Window & window);
 	~ShadowPass();
 
-	
-
 	HRESULT Init() override;
 	void Update(const Camera& camera) override;
 	void Draw() override;
