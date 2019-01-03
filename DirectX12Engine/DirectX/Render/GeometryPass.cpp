@@ -36,7 +36,8 @@ HRESULT GeometryPass::Init()
 
 void GeometryPass::Update(const Camera & camera)
 {	
-	m_depthStencil->ClearDepthStencil();
+	//p_renderingManager->GetCommandList()->Reset(&p_renderingManager->GetCommandAllocator()[*p_renderingManager->GetFrameIndex()], m_pipelineState);
+	
 
 	m_objectValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
@@ -90,7 +91,7 @@ void GeometryPass::Update(const Camera & camera)
 		}
 	}
 
-
+	m_depthStencil->ClearDepthStencil();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
@@ -149,7 +150,7 @@ void GeometryPass::Draw()
 		
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
-
+	//p_renderingManager->GetCommandList()->Close();
 }
 
 void GeometryPass::Clear()

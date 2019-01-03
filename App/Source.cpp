@@ -88,7 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 	DirectionalLight* directionalLight = new DirectionalLight();
-	directionalLight->SetPosition(0, 10, 0);
+	directionalLight->SetPosition(0, 5, 0);
 	directionalLight->SetDirection(0, -1, 0);
 	directionalLight->GetCamera()->SetUp(0, 0, 1);
 	directionalLight->GetCamera()->Update();

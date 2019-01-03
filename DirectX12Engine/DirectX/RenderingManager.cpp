@@ -134,7 +134,7 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 
 	m_shadowPass->Update(camera);
 	m_shadowPass->Draw();
-
+	   
 	m_geometryPass->Update(camera);
 	m_geometryPass->Draw();
 

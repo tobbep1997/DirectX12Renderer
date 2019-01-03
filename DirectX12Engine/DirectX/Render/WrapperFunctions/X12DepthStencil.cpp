@@ -53,7 +53,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 				w, h,
 				1, 0, 1, 0,
 				D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
-			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 			&depthOptimizedClearValue,
 			IID_PPV_ARGS(&m_depthStencilBuffer))))
 		{
@@ -62,16 +62,14 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 				m_depthStencilBuffer,
 				&depthStencilDesc,
 				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-			m_currentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+			m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 			if (createTextureHeap)
 			{
 				D3D12_DESCRIPTOR_HEAP_DESC textureHeapDesc = {};
 				textureHeapDesc.NumDescriptors = 1;
 				textureHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 				textureHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-				SwitchToSRV();
-
+				
 				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
 					&textureHeapDesc, IID_PPV_ARGS(&m_depthStencilTextureDescriptorHeap))))
 				{
@@ -88,6 +86,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 					);
 				}			
 			}
+			SwitchToDSV();
 		}
 	}
 
@@ -102,11 +101,6 @@ ID3D12Resource* X12DepthStencil::GetResource() const
 ID3D12DescriptorHeap* X12DepthStencil::GetDescriptorHeap() const
 {
 	return this->m_depthStencilDescriptorHeap;
-}
-
-ID3D12Resource* X12DepthStencil::GetTextureResource() const
-{
-	return this->m_depthTextureUploadHeap;
 }
 
 ID3D12DescriptorHeap* X12DepthStencil::GetTextureDescriptorHeap() const
@@ -143,6 +137,5 @@ void X12DepthStencil::Release()
 	SAFE_RELEASE(m_depthStencilBuffer);
 	SAFE_RELEASE(m_depthStencilDescriptorHeap);
 
-	SAFE_RELEASE(m_depthTextureUploadHeap);
 	SAFE_RELEASE(m_depthStencilTextureDescriptorHeap);
 }
