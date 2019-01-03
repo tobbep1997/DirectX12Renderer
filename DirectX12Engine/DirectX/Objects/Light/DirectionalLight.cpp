@@ -4,7 +4,7 @@
 DirectionalLight::DirectionalLight() : ILight()
 {
 	p_lightType = 1;
-	m_camera = new Camera(DirectX::XM_PI * 0.5, 1.0f, 1, 7.5f, FALSE);
+	m_camera = new Camera(DirectX::XM_PI * 0.5, 1.0f, 1, 100.0f, FALSE);
 }
 
 DirectionalLight::~DirectionalLight()

@@ -56,7 +56,7 @@ void StaticMesh::Release()
 	SAFE_RELEASE(m_vertexHeapBuffer);
 }
 
-void StaticMesh::LoadStaticMesh(const std::string& path)
+const BOOL & StaticMesh::LoadStaticMesh(const std::string& path)
 {
 	this->m_name = path;
 	Assimp::Importer importer;
@@ -68,16 +68,19 @@ void StaticMesh::LoadStaticMesh(const std::string& path)
 
 	if (!scene)
 	{
-		Window::CreateError(importer.GetErrorString());
-		return;
+		m_meshLoaded = FALSE;
+		return m_meshLoaded;
 	}
+	m_meshLoaded = TRUE;
 	_createMesh(scene);
-	
+	return m_meshLoaded;
 }
 
 BOOL StaticMesh::CreateBuffer(RenderingManager* renderingManager)
 {
 	HRESULT hr = 0;
+	if (!m_meshLoaded)
+		return FALSE;
 	if (SUCCEEDED(hr = renderingManager->OpenCommandList()))
 	{
 		if (SUCCEEDED(hr = _createBuffer(renderingManager)))

@@ -14,7 +14,7 @@ public:
 	StaticMesh();
 	~StaticMesh();
 
-	void LoadStaticMesh(const std::string & path);
+	const BOOL & LoadStaticMesh(const std::string & path);
 
 	BOOL CreateBuffer(RenderingManager * renderingManager);
 	
@@ -23,11 +23,11 @@ public:
 	const D3D12_VERTEX_BUFFER_VIEW & GetVertexBufferView() const;
 
 private:
-
 	HRESULT _createBuffer(RenderingManager * renderingManager);
 	void _clearMesh();
 	void _createMesh(const aiScene * scene);
 
+	BOOL m_meshLoaded = FALSE;
 	UINT m_vertexBufferSize = 0;
 	D3D12_VERTEX_BUFFER_VIEW		m_vertexBufferView{};
 	ID3D12Resource *				m_vertexBuffer		= nullptr;
