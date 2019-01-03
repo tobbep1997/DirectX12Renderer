@@ -60,8 +60,8 @@ void Camera::_calcProjection()
 		XMStoreFloat4x4A(&this->m_projection,
 			XMMatrixTranspose(
 				XMMatrixOrthographicLH(
-					128, 
-					128,
+					16, 
+					16,
 					m_nearPlane, 
 					m_farPlane)));	
 	}

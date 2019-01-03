@@ -131,16 +131,25 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			{
 				pointLights[i]->Queue(renderingManager);
 			}
-			if (Input::IsKeyPressed(104))
-				directionalLight->SetPosition(0, 5, -5);
+
+			if (Input::IsKeyPressed(97))
+				directionalLight->SetPosition(5, 5, 5);
 			else if (Input::IsKeyPressed(98))
 				directionalLight->SetPosition(0, 5, 5);
+			else if (Input::IsKeyPressed(99))
+				directionalLight->SetPosition(-5, 5, 5);
 			else if (Input::IsKeyPressed(100))
 				directionalLight->SetPosition(5, 5, 0);
+			else if (Input::IsKeyPressed(101))
+				directionalLight->SetPosition(0, 5, 0);
 			else if (Input::IsKeyPressed(102))
 				directionalLight->SetPosition(-5, 5, 0);
-			else
-				directionalLight->SetPosition(0, 5, 0);
+			else if (Input::IsKeyPressed(103))
+				directionalLight->SetPosition(5, 5, -5);
+			else if (Input::IsKeyPressed(104))
+				directionalLight->SetPosition(0, 5, -5);
+			else if (Input::IsKeyPressed(105))
+				directionalLight->SetPosition(-5, 5, -5);	
 			directionalLight->GetCamera()->Update();
 
 		
