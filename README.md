@@ -22,7 +22,7 @@ TODO::
 ```diff
 -Mipmapping
 -Instancing
--Deferred Rendering
++Deferred Rendering
 -Tiled based Rendering
 ```
 **Shadows**
