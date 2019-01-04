@@ -4,6 +4,7 @@
 #include "WrapperFunctions/X12ConstantBuffer.h"
 #include "WrapperFunctions/X12RenderTargetView.h"
 #include "GeometryPass.h"
+#include "DeferredRender.h"
 
 
 ShadowPass::ShadowPass(RenderingManager* renderingManager, const Window& window)
@@ -98,7 +99,7 @@ void ShadowPass::Draw()
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
 	m_depthStencil->SwitchToSRV();
-	p_renderingManager->GetGeometryPass()->AddShadowMap(nullptr,
+	p_renderingManager->GetDeferredRender()->AddShadowMap(
 		m_depthStencil->GetTextureDescriptorHeap(),
 		dynamic_cast<DirectionalLight*>(p_lightQueue->at(0))->GetCamera()->GetViewProjectionMatrix());
 }

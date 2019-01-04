@@ -2,11 +2,33 @@
 #include "Template/IRender.h"
 
 class X12RenderTargetView;
+class X12ConstantBuffer;
 
 class DeferredRender : public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 1;
+	static const UINT ROOT_PARAMETERS = 7;
+	struct LightBuffer
+	{
+		DirectX::XMFLOAT4A	CameraPosition;
+		DirectX::XMUINT4	Type[256];
+		DirectX::XMFLOAT4A	Position[256];
+		DirectX::XMFLOAT4A	Color[256];
+		DirectX::XMFLOAT4A	Vector[256];
+	};
+
+	struct ShadowLightBuffer
+	{
+		DirectX::XMINT4 values;
+		DirectX::XMFLOAT4X4A ViewProjection;
+	};
+
+	struct ShadowMap
+	{
+		ID3D12DescriptorHeap * Map;
+		DirectX::XMFLOAT4X4A ViewProjection;
+	};
+
 public:
 	DeferredRender(RenderingManager * renderingManager, const Window & window);
 	~DeferredRender();
@@ -18,7 +40,8 @@ public:
 	void Clear() override;
 	void Release() override;
 
-	void SetRenderTarget(X12RenderTargetView * renderTarget);
+	void SetRenderTarget(X12RenderTargetView ** renderTarget, const UINT & size);
+	void AddShadowMap(ID3D12DescriptorHeap * map, DirectX::XMFLOAT4X4A ViewProjection) const;
 
 private:
 
@@ -46,8 +69,16 @@ private:
 	D3D12_SHADER_BYTECODE m_pixelShader{};
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
 
+	UINT m_renderTargetSize = 0;
+	X12RenderTargetView ** m_geometryRenderTargetView = nullptr;
+	X12ConstantBuffer * m_lightBuffer = nullptr;
+	X12ConstantBuffer * m_shadowBuffer = nullptr;
 
-	X12RenderTargetView * m_geometryRenderTargetView = nullptr;
+	LightBuffer m_lightValues{};
+	ShadowLightBuffer m_shadowValues{};
+
+	std::vector<ShadowMap*>* m_shadowMaps = nullptr;
+
 
 	struct Vertex
 	{
@@ -67,6 +98,5 @@ private:
 	UINT m_vertexBufferSize;
 
 	Vertex m_vertexList[4];
-
 };
 

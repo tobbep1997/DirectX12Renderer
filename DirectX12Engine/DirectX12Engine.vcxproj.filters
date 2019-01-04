@@ -171,4 +171,7 @@
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredPixel.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="DirectX\Shaders\ShaderIncludes\LightCalculations.hlsli" />
+  </ItemGroup>
 </Project>

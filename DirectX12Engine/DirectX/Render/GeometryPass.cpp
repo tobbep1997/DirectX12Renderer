@@ -24,11 +24,11 @@ HRESULT GeometryPass::Init()
 {
 	HRESULT hr;
 	m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window);
-	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
-	m_shadowBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
-	m_renderTarget = new X12RenderTargetView(p_renderingManager, *p_window);
+	for (UINT i = 0; i < RENDER_TARGETS; i++)
+	{
+		m_renderTarget[i] = new X12RenderTargetView(p_renderingManager, *p_window);
+	}
 	
-	m_shadowMaps = new std::vector<ShadowMap*>();
 	if (SUCCEEDED(hr = _preInit()))
 	{
 		if (FAILED(hr = _signalGPU()))
@@ -41,9 +41,6 @@ HRESULT GeometryPass::Init()
 
 void GeometryPass::Update(const Camera & camera)
 {	
-	//p_renderingManager->GetCommandList()->Reset(&p_renderingManager->GetCommandAllocator()[*p_renderingManager->GetFrameIndex()], m_pipelineState);
-	
-
 	m_objectValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
 		camera.GetPosition().z,
@@ -54,82 +51,33 @@ void GeometryPass::Update(const Camera & camera)
 	{
 		m_objectValues.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
 		memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectValues, sizeof(m_objectValues));
-	}
-
-	const UINT lightQueueSize = static_cast<const UINT>(p_lightQueue->size());
-	for (UINT i = 0; i < lightQueueSize && i < 256; i++)
-	{
-		m_lightValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
-			camera.GetPosition().y,
-			camera.GetPosition().z,
-			camera.GetPosition().w);
-		m_lightValues.Type[i] = DirectX::XMUINT4(lightQueueSize, 
-			p_lightQueue->at(i)->GetType(),
-			0, 0);
-		m_lightValues.Position[i] = DirectX::XMFLOAT4A(p_lightQueue->at(i)->GetPosition().x,
-			p_lightQueue->at(i)->GetPosition().y,
-			p_lightQueue->at(i)->GetPosition().z,
-			p_lightQueue->at(i)->GetPosition().w);
-		m_lightValues.Color[i] = DirectX::XMFLOAT4A(p_lightQueue->at(i)->GetColor().x,
-			p_lightQueue->at(i)->GetColor().y,
-			p_lightQueue->at(i)->GetColor().z,
-			p_lightQueue->at(i)->GetColor().w);
-
-		if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
-		{
-			PointLight* pl = dynamic_cast<PointLight*>(p_lightQueue->at(i));
-						
-			m_lightValues.Vector[i] = DirectX::XMFLOAT4A(pl->GetIntensity(),
-				pl->GetDropOff(),
-				pl->GetPow(),
-				0);
-		}
-		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
-		{
-			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
-						
-			m_lightValues.Vector[i] = DirectX::XMFLOAT4A(
-				directionalLight->GetCamera()->GetDirection().x,
-				directionalLight->GetCamera()->GetDirection().y,
-				directionalLight->GetCamera()->GetDirection().z,
-				p_lightQueue->at(i)->GetIntensity());
-		}
-	}
-
-	m_renderTarget->SwitchToRTV();
+	}	
 
 	m_depthStencil->ClearDepthStencil();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
+	D3D12_CPU_DESCRIPTOR_HANDLE d12CpuDescriptorHandle[RENDER_TARGETS];
+	for (UINT i = 0; i < RENDER_TARGETS; i++)
+	{
+		m_renderTarget[i]->SwitchToRTV();
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+			m_renderTarget[i]->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
+			*p_renderingManager->GetFrameIndex(),
+			m_renderTarget[i]->GetDescriptorSize());
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-		*p_renderingManager->GetFrameIndex(),
-		m_renderTarget->GetDescriptorSize());
+		m_renderTarget[i]->Clear(rtvHandle);
+		d12CpuDescriptorHandle[i] = rtvHandle;
+	}
 
-	m_renderTarget->Clear(rtvHandle);
-
-	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+	p_renderingManager->GetCommandList()->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
 
 	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
 	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
 	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
 	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+	   	  	
 
-
-	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
-	m_lightBuffer->SetGraphicsRootConstantBufferView(2);
-
-	
-	ID3D12DescriptorHeap* descriptorHeaps[] = { m_shadowMaps->at(0)->Map };
-	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(6, m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart());
-
-	m_shadowLight.ViewProjection = m_shadowMaps->at(0)->ViewProjection;
-
-	m_shadowBuffer->Copy(&m_shadowLight, sizeof(m_shadowLight));
-	m_shadowBuffer->SetGraphicsRootConstantBufferView(9);
 }
 
 void GeometryPass::Draw()
@@ -162,7 +110,7 @@ void GeometryPass::Draw()
 		
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
-	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget);
+	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
 }
 
 void GeometryPass::Clear()
@@ -170,11 +118,7 @@ void GeometryPass::Clear()
 	this->p_drawQueue->clear();
 	this->p_lightQueue->clear();
 
-	for (UINT i = 0; i < this->m_shadowMaps->size(); i++)
-	{
-		delete this->m_shadowMaps->at(i);
-	}
-	this->m_shadowMaps->clear();
+
 	
 }
 
@@ -186,32 +130,22 @@ void GeometryPass::Release()
 	m_depthStencil->Release();
 	delete m_depthStencil;
 
-	m_lightBuffer->Release();
-	delete m_lightBuffer;
 
-	m_shadowBuffer->Release();
-	delete m_shadowBuffer;
 
-	m_renderTarget->Release();
-	delete m_renderTarget;
+
+	for (UINT i = 0; i < RENDER_TARGETS; i++)
+	{
+		m_renderTarget[i]->Release();
+		delete m_renderTarget[i];
+	}
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{			
 		SAFE_RELEASE(m_constantBuffer[i]);
 	}
-	delete m_shadowMaps;
 
 }
 
-void GeometryPass::AddShadowMap(ID3D12Resource * resource, ID3D12DescriptorHeap* map, DirectX::XMFLOAT4X4A ViewProjection) const
-{
-	ShadowMap * sm = new ShadowMap();
-	sm->Resource = resource;
-	sm->Map = map;
-	sm->ViewProjection = ViewProjection;
-
-	m_shadowMaps->push_back(sm);
-}
 
 HRESULT GeometryPass::_preInit()
 {
@@ -229,17 +163,20 @@ HRESULT GeometryPass::_preInit()
 					{
 						if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
 							0, 0, 
-							RENDER_TARGETS)))
+							1)))
 						{
 							if (SUCCEEDED(hr = _createConstantBuffer()))
 							{
-								if (SUCCEEDED(hr = m_renderTarget->CreateRenderTarget(
-									0, 0, 
-									RENDER_TARGETS, 
-									TRUE, 
-									RENDER_TARGET_FORMAT)))
+								for (UINT i = 0; i < RENDER_TARGETS; i++)
 								{
-									
+									if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
+										0, 0, 
+										1, 
+										TRUE, 
+										RENDER_TARGET_FORMAT)))
+									{
+										break;
+									}
 								}
 							}
 						}
@@ -413,6 +350,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	graphicsPipelineStateDesc.PS = m_pixelShader;
 	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
 	graphicsPipelineStateDesc.NumRenderTargets = RENDER_TARGETS;
+
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
 		graphicsPipelineStateDesc.RTVFormats[i] = RENDER_TARGET_FORMAT;
@@ -509,36 +447,33 @@ HRESULT GeometryPass::_createViewport()
 
 HRESULT GeometryPass::_createConstantBuffer()
 {
-	HRESULT hr;
+	HRESULT hr = 0;
 
-	if (SUCCEEDED(hr = m_lightBuffer->CreateBuffer(L"LightBuffer", &m_objectValues, sizeof(LightBuffer))))
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (SUCCEEDED(hr = m_shadowBuffer->CreateBuffer(L"Geometry Shadow", &m_shadowLight, sizeof(ShadowLightBuffer))))
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_constantBuffer[i]))))
 		{
-			for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
-			{
-				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-					D3D12_HEAP_FLAG_NONE,
-					&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
-					D3D12_RESOURCE_STATE_GENERIC_READ,
-					nullptr,
-					IID_PPV_ARGS(&m_constantBuffer[i]))))
-				{
-					SET_NAME(m_constantBuffer[i], L"Geometry ConstantBuffer Upload Resource Heap");
-				}
-				else
-					return hr;
+			SET_NAME(m_constantBuffer[i], L"Geometry ConstantBuffer Upload Resource Heap");
+		}
+		else
+			return hr;
 
-				CD3DX12_RANGE readRange(0, 0);
-				if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
-					0, &readRange,
-					reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
-				{
-					memcpy(m_cameraBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
-				}
-			}
+		CD3DX12_RANGE readRange(0, 0);
+		if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
+			0, &readRange,
+			reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
+		{
+			memcpy(m_cameraBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
 		}
 	}
+	
+	
 	return hr;
 }

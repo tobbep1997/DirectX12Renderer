@@ -106,7 +106,24 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 					&depthOptimizedClearValue,
 					IID_PPV_ARGS(&m_renderTargets[i]))))
 				{
-					p_renderingManager->GetDevice()->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
+					D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
+					renderTargetViewDesc.Format = format;
+					renderTargetViewDesc.ViewDimension = arraySize ? D3D12_RTV_DIMENSION_TEXTURE2DARRAY : D3D12_RTV_DIMENSION_TEXTURE2D;
+					if (renderTargetViewDesc.ViewDimension == D3D12_RTV_DIMENSION_TEXTURE2D)
+					{
+						renderTargetViewDesc.Texture2D.MipSlice = 0;
+						renderTargetViewDesc.Texture2D.PlaneSlice = 0;
+					}
+					else
+					{
+						renderTargetViewDesc.Texture2DArray.ArraySize = arraySize;
+						renderTargetViewDesc.Texture2DArray.FirstArraySlice = 0;
+						renderTargetViewDesc.Texture2DArray.MipSlice = 0;
+						renderTargetViewDesc.Texture2DArray.PlaneSlice = 0;
+					}
+
+					
+					p_renderingManager->GetDevice()->CreateRenderTargetView(m_renderTargets[i], &renderTargetViewDesc, rtvHandle);
 					rtvHandle.Offset(1, m_rtvDescriptorSize);
 					m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 					if (createTexture)

@@ -33,17 +33,6 @@ private:
 		DirectX::XMFLOAT4A	Vector[256];
 	};
 
-	struct ShadowLightBuffer
-	{
-		DirectX::XMINT4 values;
-		DirectX::XMFLOAT4X4A ViewProjection;
-	};
-	struct ShadowMap
-	{
-		ID3D12Resource * Resource;
-		ID3D12DescriptorHeap * Map;
-		DirectX::XMFLOAT4X4A ViewProjection;
-	};
 public:
 	GeometryPass(RenderingManager * renderingManager, const Window & window);
 	~GeometryPass();
@@ -55,7 +44,6 @@ public:
 	void Clear() override;
 	void Release() override;
 
-	void AddShadowMap(ID3D12Resource * resource, ID3D12DescriptorHeap * map, DirectX::XMFLOAT4X4A ViewProjection) const;
 
 private:
 	HRESULT _preInit();
@@ -73,9 +61,8 @@ private:
 
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
 
-	X12ConstantBuffer * m_shadowBuffer = nullptr;
 	X12DepthStencil * m_depthStencil = nullptr;
-	X12RenderTargetView * m_renderTarget = nullptr;
+	X12RenderTargetView * m_renderTarget[RENDER_TARGETS] = { nullptr };
 
 	D3D12_VIEWPORT	m_viewport{};
 	D3D12_RECT		m_rect{};
@@ -87,15 +74,12 @@ private:
 
 	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};
 	   
-	X12ConstantBuffer * m_lightBuffer = nullptr;
 	ID3D12Resource	* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
 	
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };	
 
 	ObjectBuffer m_objectValues {};
-	LightBuffer m_lightValues{};
-	ShadowLightBuffer m_shadowLight{};
 	struct Vertex
 	{
 		Vertex(const DirectX::XMFLOAT4 & position = DirectX::XMFLOAT4(0,0,0,0), 
@@ -108,6 +92,5 @@ private:
 		DirectX::XMFLOAT4 Color;
 	};
 
-	std::vector<ShadowMap*>* m_shadowMaps = nullptr;
 };
 
