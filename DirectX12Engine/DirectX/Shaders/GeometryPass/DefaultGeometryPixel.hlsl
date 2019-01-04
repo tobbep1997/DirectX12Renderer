@@ -1,4 +1,3 @@
-#include "../ShaderIncludes/LightCalculations.hlsli"
 
 struct HS_OUTPUT
 {
@@ -17,17 +16,11 @@ struct PS_OUTPUT
     float4 metallic : SV_target3;
 };                             
 
-
-
 Texture2D albedo : register(t0);
 Texture2D normalmap : register(t1);
 Texture2D metallicMap : register(t2);
 
-Texture2D shadowMap : register(t0, space1);
-
 SamplerState defaultSampler : register(s0);
-SamplerComparisonState shadowSampler : register(s0, space1);
-
 
 PS_OUTPUT main(HS_OUTPUT input)
 {
