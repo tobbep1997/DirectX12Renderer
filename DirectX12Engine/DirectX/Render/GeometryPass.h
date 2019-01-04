@@ -1,6 +1,7 @@
 #pragma once
 #include "Template/IRender.h"
 
+class X12RenderTargetView;
 class X12ConstantBuffer;
 class X12DepthStencil;
 
@@ -11,6 +12,9 @@ private:
 
 	static const UINT ROOT_PARAMETERS = 10;
 	static const UINT NUM_BUFFERS = 2;
+
+	static const UINT RENDER_TARGETS = 4;
+	static const DXGI_FORMAT RENDER_TARGET_FORMAT = DXGI_FORMAT_R32G32B32A32_FLOAT;
 
 	struct ObjectBuffer
 	{
@@ -71,6 +75,7 @@ private:
 
 	X12ConstantBuffer * m_shadowBuffer = nullptr;
 	X12DepthStencil * m_depthStencil = nullptr;
+	X12RenderTargetView * m_renderTarget = nullptr;
 
 	D3D12_VIEWPORT	m_viewport{};
 	D3D12_RECT		m_rect{};

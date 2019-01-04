@@ -3,6 +3,8 @@
 #include "WrapperFunctions/RenderingHelpClass.h"
 #include "WrapperFunctions/X12DepthStencil.h"
 #include "WrapperFunctions/X12ConstantBuffer.h"
+#include "WrapperFunctions/X12RenderTargetView.h"
+#include "DeferredRender.h"
 
 GeometryPass::GeometryPass(RenderingManager * renderingManager, 
 	const Window & window) :
@@ -24,6 +26,8 @@ HRESULT GeometryPass::Init()
 	m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window);
 	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
 	m_shadowBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
+	m_renderTarget = new X12RenderTargetView(p_renderingManager, *p_window);
+	
 	m_shadowMaps = new std::vector<ShadowMap*>();
 	if (SUCCEEDED(hr = _preInit()))
 	{
@@ -92,13 +96,18 @@ void GeometryPass::Update(const Camera & camera)
 		}
 	}
 
+	m_renderTarget->SwitchToRTV();
+
 	m_depthStencil->ClearDepthStencil();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
+
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-		p_renderingManager->GetRTVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
+		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 		*p_renderingManager->GetFrameIndex(),
-		*p_renderingManager->GetRTVDescriptorSize());
+		m_renderTarget->GetDescriptorSize());
+
+	m_renderTarget->Clear(rtvHandle);
 
 	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
@@ -146,8 +155,6 @@ void GeometryPass::Draw()
 				
 		}
 
-
-
 		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
 
 		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
@@ -155,7 +162,7 @@ void GeometryPass::Draw()
 		
 		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
-	//p_renderingManager->GetCommandList()->Close();
+	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget);
 }
 
 void GeometryPass::Clear()
@@ -184,6 +191,9 @@ void GeometryPass::Release()
 
 	m_shadowBuffer->Release();
 	delete m_shadowBuffer;
+
+	m_renderTarget->Release();
+	delete m_renderTarget;
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{			
@@ -217,11 +227,20 @@ HRESULT GeometryPass::_preInit()
 				{
 					if (SUCCEEDED(hr = _createViewport()))
 					{
-						if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry")))
+						if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
+							0, 0, 
+							RENDER_TARGETS)))
 						{
 							if (SUCCEEDED(hr = _createConstantBuffer()))
 							{
-
+								if (SUCCEEDED(hr = m_renderTarget->CreateRenderTarget(
+									0, 0, 
+									RENDER_TARGETS, 
+									TRUE, 
+									RENDER_TARGET_FORMAT)))
+								{
+									
+								}
 							}
 						}
 					}
@@ -393,15 +412,18 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	graphicsPipelineStateDesc.DS = m_domainShader;
 	graphicsPipelineStateDesc.PS = m_pixelShader;
 	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
-	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	graphicsPipelineStateDesc.NumRenderTargets = RENDER_TARGETS;
+	for (UINT i = 0; i < RENDER_TARGETS; i++)
+	{
+		graphicsPipelineStateDesc.RTVFormats[i] = RENDER_TARGET_FORMAT;
+
+	}
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
 	graphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_WIREFRAME, D3D12_CULL_MODE_NONE, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	graphicsPipelineStateDesc.NumRenderTargets = 1;
 	graphicsPipelineStateDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-
 	DXGI_SWAP_CHAIN_DESC desc;
 	if (SUCCEEDED(hr = p_renderingManager->GetSwapChain()->GetDesc(&desc)))
 	{

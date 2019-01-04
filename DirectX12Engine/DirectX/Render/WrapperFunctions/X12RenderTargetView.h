@@ -8,12 +8,18 @@ public:
 	X12RenderTargetView(RenderingManager * renderingManager, const Window & window);
 	~X12RenderTargetView();
 
-	HRESULT CreateRenderTarget(const UINT & width = 0, const UINT & height = 0);
+	HRESULT CreateRenderTarget(const UINT & width = 0, const UINT & height = 0,
+		const UINT & arraySize = 1, 
+		const BOOL & createTexture = FALSE,
+		const DXGI_FORMAT & format = DXGI_FORMAT_R8G8B8A8_UNORM);
 
 	ID3D12Resource *const* GetResource() const;
 	ID3D12DescriptorHeap * GetDescriptorHeap() const;
+	ID3D12DescriptorHeap * GetTextureDescriptorHeap() const;
 	const UINT & GetDescriptorSize() const;
 
+	void SwitchToRTV();
+	void SwitchToSRV();
 
 	void Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle) const;
 	void Release() override;
@@ -24,9 +30,13 @@ private:
 
 	UINT m_width = 0;
 	UINT m_height = 0;
+	UINT m_arraySize = 1;
+	D3D12_RESOURCE_STATES m_currentState;
 
 	UINT m_rtvDescriptorSize = 0;
-	ID3D12DescriptorHeap *	m_rtvDescriptorHeap = nullptr;
 	ID3D12Resource *		m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr };
+	ID3D12DescriptorHeap *	m_rtvDescriptorHeap = nullptr;
+	ID3D12DescriptorHeap *	m_rtvTextureDescriptorHeap = nullptr;
+
 };
 

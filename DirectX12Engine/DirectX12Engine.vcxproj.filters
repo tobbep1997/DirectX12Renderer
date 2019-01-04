@@ -72,6 +72,9 @@
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12RenderTargetView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\DeferredRender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -155,6 +158,9 @@
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12RenderTargetView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DirectX\Render\DeferredRender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryVertex.hlsl" />
@@ -162,5 +168,7 @@
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryDomain.hlsl" />
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryHull.hlsl" />
     <FxCompile Include="DirectX\Shaders\ShadowPass\DefaultShadowVertex.hlsl" />
+    <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredVertex.hlsl" />
+    <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredPixel.hlsl" />
   </ItemGroup>
 </Project>

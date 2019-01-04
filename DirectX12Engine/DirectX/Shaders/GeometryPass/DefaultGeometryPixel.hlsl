@@ -7,6 +7,14 @@ struct HS_OUTPUT
     float4 texCord : TEXCORD;
 };
 
+struct PS_OUTPUT
+{
+    float4 worldPos : SV_target0;
+    float4 albedo   : SV_target1;
+    float4 normal   : SV_target2;
+    float4 metallic : SV_target3;
+};                             
+
 cbuffer LIGHT_BUFFER : register(b0, space1)
 {
     float4 CameraPosition;
@@ -99,17 +107,24 @@ void ShadowCalculations(float4 worldPos, out float shadowCoeff, float min = 0.0f
 
 }
 
-float4 main(HS_OUTPUT input) : SV_TARGET
+PS_OUTPUT main(HS_OUTPUT input) : SV_TARGET
 {
+    PS_OUTPUT output = (PS_OUTPUT) 0;
+
     float4 texColor = albedo.Sample(defaultSampler, input.texCord.xy);
     float4 normal = float4(normalize(input.normal.xyz + mul((2.0f * normalmap.Sample(defaultSampler, input.texCord.xy).xyz - 1.0f), input.TBN)), 0);
     float4 metallic = metallicMap.Sample(defaultSampler, input.texCord.xy);
 
-    float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f) * texColor;
+    //float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f) * texColor;
 
-    float specular = 1.0f;
-    float shadowCoeff = 1.0f;
-    ShadowCalculations(input.worldPos, shadowCoeff, 0.0f);
-    float4 finalColor = LightCalculation(texColor, input.worldPos, normal, metallic, specular);
-    return saturate((finalColor + specular) * shadowCoeff + ambient);
+    //float specular = 1.0f;
+    //float shadowCoeff = 1.0f;
+    //ShadowCalculations(input.worldPos, shadowCoeff, 0.0f);
+    //float4 finalColor = LightCalculation(texColor, input.worldPos, normal, metallic, specular);
+    
+    output.worldPos = input.worldPos;
+    output.albedo = texColor;
+    output.normal = normal;
+    output.metallic = metallic;
+    return output;
 }

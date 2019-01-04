@@ -141,7 +141,7 @@ HRESULT ShadowPass::_preInit()
 					{
 						if (SUCCEEDED(hr = _createConstantBuffer()))
 						{						
-							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Shadow", m_width, m_height, TRUE)))
+							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Shadow", m_width, m_height, 1, TRUE)))
 							{
 								if (SUCCEEDED(hr = m_lightConstantBuffer->CreateBuffer(L"Shadow", &m_lightValues, sizeof(LightBuffer))))
 								{

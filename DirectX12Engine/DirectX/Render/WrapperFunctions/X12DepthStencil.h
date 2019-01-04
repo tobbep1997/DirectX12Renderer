@@ -7,7 +7,8 @@ public:
 	~X12DepthStencil();
 
 	HRESULT CreateDepthStencil(const std::wstring & name, 
-		const UINT & width = 0, const UINT & height = 0, 
+		const UINT & width = 0, const UINT & height = 0,
+		const UINT & arraySize = 1,
 		const BOOL & createTextureHeap = FALSE);
 	void Release() override;
 
@@ -21,6 +22,10 @@ public:
 	void SwitchToSRV();
 
 private:
+	UINT m_width = 0;
+	UINT m_height = 0;
+	UINT m_arraySize = 1;
+
 	ID3D12Resource		* m_depthStencilBuffer = nullptr;
 	ID3D12DescriptorHeap* m_depthStencilDescriptorHeap = nullptr;
 	
