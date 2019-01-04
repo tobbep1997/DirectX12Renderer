@@ -9,7 +9,7 @@ float4 LightCalculation(
     float4 albedo, 
     float4 normal, 
     float4 metallic, 
-    out float specular)
+    out float4 specular)
 {
     float4 worldToCamera = normalize(cameraPosition - worldPos);
     float4 posToLight = float4(0, 0, 0, 0);
@@ -31,7 +31,7 @@ float4 LightCalculation(
 
             halfWayDir = normalize(posToLight + worldToCamera);
             
-            specular += pow(max(dot(normal, halfWayDir), 0.0f), 32.0f) * length(metallic.rgb);
+            specular += pow(max(dot(normal, halfWayDir), 0.0f), 128.0f) * length(metallic.rgb) * attenuation * LightColor[i];
 
         }
         else if (LightType[i].y == 1) //Dir
@@ -40,7 +40,7 @@ float4 LightCalculation(
             finalColor += max(dot(normal, normalize(-float4(LightVector[i].xyz, 0))), 0.0f) * LightColor[i] * albedo * attenuation;
         }
     }
-
+    
     return finalColor;
 }
 
@@ -70,7 +70,7 @@ float TexelSize(Texture2D tTexture)
 
 void ShadowCalculations(Texture2D shadowMap, SamplerComparisonState samplerState, in float texelSize, in float4 fragmentLightPos, out float shadowCoeff, in float min = 0.0f, in float max = 1.0f)
 {
-    shadowCoeff = 0.0f;
+    shadowCoeff = 1.0f;
        
     float2 smTex = FragmentLightUV(fragmentLightPos);
     float depth = FragmentLightDepth(fragmentLightPos);

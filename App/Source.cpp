@@ -68,9 +68,27 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	drawable->SetMetallicMap(metallic);
 	drawable->SetDisplacementMap(displacement);
 
+	const int cubesSize = 16;
+	std::vector<Drawable*> cubes = std::vector<Drawable*>(cubesSize);
+	for (UINT i = 0; i < cubesSize; i++)
+	{
+		cubes[i] = new Drawable();
+		cubes[i]->SetPosition((rand() % cubesSize) - (cubesSize / 2), 0, (rand() % cubesSize) - (cubesSize / 2));
+		cubes[i]->SetScale(1, 1, 1);
+		cubes[i]->SetMesh(*staticCubeMesh);
+		cubes[i]->Update();
+		cubes[i]->SetTexture(texture);
+		cubes[i]->SetNormalMap(normal);
+		cubes[i]->SetMetallicMap(metallic);
+		cubes[i]->SetDisplacementMap(displacement);
+	}
+
+
+	const int floorSize = 100;
+
 	Drawable * floor = new Drawable();
 	floor->SetPosition(0, -2, 0);
-	floor->SetScale(10, 1, 10);
+	floor->SetScale(floorSize, 1, floorSize);
 	floor->SetMesh(*staticCubeMesh);
 	floor->Update();
 	floor->SetTexture(texture);
@@ -78,13 +96,16 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	floor->SetMetallicMap(metallic);
 	floor->SetDisplacementMap(displacement);
 
-	const UINT pointLightSize = 1;
+	const int pointLightSize = 255;
 	std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 	for (UINT i = 0; i < pointLightSize; i++)
 	{
 		pointLights[i] = new PointLight();
-		pointLights[i]->SetPosition(0, 0, -2.5);  
-		pointLights[i]->SetIntensity(2.5);  
+		pointLights[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 3, (rand() % floorSize) - (floorSize / 2));
+		pointLights[i]->SetIntensity(5.5f);
+		pointLights[i]->SetDropOff(1.0f);
+		pointLights[i]->SetPow(1.5f);
+		pointLights[i]->SetColor(static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f);
 	}
 
 	DirectionalLight* directionalLight = new DirectionalLight();
@@ -93,7 +114,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	directionalLight->GetCamera()->SetFocusPoint(TRUE);
 	directionalLight->GetCamera()->SetUp(1, 0, 0);
 	directionalLight->GetCamera()->Update();
-	directionalLight->SetIntensity(0.75f);
+	directionalLight->SetIntensity(3.f);
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -125,6 +146,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			drawable->SetRotation(0, drawable->GetRotation().y + deltaTime * 0.25f, 0);
 			drawable->Update();
 			drawable->Draw(renderingManager);
+
+			for (UINT i = 0; i < cubesSize; i++)
+			{
+				cubes[i]->SetRotation(0, cubes[i]->GetRotation().y + deltaTime * 0.25f, 0);
+				cubes[i]->Update();
+				cubes[i]->Draw(renderingManager);
+			}
+
 			floor->Draw(renderingManager);
 			directionalLight->Queue(renderingManager);
 			for (UINT i = 0; i < pointLightSize; i++)
@@ -172,6 +201,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	delete staticCylinderMesh;
 	delete staticCubeMesh;
 	delete drawable;
+	for (UINT i = 0; i < cubesSize; i++)
+	{
+		delete cubes[i];
+	}
 	delete floor;
 	delete texture;
 	delete normal;

@@ -37,7 +37,7 @@ float4 main(VS_OUTPUT input) : SV_Target
     float4 normal       = normalTexture.Sample  (defaultSampler, input.uv.xy);
     float4 metallic     = metallicTexture.Sample(defaultSampler, input.uv.xy);
     float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f) * albedo;
-    float specular = 0.0f;
+    float4 specular = float4(0, 0, 0, 1.0f);
     float shadowCoeff = 1.0f;
     float4 finalColor = LightCalculation(LightType, 
                                     LightPosition, 
