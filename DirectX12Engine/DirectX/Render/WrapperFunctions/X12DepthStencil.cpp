@@ -14,20 +14,24 @@ X12DepthStencil::~X12DepthStencil()
 
 HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name, 
 	const UINT & width, const UINT & height,
+	const UINT & arraySize,
 	const BOOL & createTextureHeap)
 {
 	HRESULT hr = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
 
-	UINT w = width, h = height;
+
+	m_width = width;
+	m_height = height;
+	m_arraySize = arraySize;
 
 	if (width == 0 || height == 0)
 	{
-		w = p_window->GetWidth();
-		h = p_window->GetHeight();
+		m_width = p_window->GetWidth();
+		m_height = p_window->GetHeight();
 	}
 
-	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.NumDescriptors = arraySize;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	   
@@ -37,9 +41,15 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 		SET_NAME(m_depthStencilDescriptorHeap, name + L" DepthStencil DescriptorHeap");
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
 		depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-		depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		depthStencilDesc.ViewDimension = arraySize ? D3D12_DSV_DIMENSION_TEXTURE2DARRAY : D3D12_DSV_DIMENSION_TEXTURE2D;
 		depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
-
+		if (D3D12_DSV_DIMENSION_TEXTURE2DARRAY == depthStencilDesc.ViewDimension)
+		{
+			depthStencilDesc.Texture2DArray.ArraySize = arraySize;
+			depthStencilDesc.Texture2DArray.FirstArraySlice = 0;
+			depthStencilDesc.Texture2DArray.MipSlice = 0;
+		}
+		
 		D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
 		depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
 		depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
@@ -50,8 +60,8 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Tex2D(
 				DXGI_FORMAT_D32_FLOAT,
-				w, h,
-				1, 0, 1, 0,
+				m_width, m_height,
+				arraySize, 0, 1, 0,
 				D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 			&depthOptimizedClearValue,
@@ -70,10 +80,20 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 				{
 					D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 					srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-					srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+					srvDesc.ViewDimension = arraySize ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
 					srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-					srvDesc.Texture2D.MipLevels = 1;
-
+					if (srvDesc.ViewDimension == D3D12_SRV_DIMENSION_TEXTURE2D)
+					{
+						srvDesc.Texture2D.MipLevels = 1;
+					}
+					else
+					{
+						srvDesc.Texture2DArray.ArraySize = arraySize;
+						srvDesc.Texture2DArray.FirstArraySlice = 0;
+						srvDesc.Texture2DArray.MipLevels = 1;
+						srvDesc.Texture2DArray.MostDetailedMip = 0;
+					}
+					
 					p_renderingManager->GetDevice()->CreateShaderResourceView(
 						m_depthStencilBuffer,
 						&srvDesc,

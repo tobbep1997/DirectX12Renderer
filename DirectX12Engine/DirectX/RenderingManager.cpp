@@ -4,6 +4,7 @@
 
 #include "Render/GeometryPass.h"
 #include "Render/ShadowPass.h"
+#include "Render/DeferredRender.h"
 
 RenderingManager::RenderingManager()
 = default;
@@ -26,6 +27,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 
 	m_geometryPass = new GeometryPass(this, window);
 	m_shadowPass = new ShadowPass(this, window);
+	m_deferredPass = new DeferredRender(this, window);
 
 	if (SUCCEEDED(hr = this->_checkD3D12Support(adapter, dxgiFactory)))
 	{
@@ -63,7 +65,10 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 										{
 											if (SUCCEEDED(hr = m_shadowPass->Init()))
 											{
-												
+												if (SUCCEEDED(hr = m_deferredPass->Init()))
+												{
+													
+												}
 											}
 										}
 									}
@@ -138,6 +143,9 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 	m_geometryPass->Update(camera);
 	m_geometryPass->Draw();
 
+	m_deferredPass->Update(camera);
+	m_deferredPass->Draw();
+
 	//---------------------------------------------------------------------
 
 	m_commandList->ResourceBarrier(1,
@@ -181,6 +189,7 @@ void RenderingManager::_clear() const
 {
 	m_geometryPass->Clear();
 	m_shadowPass->Clear();
+	m_deferredPass->Clear();
 }
 
 void RenderingManager::Present() const
@@ -222,6 +231,10 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_geometryPass->Release();
 	delete m_geometryPass;
 	m_geometryPass = nullptr;
+
+	m_deferredPass->Release();
+	delete m_deferredPass;
+	m_deferredPass = nullptr;
 
 	m_shadowPass->Release();
 	delete m_shadowPass;
@@ -303,6 +316,11 @@ GeometryPass* RenderingManager::GetGeometryPass() const
 ShadowPass* RenderingManager::GetShadowPass() const
 {
 	return this->m_shadowPass;
+}
+
+DeferredRender* RenderingManager::GetDeferredRender() const
+{
+	return this->m_deferredPass;
 }
 
 HRESULT RenderingManager::OpenCommandList()
