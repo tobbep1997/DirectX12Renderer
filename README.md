@@ -20,6 +20,7 @@ TODO::
 ```
 **Draw**
 ```diff
+-Mipmapping
 -Instancing
 -Deferred Rendering
 -Tiled based Rendering
