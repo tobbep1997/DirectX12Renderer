@@ -100,7 +100,7 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 						format,
 						m_width,
 						m_height,
-						arraySize, 0, 1, 0,
+						arraySize, 1, 1, 0,
 						D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET),
 					D3D12_RESOURCE_STATE_RENDER_TARGET,
 					&depthOptimizedClearValue,

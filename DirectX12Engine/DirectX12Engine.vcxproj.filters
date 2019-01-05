@@ -75,6 +75,9 @@
     <ClCompile Include="DirectX\Render\DeferredRender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12ShaderResourceView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -159,6 +162,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DirectX\Render\DeferredRender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12ShaderResourceView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX\Render\WrapperFunctions\Functions\DXGIFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

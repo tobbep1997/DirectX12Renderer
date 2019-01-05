@@ -10,21 +10,13 @@
 ShadowPass::ShadowPass(RenderingManager* renderingManager, const Window& window)
 	: IRender(renderingManager, window)
 {
-	m_depthStencil = new X12DepthStencil(renderingManager, window);
 	m_lightConstantBuffer = new X12ConstantBuffer(renderingManager, window);
-	m_renderTarget = new X12RenderTargetView(renderingManager, window);
 }
 
 ShadowPass::~ShadowPass()
 {
-	delete m_depthStencil;
-	m_depthStencil = nullptr;
-
 	delete m_lightConstantBuffer;
 	m_lightConstantBuffer = nullptr;
-
-	delete m_renderTarget;
-	m_renderTarget = nullptr;
 }
 
 HRESULT ShadowPass::Init()
@@ -45,63 +37,79 @@ HRESULT ShadowPass::Init()
 void ShadowPass::Update(const Camera& camera)
 {
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
+	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
 	for (UINT i = 0; i < drawQueueSize; i++)
-	{
+	{		
 		m_objectValues.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
 		memcpy(m_constantBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectValues, sizeof(m_objectValues));
 	}
-
-	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
+	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
 	{
 		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
 		{
 			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
+			m_lightValues.LightType.x = directionalLight->GetType();
+			m_lightValues.LightViewProjection[0] = directionalLight->GetCamera()->GetViewProjectionMatrix();
 
-			m_lightValues.LightViewProjection[i] = directionalLight->GetCamera()->GetViewProjectionMatrix();
+			memcpy(m_constantLightBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + counter++ * m_constantLightBufferPerObjectAlignedSize, &m_lightValues, sizeof(m_lightValues));
 		}
 	}
-	
-	m_depthStencil->SwitchToDSV();
-	m_depthStencil->ClearDepthStencil();
-	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
-	
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-		*p_renderingManager->GetFrameIndex(),
-		m_renderTarget->GetDescriptorSize());
-
-	m_renderTarget->Clear(rtvHandle);
-
-
-	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
+	   
 	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
 	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
 	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
 	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
 	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	m_lightConstantBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
-	m_lightConstantBuffer->SetGraphicsRootConstantBufferView(1);
-
 }
 
 void ShadowPass::Draw()
 {
 	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
-	for (UINT i = 0; i < drawQueueSize; i++)
+	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
+
+	UINT counter = 0;
+
+	for (UINT i = 0; i < lightQueueSize; i++)
 	{
-		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());
+		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
+		{
+			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
+			
+			directionalLight->GetDepthStencil()->SwitchToDSV();
+			directionalLight->GetDepthStencil()->ClearDepthStencil();
+			CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(directionalLight->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
-		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+				directionalLight->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
+				*p_renderingManager->GetFrameIndex(),
+				directionalLight->GetRenderTargetView()->GetDescriptorSize());
 
-		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
+			directionalLight->GetRenderTargetView()->Clear(rtvHandle);
+			
+			p_renderingManager->GetCommandList()->OMSetRenderTargets(directionalLight->GetNumRenderTargets(), &rtvHandle, FALSE, &dsvHandle);
+			
+			p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(1, m_constantLightBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + counter++ * m_constantLightBufferPerObjectAlignedSize);
+			
+			for (UINT j = 0; j < drawQueueSize; j++)
+			{
+				p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(j)->GetMesh().GetVertexBufferView());
+
+				p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + j * m_constantBufferPerObjectAlignedSize);
+
+				p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(j)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
+			}
+
+			directionalLight->GetDepthStencil()->SwitchToSRV();
+
+			p_renderingManager->GetDeferredRender()->AddShadowMap(
+				directionalLight->GetDepthStencil()->GetResource(),
+				directionalLight->GetDepthStencil()->GetTextureDescriptorHeap(),
+				dynamic_cast<DirectionalLight*>(directionalLight)->GetCamera()->GetViewProjectionMatrix());
+		}
 	}
-	m_depthStencil->SwitchToSRV();
-	p_renderingManager->GetDeferredRender()->AddShadowMap(
-		m_depthStencil->GetTextureDescriptorHeap(),
-		dynamic_cast<DirectionalLight*>(p_lightQueue->at(0))->GetCamera()->GetViewProjectionMatrix());
+
+
 }
 
 void ShadowPass::Clear()
@@ -118,11 +126,10 @@ void ShadowPass::Release()
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
 		SAFE_RELEASE(m_constantBuffer[i]);
+		SAFE_RELEASE(m_constantLightBuffer[i]);
 	}
 
-	m_depthStencil->Release();
 	m_lightConstantBuffer->Release();
-	m_renderTarget->Release();
 }
 
 HRESULT ShadowPass::_preInit()
@@ -132,23 +139,17 @@ HRESULT ShadowPass::_preInit()
 	_createViewport();
 	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
 	{
-		if (SUCCEEDED(hr = m_renderTarget->CreateRenderTarget(m_width, m_height)))
+		if (SUCCEEDED(hr = _initRootSignature()))
 		{
-			if (SUCCEEDED(hr = _initRootSignature()))
+			if (SUCCEEDED(hr = _initShaders()))
 			{
-				if (SUCCEEDED(hr = _initShaders()))
+				if (SUCCEEDED(hr = _initPipelineState()))
 				{
-					if (SUCCEEDED(hr = _initPipelineState()))
-					{
-						if (SUCCEEDED(hr = _createConstantBuffer()))
-						{						
-							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Shadow", m_width, m_height, 1, TRUE)))
-							{
-								if (SUCCEEDED(hr = m_lightConstantBuffer->CreateBuffer(L"Shadow", &m_lightValues, sizeof(LightBuffer))))
-								{
-									
-								}
-							}
+					if (SUCCEEDED(hr = _createConstantBuffer()))
+					{						
+						if (SUCCEEDED(hr = m_lightConstantBuffer->CreateBuffer(L"Shadow", &m_lightValues, sizeof(LightBuffer))))
+						{
+							
 						}
 					}
 				}
@@ -260,7 +261,7 @@ HRESULT ShadowPass::_initPipelineState()
 	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
-	graphicsPipelineStateDesc.RasterizerState = //CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	graphicsPipelineStateDesc.RasterizerState = 
 	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
@@ -309,7 +310,31 @@ HRESULT ShadowPass::_createConstantBuffer()
 			0, & readRange,
 			reinterpret_cast<void**>(&m_constantBufferGPUAddress[i]))))
 		{
-			memcpy(m_constantBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
+			memcpy(m_constantBufferGPUAddress[i], &m_objectValues, sizeof(ObjectBuffer));
+		}
+	}
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_constantLightBuffer[i]))))
+		{
+			SET_NAME(m_constantLightBuffer[i], L"Shadow ConstantBuffer Upload Resource Heap");
+		}
+		else
+			return hr;
+
+		CD3DX12_RANGE readRange(0, 0);
+		if (SUCCEEDED(hr = m_constantLightBuffer[i]->Map(
+			0, &readRange,
+			reinterpret_cast<void**>(&m_constantLightBufferGPUAddress[i]))))
+		{
+			memcpy(m_constantLightBufferGPUAddress[i], &m_lightValues, sizeof(LightBuffer));
 		}
 	}
 	return hr;
@@ -319,13 +344,13 @@ void ShadowPass::_createViewport()
 {
 	m_viewport.TopLeftX = 0;
 	m_viewport.TopLeftY = 0;
-	m_viewport.Width	= static_cast<FLOAT>(m_width);
-	m_viewport.Height	= static_cast<FLOAT>(m_height);
+	m_viewport.Width	= static_cast<FLOAT>(SHADOW_MAP_SIZE);
+	m_viewport.Height	= static_cast<FLOAT>(SHADOW_MAP_SIZE);
 	m_viewport.MinDepth = 0.0f;
 	m_viewport.MaxDepth = 1.0f;
 
 	m_rect.left = 0;
 	m_rect.top = 0;
-	m_rect.right = m_width;
-	m_rect.bottom = m_height;
+	m_rect.right = SHADOW_MAP_SIZE;
+	m_rect.bottom = SHADOW_MAP_SIZE;
 }

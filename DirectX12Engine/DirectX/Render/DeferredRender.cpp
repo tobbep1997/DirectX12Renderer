@@ -3,6 +3,7 @@
 #include "WrapperFunctions/X12RenderTargetView.h"
 #include "WrapperFunctions/RenderingHelpClass.h"
 #include "WrapperFunctions/X12ConstantBuffer.h"
+#include "WrapperFunctions/X12ShaderResourceView.h"
 
 
 DeferredRender::DeferredRender(RenderingManager* renderingManager, const Window& window)
@@ -15,6 +16,7 @@ DeferredRender::DeferredRender(RenderingManager* renderingManager, const Window&
 	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
 	m_shadowBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
 	m_shadowMaps = new std::vector<ShadowMap*>();
+	m_shaderResourceView = new X12ShaderResourceView(p_renderingManager, *p_window);
 
 }
 
@@ -96,9 +98,7 @@ void DeferredRender::Update(const Camera& camera)
 	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 	m_lightBuffer->SetGraphicsRootConstantBufferView(4);
 
-	m_shadowValues.ViewProjection = m_shadowMaps->at(0)->ViewProjection;
-	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
-	m_shadowBuffer->SetGraphicsRootConstantBufferView(5);
+	
 
 	if (!m_geometryRenderTargetView)
 		return;
@@ -111,10 +111,20 @@ void DeferredRender::Update(const Camera& camera)
 		p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(i, m_geometryRenderTargetView[i]->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 	}
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { m_shadowMaps->at(0)->Map };
-	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(6, m_shadowMaps->at(0)->Map->GetGPUDescriptorHandleForHeapStart());
-
+	//-------------------------------------------------------------------------------	Shadows
+	UINT counter = 0;
+	for (UINT i = 0; i < lightQueueSize; i++)
+	{
+		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
+		{
+			m_shadowValues.ViewProjection[counter] = m_shadowMaps->at(i)->ViewProjection;
+			m_shaderResourceView->CopySubresource(counter++, m_shadowMaps->at(i)->Resource, m_shadowMaps->at(i)->Map);
+		}
+	}
+	m_shadowValues.values.x = counter;
+	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
+	m_shadowBuffer->SetGraphicsRootConstantBufferView(5);
+	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);
 
 }
 
@@ -153,6 +163,9 @@ void DeferredRender::Release()
 	delete m_lightBuffer;
 	delete m_shadowMaps;
 
+	m_shaderResourceView->Release();
+	delete m_shaderResourceView;
+	m_shaderResourceView = nullptr;
 
 	m_shadowBuffer->Release();
 	delete m_shadowBuffer;
@@ -165,10 +178,13 @@ void DeferredRender::SetRenderTarget(X12RenderTargetView** renderTarget, const U
 	this->m_renderTargetSize = size;
 }
 
-void DeferredRender::AddShadowMap(ID3D12DescriptorHeap* map,
+void DeferredRender::AddShadowMap(
+	ID3D12Resource* resource,
+	ID3D12DescriptorHeap* map, 
 	DirectX::XMFLOAT4X4A ViewProjection) const
 {
 	ShadowMap * sm = new ShadowMap();
+	sm->Resource = resource;
 	sm->Map = map;
 	sm->ViewProjection = ViewProjection;
 
@@ -195,6 +211,14 @@ HRESULT DeferredRender::_preInit()
 							{
 								if (SUCCEEDED(hr = m_shadowBuffer->CreateBuffer(L"Geometry Shadow", &m_shadowValues, sizeof(ShadowLightBuffer))))
 								{
+									if (SUCCEEDED(hr = m_shaderResourceView->CreateShaderResourceView(
+										SHADOW_MAP_SIZE,
+										SHADOW_MAP_SIZE,
+										MAX_SHADOWS,
+										DXGI_FORMAT_R32_FLOAT)))
+									{
+										
+									}
 								}
 							}
 						}

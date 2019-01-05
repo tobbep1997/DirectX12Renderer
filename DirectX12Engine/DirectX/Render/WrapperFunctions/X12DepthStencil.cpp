@@ -55,13 +55,15 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 		depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 		depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
+		D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);;
+		
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Tex2D(
 				DXGI_FORMAT_D32_FLOAT,
 				m_width, m_height,
-				arraySize, 0, 1, 0,
+				arraySize, 1, 1, 0,
 				D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 			&depthOptimizedClearValue,

@@ -15,11 +15,14 @@ private:
 	{
 		DirectX::XMFLOAT4X4A	WorldMatrix;
 
-		DirectX::XMFLOAT4A		Padding[45];
+		DirectX::XMFLOAT4A		Padding[44];
 	};
 	struct LightBuffer
 	{
-		DirectX::XMFLOAT4X4A LightViewProjection[256];
+		DirectX::XMUINT4 LightType;
+		DirectX::XMFLOAT4X4A LightViewProjection[6];
+
+		DirectX::XMFLOAT4A		Padding[43];
 	};
 public:
 	ShadowPass(RenderingManager * renderingManager, const Window & window);
@@ -40,13 +43,8 @@ private:
 	HRESULT _initPipelineState();
 	HRESULT _createConstantBuffer();
 	void _createViewport();
-
-	UINT m_width	= 4096U;
-	UINT m_height	= 4096U;
-
-	X12DepthStencil * m_depthStencil = nullptr;
+	
 	X12ConstantBuffer * m_lightConstantBuffer = nullptr;
-	X12RenderTargetView * m_renderTarget = nullptr;
 
 	ID3D12RootSignature *	m_rootSignature = nullptr;
 	D3D12_ROOT_PARAMETER	m_rootParameter[ROOT_PARAMETERS]{};
@@ -58,9 +56,12 @@ private:
 	D3D12_RECT		m_rect{};
 
 	ID3D12Resource *		m_constantBuffer[FRAME_BUFFER_COUNT]{ nullptr };
-
 	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
 	UINT8* m_constantBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
+
+	ID3D12Resource *		m_constantLightBuffer[FRAME_BUFFER_COUNT]{ nullptr };
+	int m_constantLightBufferPerObjectAlignedSize = (sizeof(LightBuffer) + 255) & ~255;
+	UINT8* m_constantLightBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
 
 	ObjectBuffer	m_objectValues{};
 	LightBuffer		m_lightValues{};

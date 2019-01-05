@@ -1,21 +1,35 @@
 ﻿#include "DirectX12EnginePCH.h"
 #include "DirectionalLight.h"
+#include "DirectX/Render/WrapperFunctions/X12RenderTargetView.h"
+#include "DirectX/Render/WrapperFunctions/X12DepthStencil.h"
 
-DirectionalLight::DirectionalLight() : ILight()
+
+DirectionalLight::DirectionalLight(RenderingManager* renderingManager, const Window& window)
+	: ILight(renderingManager, window)
 {
 	p_lightType = 1;
 	m_camera = new Camera(DirectX::XM_PI * 0.5, 1.0f, 1, 100.0f, FALSE);
+
+	p_renderTarget = new X12RenderTargetView(renderingManager, window);
+	p_depthStencil = new X12DepthStencil(renderingManager, window);
 }
 
 DirectionalLight::~DirectionalLight()
 {
 	delete m_camera;
 	m_camera = nullptr;
+
+	delete p_renderTarget;
+	delete p_depthStencil;
 }
 
 void DirectionalLight::Init()
 {
 	m_camera->Init();
+	if (SUCCEEDED(_createDirectXContent()))
+	{
+		PRINT("Successfully created Directional Light") NEW_LINE;
+	}	
 }
 
 void DirectionalLight::Update()
@@ -26,6 +40,13 @@ void DirectionalLight::Update()
 void DirectionalLight::Release()
 {
 	m_camera->Release();
+	p_renderTarget->Release();
+	p_depthStencil->Release();
+}
+
+const UINT& DirectionalLight::GetNumRenderTargets() const
+{
+	return this->p_renderTargets;
 }
 
 Camera* DirectionalLight::GetCamera()
@@ -58,3 +79,32 @@ const UINT& DirectionalLight::GetType() const
 {
 	return p_lightType;
 }
+
+HRESULT DirectionalLight::_createDirectXContent()
+{
+	HRESULT hr = 0;
+	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
+	{
+		if (SUCCEEDED(hr = p_renderTarget->CreateRenderTarget(SHADOW_MAP_SIZE,
+			SHADOW_MAP_SIZE,
+			1, 
+			TRUE)))
+		{
+			if (SUCCEEDED(hr = p_depthStencil->CreateDepthStencil(
+				L"Directional Light",
+				SHADOW_MAP_SIZE,
+				SHADOW_MAP_SIZE,
+				1, 
+				TRUE)))
+			{
+				if (SUCCEEDED(hr = p_renderingManager->SignalGPU()))
+				{
+					
+				}
+			}
+		}
+	}
+	return hr;
+}
+
+

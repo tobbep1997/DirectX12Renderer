@@ -73,7 +73,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	for (UINT i = 0; i < cubesSize; i++)
 	{
 		cubes[i] = new Drawable();
-		cubes[i]->SetPosition((rand() % cubesSize) - (cubesSize / 2), 0, (rand() % cubesSize) - (cubesSize / 2));
+		cubes[i]->SetPosition(static_cast<float>(rand() % cubesSize) - (cubesSize / 2), 0.0f, static_cast<float>(rand() % cubesSize) - (cubesSize / 2));
 		cubes[i]->SetScale(1, 1, 1);
 		cubes[i]->SetMesh(*staticCubeMesh);
 		cubes[i]->Update();
@@ -96,25 +96,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	floor->SetMetallicMap(metallic);
 	floor->SetDisplacementMap(displacement);
 
-	const int pointLightSize = 255;
-	std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
-	for (UINT i = 0; i < pointLightSize; i++)
-	{
-		pointLights[i] = new PointLight();
-		pointLights[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 3, (rand() % floorSize) - (floorSize / 2));
-		pointLights[i]->SetIntensity(5.5f);
-		pointLights[i]->SetDropOff(1.0f);
-		pointLights[i]->SetPow(1.5f);
-		pointLights[i]->SetColor(static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f);
-	}
 
-	DirectionalLight* directionalLight = new DirectionalLight();
-	directionalLight->SetPosition(0, 5, 0);
-	directionalLight->SetDirection(0, 0, 0);
-	directionalLight->GetCamera()->SetFocusPoint(TRUE);
-	directionalLight->GetCamera()->SetUp(1, 0, 0);
-	directionalLight->GetCamera()->Update();
-	directionalLight->SetIntensity(3.f);
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -124,14 +106,44 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		720, 
 		FALSE,
 		TRUE,
-		FALSE))
+		TRUE))
 	{
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadTexture("../Texture/Brick/Brick_diffuse.bmp", renderingManager);
 		normal->LoadTexture("../Texture/Brick/Brick_normal.bmp", renderingManager);
 		metallic->LoadTexture("../Texture/Brick/Brick_metallic.bmp", renderingManager);
 		displacement->LoadTexture("../Texture/Brick/Brick_height.bmp", renderingManager);
-		
+
+		const int pointLightSize = 200;
+		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
+		for (UINT i = 0; i < pointLightSize; i++)
+		{
+			pointLights[i] = new PointLight(renderingManager, *window);
+			pointLights[i]->SetPosition(static_cast<float>(rand() % floorSize) - (floorSize / 2), 3.0f, static_cast<float>(rand() % floorSize) - (floorSize / 2));
+			pointLights[i]->SetIntensity(5.5f);
+			pointLights[i]->SetDropOff(1.0f);
+			pointLights[i]->SetPow(1.5f);
+			pointLights[i]->SetColor(static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f);
+		}
+
+		DirectionalLight* directionalLight = new DirectionalLight(renderingManager, *window);
+		directionalLight->Init();
+		directionalLight->SetPosition(0, 5, 0);
+		directionalLight->SetDirection(0, 0, 0);
+		directionalLight->GetCamera()->SetFocusPoint(TRUE);
+		directionalLight->GetCamera()->SetUp(1, 0, 0);
+		directionalLight->GetCamera()->Update();
+		directionalLight->SetIntensity(3.f);
+
+		DirectionalLight* directionalLight2 = new DirectionalLight(renderingManager, *window);
+		directionalLight2->Init();
+		directionalLight2->SetPosition(0, 5, 0);
+		directionalLight2->SetDirection(0, 0, 0);
+		directionalLight2->GetCamera()->SetFocusPoint(TRUE);
+		directionalLight2->GetCamera()->SetUp(1, 0, 0);
+		directionalLight2->GetCamera()->Update();
+
+
 		deltaTimer.Init();
 		while (Window::IsOpen())
 		{
@@ -155,10 +167,11 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 
 			floor->Draw(renderingManager);
-			directionalLight->Queue(renderingManager);
+			directionalLight->Queue();
+			directionalLight2->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
-				pointLights[i]->Queue(renderingManager);
+				pointLights[i]->Queue();
 			}
 
 			if (Input::IsKeyPressed(97))
@@ -186,15 +199,23 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			if (Input::IsKeyPressed('P'))
 				RestartRenderingManager(window, renderingManager, TRUE);
 		}	
+		renderingManager->WaitForFrames();
+		directionalLight->Release();
+		directionalLight2->Release();
+		for (UINT i = 0; i < pointLightSize; i++)
+			pointLights[i]->Release();
+
+		delete directionalLight;
+		delete directionalLight2;
+		for (UINT i = 0; i < pointLightSize; i++)
+			delete pointLights[i];
 	}
-	renderingManager->WaitForFrames();
 	staticCylinderMesh->Release();
 	staticCubeMesh->Release();
 	texture->Release();
 	normal->Release();
 	metallic->Release();
 	displacement->Release();
-	directionalLight->Release();
 	renderingManager->Release(FALSE);
 
 	delete camera;
@@ -210,8 +231,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	delete normal;
 	delete metallic;
 	delete displacement;
-	delete directionalLight;
-	for (UINT i = 0; i < pointLightSize; i++)
-		delete pointLights[i];
+
 	return 0;
 }

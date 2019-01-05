@@ -3,19 +3,22 @@
 #include "DirectX/Render/Template/IRender.h"
 
 
-ILight::ILight()
+
+ILight::ILight(RenderingManager* renderingManager, const Window& window)
 {
 	this->m_intensity = 1;
+	p_renderingManager = renderingManager;
+	p_window = &window;
 }
 ILight::~ILight()
 = default;
 
-void ILight::Queue(RenderingManager* renderingManager)
+void ILight::Queue()
 {
 	if (m_intensity > 0)
 	{
-		reinterpret_cast<IRender*>(renderingManager->GetDeferredRender())->QueueLight(this);
-		reinterpret_cast<IRender*>(renderingManager->GetShadowPass())->QueueLight(this);
+		reinterpret_cast<IRender*>(p_renderingManager->GetDeferredRender())->QueueLight(this);
+		reinterpret_cast<IRender*>(p_renderingManager->GetShadowPass())->QueueLight(this);
 	}
 }
 
@@ -43,4 +46,16 @@ const DirectX::XMFLOAT4 & ILight::GetColor() const
 {
 	return this->m_color;
 }
+
+X12DepthStencil* ILight::GetDepthStencil() const
+{
+	return p_depthStencil;
+}
+
+X12RenderTargetView* ILight::GetRenderTargetView() const
+{
+	return p_renderTarget;
+}
+
+
 

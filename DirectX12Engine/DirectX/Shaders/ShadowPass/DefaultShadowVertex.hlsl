@@ -12,10 +12,15 @@ cbuffer CAMERA_BUFFER : register(b0)
 }
 cbuffer LIGHT_BUFFER : register(b1)
 {
-    float4x4 ViewProjection[256];
+    uint4 LightType;
+    float4x4 ViewProjection[6];
 }
 
 float4 main(VS_INPUT input) : SV_POSITION
 {
-    return mul(input.pos, mul(WorldMatrix, ViewProjection[0]));
+    if (LightType.x == 1)
+        return mul(input.pos, mul(WorldMatrix, ViewProjection[0]));
+    else
+        return mul(input.pos, mul(WorldMatrix, ViewProjection[0]));
+
 }

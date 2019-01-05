@@ -2,12 +2,15 @@
 #include "../../Transform.h"
 #include <DirectXMath.h>
 
+class X12DepthStencil;
+class X12RenderTargetView;
+
 class ILight : public Transform
 {
 public:
 	virtual ~ILight();
 
-	void Queue(RenderingManager * renderingManager);
+	void Queue();
 
 	void SetIntensity(const float & intensity);
 	const float & GetIntensity() const;
@@ -18,9 +21,21 @@ public:
 
 	virtual const UINT & GetType() const = 0;
 
+	virtual const UINT & GetNumRenderTargets() const = 0;
+
+	X12DepthStencil * GetDepthStencil() const;
+	X12RenderTargetView * GetRenderTargetView() const;
+
 protected:
-	ILight();
+	ILight(RenderingManager * renderingManager, const Window & window);
+	RenderingManager * p_renderingManager;
+	const Window * p_window;
+
 	UINT p_lightType = 0;
+	X12DepthStencil * p_depthStencil = nullptr;
+	X12RenderTargetView * p_renderTarget = nullptr;
+
+	UINT p_renderTargets = 1;
 private:
 	DirectX::XMFLOAT4 m_color = DirectX::XMFLOAT4(1, 1, 1, 1);
 	float m_intensity = 1;

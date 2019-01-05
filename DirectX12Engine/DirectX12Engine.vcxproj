@@ -159,6 +159,7 @@
     <ClInclude Include="DirectX\Objects\Light\DirectionalLight.h" />
     <ClInclude Include="DirectX\Objects\Mesh\StaticMesh.h" />
     <ClInclude Include="DirectX\Objects\Texture\Texture.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\Functions\DXGIFunctions.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\Template\IX12Object.h" />
     <ClInclude Include="DirectX\Structs.h" />
     <ClInclude Include="DirectX\Objects\Drawable.h" />
@@ -183,6 +184,7 @@
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12DepthStencil.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12RenderTargetView.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12ShaderResourceView.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectX\Render\DeferredRender.cpp" />
@@ -214,6 +216,7 @@
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12DepthStencil.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12RenderTargetView.cpp" />
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12ShaderResourceView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredPixel.hlsl">
