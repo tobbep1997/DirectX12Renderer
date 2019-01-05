@@ -1,15 +1,16 @@
 #include "DirectX12EnginePCH.h"
 #include "PointLight.h"
 
-
-PointLight::PointLight()
+PointLight::PointLight(RenderingManager* renderingManager, const Window& window)
+	: ILight(renderingManager, window)
 {
 	p_lightType = 0U;
 
 	m_dropOff = 1.0f;
 	m_pow = 2.0f;
-}
 
+	this->p_renderTargets = 6u;
+}
 
 PointLight::~PointLight()
 {
@@ -38,4 +39,9 @@ const float& PointLight::GetPow() const
 const UINT & PointLight::GetType() const
 {
 	return p_lightType;
+}
+
+const UINT& PointLight::GetNumRenderTargets() const
+{
+	return this->p_renderTargets;
 }

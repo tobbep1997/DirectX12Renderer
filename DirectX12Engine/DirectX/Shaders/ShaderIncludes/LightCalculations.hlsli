@@ -1,4 +1,6 @@
 
+#pragma warning (disable : 4000)
+
 float4 LightCalculation(
     uint4 LightType[256],
     float4 LightPosition[256], 
@@ -61,32 +63,38 @@ float FragmentLightDepth(float4 fragmentLightPos)
     return fragmentLightPos.z;
 }
 
-float TexelSize(Texture2D tTexture)
+float TexelSize(Texture2DArray tTexture)
 {
-    float width, height, element;
-    tTexture.GetDimensions(0, width, height, element);
+    float width, height, element, numberOfElements;
+    tTexture.GetDimensions(0, width, height, element, numberOfElements);
     return 1.0f / width;
 }
 
-void ShadowCalculations(Texture2D shadowMap, SamplerComparisonState samplerState, in float texelSize, in float4 fragmentLightPos, out float shadowCoeff, in float min = 0.0f, in float max = 1.0f)
-{
-    shadowCoeff = 1.0f;
-       
-    float2 smTex = FragmentLightUV(fragmentLightPos);
+int ShadowCalculations(Texture2DArray shadowMap, uint index, SamplerComparisonState samplerState, in float texelSize, in float4 fragmentLightPos, inout float shadowCoeff, in float min = 0.0f, in float max = 1.0f)
+{    
+    
+    if (abs(fragmentLightPos.x) > 1 || abs(fragmentLightPos.y) > 1)
+        return 0;
+
+    float2 baseUV = FragmentLightUV(fragmentLightPos);
     float depth = FragmentLightDepth(fragmentLightPos);
        
     float epsilon = 0.01f;
     float divider = 0.0f;
+    float currentShadowCoeff = 1.0f;
     int sampleSize = 1;
 
+    float2 smTex;
     for (int x = -sampleSize; x <= sampleSize; ++x)
     {
         for (int y = -sampleSize; y <= sampleSize; ++y)
         {
-            shadowCoeff += shadowMap.SampleCmpLevelZero(samplerState, smTex + (float2(x, y) * texelSize), depth - epsilon).r;
+            smTex = baseUV + (float2(x, y) * texelSize);
+            currentShadowCoeff += shadowMap.SampleCmpLevelZero(samplerState, float3(smTex.x, smTex.y, index), depth - epsilon).r;
             divider += 1.0f;
         }
     }
-
-    shadowCoeff /= divider;
+    currentShadowCoeff /= divider;
+    shadowCoeff += currentShadowCoeff;
+    return 1;
 }

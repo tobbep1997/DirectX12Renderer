@@ -54,11 +54,11 @@ BOOL Texture::LoadTexture(const std::string& path, RenderingManager * renderingM
 	if (SUCCEEDED(hr = m_renderingManager->OpenCommandList()))
 	{
 		if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
-			D3D12_HEAP_FLAG_NONE, // no flags
-			&textureDesc, // the description of our texture
-			D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
-			nullptr, // used for render targets and depth/stencil buffers
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
+			D3D12_HEAP_FLAG_NONE, 
+			&textureDesc, 
+			D3D12_RESOURCE_STATE_COPY_DEST, 
+			nullptr, 
 			IID_PPV_ARGS(&m_textureBuffer))))
 		{
 			SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture Buffer");
@@ -81,11 +81,10 @@ BOOL Texture::LoadTexture(const std::string& path, RenderingManager * renderingM
 				SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture Upload Heap");
 
 				D3D12_SUBRESOURCE_DATA textureData = {};
-				textureData.pData = &m_imageData[0]; // pointer to our image data
-				textureData.RowPitch = imageBytesPerRow; // size of all our triangle vertex data
-				textureData.SlicePitch = imageBytesPerRow * textureDesc.Height; // also the size of our triangle vertex data
+				textureData.pData = &m_imageData[0]; 
+				textureData.RowPitch = imageBytesPerRow; 
+				textureData.SlicePitch = imageBytesPerRow * textureDesc.Height; 
 
-				// Now we copy the upload buffer contents to the default heap
 				UpdateSubresources(
 					m_renderingManager->GetCommandList(),
 					m_textureBuffer,
@@ -93,7 +92,6 @@ BOOL Texture::LoadTexture(const std::string& path, RenderingManager * renderingM
 					0, 0, 1,
 					&textureData);
 
-				// transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel shader to get the color of pixels)
 				m_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_textureBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
 				D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};

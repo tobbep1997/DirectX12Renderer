@@ -5,7 +5,7 @@ class PointLight :
 {
 
 public:
-	PointLight();
+	PointLight(RenderingManager * renderingManager, const Window & window);
 	~PointLight();
 
 	void SetDropOff(const float & dropOff);
@@ -15,6 +15,7 @@ public:
 	const float & GetPow() const;
 
 	const UINT & GetType() const override;
+	const UINT & GetNumRenderTargets() const override;
 private:
 	float m_dropOff;
 	float m_pow;

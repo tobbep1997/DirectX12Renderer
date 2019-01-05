@@ -17,10 +17,10 @@ cbuffer LIGHT_BUFFER : register(b0)
 cbuffer SHADOW_BUFFER : register(b0, space1)
 {
     int4 values;
-    float4x4 ShadowViewProjection;
+    float4x4 ShadowViewProjection[16];
 }
 
-Texture2D shadowMap : register(t0, space1);
+Texture2DArray shadowMap : register(t0, space1);
 
 SamplerState defaultSampler : register(s0);
 SamplerComparisonState shadowSampler : register(s0, space1);
@@ -39,6 +39,7 @@ float4 main(VS_OUTPUT input) : SV_Target
     float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f) * albedo;
     float4 specular = float4(0, 0, 0, 1.0f);
     float shadowCoeff = 1.0f;
+
     float4 finalColor = LightCalculation(LightType, 
                                     LightPosition, 
                                     LightColor, 
@@ -49,8 +50,11 @@ float4 main(VS_OUTPUT input) : SV_Target
                                     normal, 
                                     metallic, 
                                     specular);
-
-    ShadowCalculations(shadowMap, shadowSampler, TexelSize(shadowMap), FragmentLightPos(worldPos, ShadowViewProjection), shadowCoeff);
-
+    int divider = 1;
+    for (int i = 0; i < values.x; i++)
+    {
+        divider += ShadowCalculations(shadowMap, i, shadowSampler, TexelSize(shadowMap), FragmentLightPos(worldPos, ShadowViewProjection[i]), shadowCoeff);
+    }
+    shadowCoeff /= divider;
     return saturate((finalColor + specular) * shadowCoeff + ambient);;
 }
