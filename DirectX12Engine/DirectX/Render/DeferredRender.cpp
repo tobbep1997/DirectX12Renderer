@@ -101,7 +101,7 @@ void DeferredRender::Update(const Camera& camera)
 
 	for (UINT i = 0; i < this->m_renderTargetSize; i++)
 	{
-		m_geometryRenderTargetView[i]->SwitchToSRV();
+		m_geometryRenderTargetView[i]->SwitchToSRV(p_renderingManager->GetCommandList());
 		ID3D12DescriptorHeap* descriptorHeaps[] = { m_geometryRenderTargetView[i]->GetTextureDescriptorHeap() };
 		p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 		p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(i, m_geometryRenderTargetView[i]->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
@@ -135,7 +135,7 @@ void DeferredRender::Draw()
 	p_renderingManager->GetCommandList()->DrawInstanced(4, 1, 0, 0);
 	for (UINT i = 0; i < this->m_renderTargetSize; i++)
 	{
-		m_geometryRenderTargetView[i]->SwitchToRTV();
+		m_geometryRenderTargetView[i]->SwitchToRTV(p_renderingManager->GetCommandList());
 	}
 }
 

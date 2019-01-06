@@ -5,7 +5,7 @@ class X12RenderTargetView :
 	public IX12Object
 {
 public:
-	X12RenderTargetView(RenderingManager * renderingManager, const Window & window);
+	X12RenderTargetView(RenderingManager * renderingManager, const Window & window, ID3D12GraphicsCommandList * commandList = nullptr);
 	~X12RenderTargetView();
 
 	HRESULT CreateRenderTarget(const UINT & width = 0, const UINT & height = 0,
@@ -18,10 +18,10 @@ public:
 	ID3D12DescriptorHeap * GetTextureDescriptorHeap() const;
 	const UINT & GetDescriptorSize() const;
 
-	void SwitchToRTV();
-	void SwitchToSRV();
+	void SwitchToRTV(ID3D12GraphicsCommandList * commandList = nullptr);
+	void SwitchToSRV(ID3D12GraphicsCommandList * commandList = nullptr);
 
-	void Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle) const;
+	void Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList = nullptr) const;
 	void Release() override;
 
 private:

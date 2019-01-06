@@ -135,11 +135,13 @@ ID3D12DescriptorHeap* Texture::GetId3D12DescriptorHeap() const
 	return m_textureDescriptorHeap;
 }
 
-void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootParameterIndex) const
+void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootParameterIndex, ID3D12GraphicsCommandList * commandList) const
 {
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : renderingManager->GetCommandList();
+
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_textureDescriptorHeap };
-	renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);	
-	renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(rootParameterIndex, m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	gcl->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);	
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }
 
 HRESULT Texture::_uploadTexture()

@@ -25,9 +25,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	IDXGIFactory4 * dxgiFactory = nullptr;
 
 
-	m_geometryPass = new GeometryPass(this, window);
-	m_shadowPass = new ShadowPass(this, window);
-	m_deferredPass = new DeferredRender(this, window);
+
 
 	if (SUCCEEDED(hr = this->_checkD3D12Support(adapter, dxgiFactory)))
 	{
@@ -61,10 +59,13 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 								{
 									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
 									{		
+										m_geometryPass = new GeometryPass(this, window);
 										if (SUCCEEDED(hr = m_geometryPass->Init()))
 										{
+											m_shadowPass = new ShadowPass(this, window);
 											if (SUCCEEDED(hr = m_shadowPass->Init()))
 											{
+												m_deferredPass = new DeferredRender(this, window);
 												if (SUCCEEDED(hr = m_deferredPass->Init()))
 												{
 													
@@ -340,6 +341,23 @@ HRESULT RenderingManager::SignalGPU()
 	ID3D12CommandList* ppCommandLists[] = { this->m_commandList };
 	this->m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	
+	this->m_fenceValue[this->m_frameIndex]++;
+	if (SUCCEEDED(hr = this->m_commandQueue->Signal(
+		&GetFence()[this->m_frameIndex],
+		this->m_fenceValue[this->m_frameIndex])))
+	{
+
+	}
+	return hr;
+}
+
+HRESULT RenderingManager::SignalGPU(ID3D12GraphicsCommandList* commandList)
+{
+	HRESULT hr = 0;
+	commandList->Close();
+	ID3D12CommandList* ppCommandLists[] = { commandList };
+	this->m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
 	this->m_fenceValue[this->m_frameIndex]++;
 	if (SUCCEEDED(hr = this->m_commandQueue->Signal(
 		&GetFence()[this->m_frameIndex],
