@@ -229,16 +229,13 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_rtvDescriptorSize = 0;
 
 	m_geometryPass->Release();
-	delete m_geometryPass;
-	m_geometryPass = nullptr;
+	SAFE_DELETE(m_geometryPass);
 
 	m_deferredPass->Release();
-	delete m_deferredPass;
-	m_deferredPass = nullptr;
+	SAFE_DELETE(m_deferredPass);
 
 	m_shadowPass->Release();
-	delete m_shadowPass;
-	m_shadowPass = nullptr;
+	SAFE_DELETE(m_shadowPass);
 
 	if (m_device->Release() > 0)
 	{

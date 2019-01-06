@@ -75,9 +75,8 @@ HRESULT X12ShaderResourceView::CreateShaderResourceView(const UINT& width, const
 	return hr;
 }
 
-HRESULT X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resource* resource, ID3D12DescriptorHeap * descriptorHeap)
+void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resource* resource, ID3D12DescriptorHeap * descriptorHeap) const
 {
-	HRESULT hr = 0;
 	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE));
 	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
 
@@ -108,7 +107,6 @@ HRESULT X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Reso
 	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
-	return hr;
 }
 
 void X12ShaderResourceView::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex)

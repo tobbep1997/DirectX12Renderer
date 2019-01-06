@@ -5,7 +5,7 @@ class X12ConstantBuffer;
 class X12RenderTargetView;
 class X12ShaderResourceView;
 
-constexpr auto MAX_SHADOWS = 16u;
+constexpr auto MAX_SHADOWS = 32u;
 
 class DeferredRender : public IRender
 {
@@ -56,7 +56,6 @@ private:
 	HRESULT _createViewport();
 
 	HRESULT _createQuadBuffer();
-	HRESULT _createQuadIndexBuffer();
 
 	D3D12_VERTEX_BUFFER_VIEW		m_vertexBufferView{};
 	ID3D12Resource *				m_vertexBuffer = nullptr;

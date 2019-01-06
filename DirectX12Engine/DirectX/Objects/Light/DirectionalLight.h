@@ -10,20 +10,15 @@ public:
 	void Init() override;
 	void Update() override;
 	void Release() override;
-	const UINT & GetNumRenderTargets() const override;
 
-	Camera * GetCamera();
+	Camera * GetCamera() const;
 
-	void SetDirection(const DirectX::XMFLOAT4 & direction);
-	void SetDirection(const float & x, const float & y, const float & z, const float & w = 0.0f);
+	void SetDirection(const DirectX::XMFLOAT4 & direction) const;
+	void SetDirection(const float & x, const float & y, const float & z, const float & w = 0.0f) const;
 
 	void SetPosition(const DirectX::XMFLOAT4& position) override;
 	void SetPosition(const float& x, const float& y, const float& z, const float& w = 1.0f) override;
 
-	const UINT& GetType() const override;
 private:
-
-	HRESULT _createDirectXContent();
-
 	Camera * m_camera;
 };

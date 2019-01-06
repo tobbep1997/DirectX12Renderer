@@ -8,6 +8,7 @@ class IRender
 protected:
 	RenderingManager * p_renderingManager;
 	const Window * p_window;
+
 	IRender(RenderingManager * renderingManager, 
 		const Window & window)
 	{
@@ -22,8 +23,8 @@ protected:
 public:
 	virtual~IRender()
 	{
-		delete p_drawQueue;
-		delete p_lightQueue;
+		SAFE_DELETE(p_lightQueue);
+		SAFE_DELETE(p_drawQueue);
 	}
 
 

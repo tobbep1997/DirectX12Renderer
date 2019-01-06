@@ -15,7 +15,7 @@ ShadowPass::ShadowPass(RenderingManager* renderingManager, const Window& window)
 
 ShadowPass::~ShadowPass()
 {
-	delete m_lightConstantBuffer;
+	SAFE_DELETE(m_lightConstantBuffer);
 	m_lightConstantBuffer = nullptr;
 }
 
@@ -30,7 +30,6 @@ HRESULT ShadowPass::Init()
 			
 		}
 	}
-
 	return hr;	
 }
 
@@ -79,46 +78,26 @@ void ShadowPass::Draw()
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
 
 	UINT counter = 0;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandleArray[6];
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandleArray[6];
-
 	for (UINT i = 0; i < lightQueueSize; i++)
 	{
-		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
-		{
-			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
-			
-			directionalLight->GetDepthStencil()->SwitchToDSV();
-			directionalLight->GetDepthStencil()->ClearDepthStencil();
-			CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(directionalLight->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
-					   
-			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-				directionalLight->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-				*p_renderingManager->GetFrameIndex(),
-				directionalLight->GetRenderTargetView()->GetDescriptorSize());
+		p_lightQueue->at(i)->GetDepthStencil()->SwitchToDSV();
+		p_lightQueue->at(i)->GetDepthStencil()->ClearDepthStencil();
 
-			directionalLight->GetRenderTargetView()->Clear(rtvHandle);
-			
-			p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+		const CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(p_lightQueue->at(i)->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+			p_lightQueue->at(i)->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
+			*p_renderingManager->GetFrameIndex(),
+			p_lightQueue->at(i)->GetRenderTargetView()->GetDescriptorSize());
+		p_lightQueue->at(i)->GetRenderTargetView()->Clear(rtvHandle);
+		
+		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
+		{			
+			p_renderingManager->GetCommandList()->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, FALSE, &dsvHandle);
 		}
 		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
 		{
-			PointLight* pointLight = dynamic_cast<PointLight*>(p_lightQueue->at(i));		
-
-			pointLight->GetDepthStencil()->SwitchToDSV();
-			pointLight->GetDepthStencil()->ClearDepthStencil();
-			const CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(pointLight->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
-
-			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-				pointLight->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-				*p_renderingManager->GetFrameIndex(),
-				pointLight->GetRenderTargetView()->GetDescriptorSize());
-
-			pointLight->GetRenderTargetView()->Clear(rtvHandle);
-
-
-			p_renderingManager->GetCommandList()->OMSetRenderTargets(pointLight->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
+			p_renderingManager->GetCommandList()->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
 		}
 
 		for (UINT j = 0; j < drawQueueSize; j++)
@@ -132,13 +111,13 @@ void ShadowPass::Draw()
 		}
 		counter++;
 
+		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV();
+
 		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
 		{
-			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
+			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));			
 
-			directionalLight->GetDepthStencil()->SwitchToSRV();
-
-			DirectX::XMFLOAT4X4A arr[1] = { dynamic_cast<DirectionalLight*>(directionalLight)->GetCamera()->GetViewProjectionMatrix() };
+			DirectX::XMFLOAT4X4A arr[1] = { directionalLight->GetCamera()->GetViewProjectionMatrix() };
 
 			p_renderingManager->GetDeferredRender()->AddShadowMap(
 				directionalLight->GetDepthStencil()->GetResource(),
@@ -149,23 +128,17 @@ void ShadowPass::Draw()
 		{
 			PointLight* pointLight = dynamic_cast<PointLight*>(p_lightQueue->at(i));
 
-			for (UINT j = 0; j < 1; j++)
+			DirectX::XMFLOAT4X4A arr[6];
+			for (UINT k = 0; k < 6; k++)
 			{
-				pointLight->GetDepthStencil()->SwitchToSRV();
-
-				DirectX::XMFLOAT4X4A arr[6];
-				for (UINT k = 0; k < 6; k++)
-				{
-					arr[k] = pointLight->GetCameras()[k]->GetViewProjectionMatrix();
-				}
-
-				p_renderingManager->GetDeferredRender()->AddShadowMap(
-					pointLight->GetDepthStencil()->GetResource(),
-					pointLight->GetDepthStencil()->GetTextureDescriptorHeap(),
-					arr);
+				arr[k] = pointLight->GetCameras()[k]->GetViewProjectionMatrix();
 			}
-		}
 
+			p_renderingManager->GetDeferredRender()->AddShadowMap(
+				pointLight->GetDepthStencil()->GetResource(),
+				pointLight->GetDepthStencil()->GetTextureDescriptorHeap(),
+				arr);			
+		}
 	}
 }
 

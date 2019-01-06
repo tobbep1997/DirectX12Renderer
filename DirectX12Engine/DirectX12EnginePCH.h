@@ -71,6 +71,9 @@ namespace DEBUG
 }
 
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = nullptr; } }
+#define SAFE_DELETE(p) { if ( (p) ) { delete (p); (p) = nullptr; } }
+#define SAFE_DELETE_ARRAY(p) { if ( (p) ) { delete[] (p); (p) = nullptr; } }
+
 #ifdef _DEBUG
 	#include <iostream>
 	#define PRINT(p) { DEBUG::Print(p);		std::cout << p;			}

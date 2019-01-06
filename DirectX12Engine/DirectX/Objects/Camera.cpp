@@ -1,11 +1,13 @@
 #include "DirectX12EnginePCH.h"
 #include "Camera.h"
 
+#pragma warning (disable : 4172)
 
 void Camera::Init()
 {
 	this->m_direction	= DirectX::XMFLOAT4(0, 0, 1, 0);
 	this->m_up			= DirectX::XMFLOAT4(0, 1, 0, 0);
+	this->m_focusPoint	= DirectX::XMFLOAT4(0, 0, 0, 1);
 }
 
 void Camera::Update()
@@ -23,12 +25,12 @@ void Camera::Release()
 void Camera::_calcView()
 {
 	using namespace DirectX;
-	if (m_focusPoint)
+	if (m_useFocusPoint)
 	{
 		XMStoreFloat4x4A(&this->m_view, XMMatrixTranspose(
 			XMMatrixLookAtLH(
 				XMLoadFloat4(&GetPosition()),
-				XMLoadFloat4(&m_direction),
+				XMLoadFloat4(&m_focusPoint),
 				XMLoadFloat4(&m_up))));
 	}
 	else
@@ -118,6 +120,16 @@ void Camera::SetDirection(const DirectX::XMFLOAT4& direction)
 void Camera::SetDirection(const float& x, const float& y, const float& z, const float& w)
 {
 	this->SetDirection(DirectX::XMFLOAT4(x, y, z, w));
+}
+
+void Camera::SetFocusPoint(const DirectX::XMFLOAT4& focusPoint)
+{
+	this->m_focusPoint = focusPoint;
+}
+
+void Camera::SetFocusPoint(const float& x, const float& y, const float& z, const float& w)
+{
+	SetFocusPoint(DirectX::XMFLOAT4(x, y, z, w));
 }
 
 void Camera::Rotate(const DirectX::XMFLOAT4& rotation)
@@ -227,7 +239,7 @@ void Camera::SetPerspective(const BOOL& perspective)
 
 void Camera::SetFocusPoint(const BOOL& focusPoint)
 {
-	this->m_focusPoint = focusPoint;
+	this->m_useFocusPoint = focusPoint;
 }
 
 const float& Camera::GetFov() const
@@ -253,7 +265,7 @@ const float& Camera::GetFarPlane() const
 const DirectX::XMFLOAT4& Camera::GetDirection() const
 {
 	using namespace DirectX;
-	if (m_focusPoint)
+	if (m_useFocusPoint)
 	{
 		const XMVECTOR focusPoint = XMLoadFloat4(&this->m_direction);
 		const XMVECTOR position = XMLoadFloat4(&this->GetPosition());

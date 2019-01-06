@@ -20,12 +20,11 @@ void Texture::Update()
 }
 
 void Texture::Release()
-{
-	if (m_imageData)
-		delete[] m_imageData;
+{	
+	SAFE_DELETE_ARRAY(m_imageData);
 	SAFE_RELEASE(m_textureBuffer);
 	SAFE_RELEASE(m_textureUploadHeap);
-	SAFE_RELEASE(m_textureDescriptorHeap);
+	SAFE_RELEASE(m_textureDescriptorHeap);	
 }
 
 void Texture::SetRenderingManager(RenderingManager* renderingManager)
@@ -139,8 +138,7 @@ ID3D12DescriptorHeap* Texture::GetId3D12DescriptorHeap() const
 void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootParameterIndex) const
 {
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_textureDescriptorHeap };
-	renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);	
 	renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(rootParameterIndex, m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }
 
@@ -149,7 +147,7 @@ HRESULT Texture::_uploadTexture()
 	HRESULT hr = 0;
 	if (SUCCEEDED(hr = m_renderingManager->SignalGPU()))
 	{
-		delete[] m_imageData;
+		SAFE_DELETE_ARRAY(m_imageData);
 		m_imageData = nullptr;
 	}
 	return hr;

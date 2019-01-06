@@ -8,7 +8,7 @@ public:
 	void Update() override;
 	void Release() override;
 private:
-	DirectX::XMFLOAT4 m_direction;
+	DirectX::XMFLOAT4 m_direction, m_focusPoint;
 	DirectX::XMFLOAT4 m_up;
 
 	DirectX::XMFLOAT4X4A m_view;
@@ -21,7 +21,7 @@ private:
 	float m_farPlane;
 
 	BOOL m_usePerspective;
-	BOOL m_focusPoint = FALSE;
+	BOOL m_useFocusPoint = FALSE;
 
 	void _calcView();
 	void _calcProjection();
@@ -33,6 +33,10 @@ public:
 
 	void SetDirection(const DirectX::XMFLOAT4 & direction);
 	void SetDirection(const float & x, const float & y, const float & z, const float & w = 0.0f);
+
+	void SetFocusPoint(const DirectX::XMFLOAT4 & focusPoint);
+	void SetFocusPoint(const float & x, const float & y, const float & z, const float & w = 1.0f);
+
 
 	void Rotate(const DirectX::XMFLOAT4 & rotation);
 	void Rotate(const float & x, const float & y, const float & z, const float & w = 0.0f);

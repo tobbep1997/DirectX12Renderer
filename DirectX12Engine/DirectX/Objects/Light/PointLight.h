@@ -18,9 +18,6 @@ public:
 	const float & GetDropOff() const;
 	const float & GetPow() const;
 
-	const UINT & GetType() const override;
-	const UINT & GetNumRenderTargets() const override;
-
 	const Camera *const* GetCameras() const;
 
 	void Init() override;

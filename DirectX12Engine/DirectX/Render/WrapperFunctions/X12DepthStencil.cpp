@@ -161,6 +161,5 @@ void X12DepthStencil::Release()
 {
 	SAFE_RELEASE(m_depthStencilBuffer);
 	SAFE_RELEASE(m_depthStencilDescriptorHeap);
-
 	SAFE_RELEASE(m_depthStencilTextureDescriptorHeap);
 }

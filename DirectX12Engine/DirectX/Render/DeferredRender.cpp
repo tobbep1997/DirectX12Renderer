@@ -13,11 +13,12 @@ DeferredRender::DeferredRender(RenderingManager* renderingManager, const Window&
 	m_vertexList[1] = Vertex(DirectX::XMFLOAT4(-1.0f,  1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(0, 0, 0, 0));
 	m_vertexList[2] = Vertex(DirectX::XMFLOAT4( 1.0f, -1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(1, 1, 0, 0));
 	m_vertexList[3] = Vertex(DirectX::XMFLOAT4( 1.0f,  1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(1, 0, 0, 0));
+
 	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
 	m_shadowBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
-	m_shadowMaps = new std::vector<ShadowMap*>();
 	m_shaderResourceView = new X12ShaderResourceView(p_renderingManager, *p_window);
 
+	m_shadowMaps = new std::vector<ShadowMap*>();
 }
 
 DeferredRender::~DeferredRender()
@@ -98,11 +99,6 @@ void DeferredRender::Update(const Camera& camera)
 	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
 	m_lightBuffer->SetGraphicsRootConstantBufferView(4);
 
-	
-
-	if (!m_geometryRenderTargetView)
-		return;
-
 	for (UINT i = 0; i < this->m_renderTargetSize; i++)
 	{
 		m_geometryRenderTargetView[i]->SwitchToSRV();
@@ -111,7 +107,6 @@ void DeferredRender::Update(const Camera& camera)
 		p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(i, m_geometryRenderTargetView[i]->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 	}
 
-	//-------------------------------------------------------------------------------	Shadows
 	UINT index = 0;
 	for (UINT i = 0; i < m_shadowMaps->size() && i < MAX_SHADOWS && index < MAX_SHADOWS; i++)
 	{
@@ -124,11 +119,13 @@ void DeferredRender::Update(const Camera& camera)
 		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource, m_shadowMaps->at(i)->Map);
 		index += m_shadowMaps->at(i)->Resource->GetDesc().DepthOrArraySize;
 	}
+
 	m_shadowValues.values.x = index;
+	
 	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
 	m_shadowBuffer->SetGraphicsRootConstantBufferView(5);
+	
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);
-
 }
 
 void DeferredRender::Draw()
@@ -149,7 +146,7 @@ void DeferredRender::Clear()
 
 	for (UINT i = 0; i < this->m_shadowMaps->size(); i++)
 	{
-		delete this->m_shadowMaps->at(i);
+		SAFE_DELETE(this->m_shadowMaps->at(i));
 	}
 	this->m_shadowMaps->clear();
 }
@@ -163,15 +160,14 @@ void DeferredRender::Release()
 	SAFE_RELEASE(m_vertexHeapBuffer);
 
 	m_lightBuffer->Release();
-	delete m_lightBuffer;
-	delete m_shadowMaps;
+	SAFE_DELETE(m_lightBuffer);
+	SAFE_DELETE(m_shadowMaps);
 
 	m_shaderResourceView->Release();
-	delete m_shaderResourceView;
-	m_shaderResourceView = nullptr;
+	SAFE_DELETE(m_shaderResourceView);
 
 	m_shadowBuffer->Release();
-	delete m_shadowBuffer;
+	SAFE_DELETE(m_shadowBuffer);
 
 }
 
@@ -462,12 +458,5 @@ HRESULT DeferredRender::_createQuadBuffer()
 		}
 	}
 
-	return hr;
-}
-
-HRESULT DeferredRender::_createQuadIndexBuffer()
-{
-	HRESULT hr = 0;
-	
 	return hr;
 }

@@ -126,7 +126,7 @@ void GeometryPass::Release()
 	SAFE_RELEASE(m_pipelineState);
 
 	m_depthStencil->Release();
-	delete m_depthStencil;
+	SAFE_DELETE(m_depthStencil);
 
 
 
@@ -134,7 +134,7 @@ void GeometryPass::Release()
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
 		m_renderTarget[i]->Release();
-		delete m_renderTarget[i];
+		SAFE_DELETE(m_renderTarget[i]);
 	}
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)

@@ -31,7 +31,7 @@ private:
 	UINT m_width = 0;
 	UINT m_height = 0;
 	UINT m_arraySize = 1;
-	D3D12_RESOURCE_STATES m_currentState;
+	D3D12_RESOURCE_STATES m_currentState = D3D12_RESOURCE_STATE_COMMON;
 
 	UINT m_rtvDescriptorSize = 0;
 	ID3D12Resource *		m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr };
