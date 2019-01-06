@@ -9,6 +9,7 @@ ILight::ILight(RenderingManager* renderingManager, const Window& window)
 	this->m_intensity = 1;
 	p_renderingManager = renderingManager;
 	p_window = &window;
+	this->m_color = DirectX::XMFLOAT4(1, 1, 1, 1);
 }
 ILight::~ILight()
 = default;

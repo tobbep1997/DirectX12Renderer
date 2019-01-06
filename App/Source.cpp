@@ -114,12 +114,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		metallic->LoadTexture("../Texture/Brick/Brick_metallic.bmp", renderingManager);
 		displacement->LoadTexture("../Texture/Brick/Brick_height.bmp", renderingManager);
 
-		const int pointLightSize = 200;
+		const int pointLightSize = 1;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
-			pointLights[i]->SetPosition(static_cast<float>(rand() % floorSize) - (floorSize / 2), 3.0f, static_cast<float>(rand() % floorSize) - (floorSize / 2));
+			pointLights[i]->Init();
+			pointLights[i]->SetPosition(0, 1.0f, 0);
 			pointLights[i]->SetIntensity(5.5f);
 			pointLights[i]->SetDropOff(1.0f);
 			pointLights[i]->SetPow(1.5f);
@@ -133,7 +134,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->GetCamera()->SetFocusPoint(TRUE);
 		directionalLight->GetCamera()->SetUp(1, 0, 0);
 		directionalLight->GetCamera()->Update();
-		directionalLight->SetIntensity(3.f);
+		directionalLight->SetIntensity(0.2f);
 
 		DirectionalLight* directionalLight2 = new DirectionalLight(renderingManager, *window);
 		directionalLight2->Init();
@@ -142,6 +143,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight2->GetCamera()->SetFocusPoint(TRUE);
 		directionalLight2->GetCamera()->SetUp(1, 0, 0);
 		directionalLight2->GetCamera()->Update();
+		directionalLight2->SetIntensity(0.2f);
+
 
 
 		deltaTimer.Init();
@@ -167,8 +170,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 
 			floor->Draw(renderingManager);
-			directionalLight->Queue();
-			directionalLight2->Queue();
+			//directionalLight->Queue();
+			//directionalLight2->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
 				pointLights[i]->Queue();

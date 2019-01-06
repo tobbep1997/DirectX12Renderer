@@ -16,11 +16,7 @@ cbuffer LIGHT_BUFFER : register(b1)
     float4x4 ViewProjection[6];
 }
 
-float4 main(VS_INPUT input) : SV_POSITION
+float4 main(VS_INPUT input) : POSITION
 {
-    if (LightType.x == 1)
-        return mul(input.pos, mul(WorldMatrix, ViewProjection[0]));
-    else
-        return mul(input.pos, mul(WorldMatrix, ViewProjection[0]));
-
+    return mul(input.pos, WorldMatrix);
 }

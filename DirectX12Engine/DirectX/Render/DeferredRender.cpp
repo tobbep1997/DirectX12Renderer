@@ -112,16 +112,13 @@ void DeferredRender::Update(const Camera& camera)
 	}
 
 	//-------------------------------------------------------------------------------	Shadows
-	UINT counter = 0;
-	for (UINT i = 0; i < lightQueueSize; i++)
+
+	for (UINT i = 0; i < m_shadowMaps->size() && i < MAX_SHADOWS; i++)
 	{
-		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
-		{
-			m_shadowValues.ViewProjection[counter] = m_shadowMaps->at(i)->ViewProjection;
-			m_shaderResourceView->CopySubresource(counter++, m_shadowMaps->at(i)->Resource, m_shadowMaps->at(i)->Map);
-		}
+		m_shadowValues.ViewProjection[i] = m_shadowMaps->at(i)->ViewProjection;
+		m_shaderResourceView->CopySubresource(i, m_shadowMaps->at(i)->Resource, m_shadowMaps->at(i)->Map);
 	}
-	m_shadowValues.values.x = counter;
+	m_shadowValues.values.x = static_cast<int>(m_shadowMaps->size());
 	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
 	m_shadowBuffer->SetGraphicsRootConstantBufferView(5);
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);

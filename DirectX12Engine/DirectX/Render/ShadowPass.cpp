@@ -54,6 +54,16 @@ void ShadowPass::Update(const Camera& camera)
 
 			memcpy(m_constantLightBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + counter++ * m_constantLightBufferPerObjectAlignedSize, &m_lightValues, sizeof(m_lightValues));
 		}
+		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
+		{
+			PointLight* directionalLight = dynamic_cast<PointLight*>(p_lightQueue->at(i));
+			m_lightValues.LightType.x = directionalLight->GetType();
+			for (UINT j = 0; j < 6; j++)
+			{
+				m_lightValues.LightViewProjection[j] = directionalLight->GetCameras()[j]->GetViewProjectionMatrix();
+			}
+			memcpy(m_constantLightBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + counter++ * m_constantLightBufferPerObjectAlignedSize, &m_lightValues, sizeof(m_lightValues));
+		}
 	}
 	   
 	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
@@ -70,6 +80,9 @@ void ShadowPass::Draw()
 
 	UINT counter = 0;
 
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandleArray[6];
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandleArray[6];
+
 	for (UINT i = 0; i < lightQueueSize; i++)
 	{
 		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
@@ -79,7 +92,7 @@ void ShadowPass::Draw()
 			directionalLight->GetDepthStencil()->SwitchToDSV();
 			directionalLight->GetDepthStencil()->ClearDepthStencil();
 			CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(directionalLight->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
-
+					   
 			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 				directionalLight->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 				*p_renderingManager->GetFrameIndex(),
@@ -88,17 +101,45 @@ void ShadowPass::Draw()
 			directionalLight->GetRenderTargetView()->Clear(rtvHandle);
 			
 			p_renderingManager->GetCommandList()->OMSetRenderTargets(directionalLight->GetNumRenderTargets(), &rtvHandle, FALSE, &dsvHandle);
-			
-			p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(1, m_constantLightBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + counter++ * m_constantLightBufferPerObjectAlignedSize);
-			
-			for (UINT j = 0; j < drawQueueSize; j++)
+		}
+		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
+		{
+			PointLight* pointLight = dynamic_cast<PointLight*>(p_lightQueue->at(i));
+			for (UINT j = 0; j < 6; j++)
 			{
-				p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(j)->GetMesh().GetVertexBufferView());
+				pointLight->GetDepthStencil()[j]->SwitchToDSV();
+				pointLight->GetDepthStencil()[j]->ClearDepthStencil();
+				const CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(pointLight->GetDepthStencil()[j]->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
-				p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + j * m_constantBufferPerObjectAlignedSize);
+				CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+					pointLight->GetRenderTargetView()[j]->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
+					*p_renderingManager->GetFrameIndex(),
+					pointLight->GetRenderTargetView()[j]->GetDescriptorSize());
 
-				p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(j)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
+				pointLight->GetRenderTargetView()[j]->Clear(rtvHandle);
+
+				rtvHandleArray[j] = rtvHandle;
+				dsvHandleArray[j] = dsvHandle;
+
 			}
+
+			p_renderingManager->GetCommandList()->OMSetRenderTargets(pointLight->GetNumRenderTargets(), rtvHandleArray, FALSE, dsvHandleArray);
+		}
+
+		for (UINT j = 0; j < drawQueueSize; j++)
+		{
+			p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(j)->GetMesh().GetVertexBufferView());
+
+			p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + j * m_constantBufferPerObjectAlignedSize);
+			p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(1, m_constantLightBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + counter * m_constantLightBufferPerObjectAlignedSize);
+
+			p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(j)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
+		}
+		counter++;
+
+		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
+		{
+			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
 
 			directionalLight->GetDepthStencil()->SwitchToSRV();
 
@@ -107,9 +148,22 @@ void ShadowPass::Draw()
 				directionalLight->GetDepthStencil()->GetTextureDescriptorHeap(),
 				dynamic_cast<DirectionalLight*>(directionalLight)->GetCamera()->GetViewProjectionMatrix());
 		}
+		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
+		{
+			PointLight* pointLight = dynamic_cast<PointLight*>(p_lightQueue->at(i));
+
+			for (UINT j = 0; j < 6; j++)
+			{
+				pointLight->GetDepthStencil()[j]->SwitchToSRV();
+
+				p_renderingManager->GetDeferredRender()->AddShadowMap(
+					pointLight->GetDepthStencil()[j]->GetResource(),
+					pointLight->GetDepthStencil()[j]->GetTextureDescriptorHeap(),
+					pointLight->GetCameras()[j]->GetViewProjectionMatrix());
+			}
+		}
+
 	}
-
-
 }
 
 void ShadowPass::Clear()
@@ -187,7 +241,7 @@ HRESULT ShadowPass::_initRootSignature()
 
 	m_rootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	m_rootParameter[1].Descriptor = lightDescriptor;
-	m_rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	m_rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(m_rootParameter),
@@ -196,8 +250,7 @@ HRESULT ShadowPass::_initRootSignature()
 		nullptr,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT	|				
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS			|
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS		|
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS		|
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS		|				
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS);
 
 	ID3DBlob * signature = nullptr;
@@ -234,6 +287,17 @@ HRESULT ShadowPass::_initShaders()
 		m_vertexShader.BytecodeLength = blob->GetBufferSize();
 		m_vertexShader.pShaderBytecode = blob->GetBufferPointer();
 	}
+
+	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/ShadowPass/DefaultShadowGeometry.hlsl", blob, "gs_5_1")))
+	{
+		return hr;
+	}
+	else
+	{
+		m_geometryShader.BytecodeLength = blob->GetBufferSize();
+		m_geometryShader.pShaderBytecode = blob->GetBufferPointer();
+	}
+
 	return hr;
 }
 
@@ -258,13 +322,19 @@ HRESULT ShadowPass::_initPipelineState()
 	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
 	graphicsPipelineStateDesc.pRootSignature = m_rootSignature;
 	graphicsPipelineStateDesc.VS = m_vertexShader;
+	graphicsPipelineStateDesc.GS = m_geometryShader; 
 	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	graphicsPipelineStateDesc.NumRenderTargets = 6;
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	graphicsPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	graphicsPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	graphicsPipelineStateDesc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	graphicsPipelineStateDesc.RTVFormats[4] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	graphicsPipelineStateDesc.RTVFormats[5] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
 	graphicsPipelineStateDesc.RasterizerState = 
 	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	graphicsPipelineStateDesc.NumRenderTargets = 1;
 	graphicsPipelineStateDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
@@ -324,7 +394,7 @@ HRESULT ShadowPass::_createConstantBuffer()
 			nullptr,
 			IID_PPV_ARGS(&m_constantLightBuffer[i]))))
 		{
-			SET_NAME(m_constantLightBuffer[i], L"Shadow ConstantBuffer Upload Resource Heap");
+			SET_NAME(m_constantLightBuffer[i], L"Shadow ConstantLightBuffer Upload Resource Heap");
 		}
 		else
 			return hr;

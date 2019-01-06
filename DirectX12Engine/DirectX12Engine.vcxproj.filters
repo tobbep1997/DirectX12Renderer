@@ -179,6 +179,7 @@
     <FxCompile Include="DirectX\Shaders\ShadowPass\DefaultShadowVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredPixel.hlsl" />
+    <FxCompile Include="DirectX\Shaders\ShadowPass\DefaultShadowGeometry.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectX\Shaders\ShaderIncludes\LightCalculations.hlsli" />

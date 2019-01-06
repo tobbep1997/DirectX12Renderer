@@ -252,6 +252,17 @@ const float& Camera::GetFarPlane() const
 
 const DirectX::XMFLOAT4& Camera::GetDirection() const
 {
+	using namespace DirectX;
+	if (m_focusPoint)
+	{
+		const XMVECTOR focusPoint = XMLoadFloat4(&this->m_direction);
+		const XMVECTOR position = XMLoadFloat4(&this->GetPosition());
+
+		const XMVECTOR dirVector = XMVector3Normalize(focusPoint - position);
+		XMFLOAT4 direction; XMStoreFloat4(&direction, dirVector);
+		return direction;
+	}
+
 	return this->m_direction;
 }
 

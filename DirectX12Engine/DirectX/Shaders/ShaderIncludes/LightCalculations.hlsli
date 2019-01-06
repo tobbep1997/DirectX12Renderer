@@ -11,15 +11,14 @@ float4 LightCalculation(
     float4 albedo, 
     float4 normal, 
     float4 metallic, 
-    out float4 specular)
+    inout float4 specular)
 {
     float4 worldToCamera = normalize(cameraPosition - worldPos);
     float4 posToLight = float4(0, 0, 0, 0);
     float4 finalColor = float4(0, 0, 0, 0);
     float4 halfWayDir = 0;
     float distanceToLight = 0;
-    float attenuation = 0;
-    specular = 0;
+    float attenuation = 0;   
 
     for (uint i = 0; i < LightType[0].x && i < 256; i++)
     {

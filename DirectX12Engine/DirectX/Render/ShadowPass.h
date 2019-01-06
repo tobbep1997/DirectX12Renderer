@@ -50,6 +50,7 @@ private:
 	D3D12_ROOT_PARAMETER	m_rootParameter[ROOT_PARAMETERS]{};
 
 	D3D12_SHADER_BYTECODE	m_vertexShader{};
+	D3D12_SHADER_BYTECODE	m_geometryShader{};
 
 	ID3D12PipelineState *	m_pipelineState = nullptr;
 	D3D12_VIEWPORT	m_viewport{};
