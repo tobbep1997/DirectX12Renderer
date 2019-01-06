@@ -3,8 +3,8 @@
 #include "Functions/DXGIFunctions.h"
 
 
-X12ShaderResourceView::X12ShaderResourceView(RenderingManager* renderingManager, const Window& window)
-	: IX12Object(renderingManager, window)
+X12ShaderResourceView::X12ShaderResourceView(RenderingManager* renderingManager, const Window& window, ID3D12GraphicsCommandList * commandList)
+	: IX12Object(renderingManager, window, commandList)
 {
 }
 
@@ -75,10 +75,12 @@ HRESULT X12ShaderResourceView::CreateShaderResourceView(const UINT& width, const
 	return hr;
 }
 
-void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resource* resource, ID3D12DescriptorHeap * descriptorHeap) const
+void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resource* resource, ID3D12DescriptorHeap * descriptorHeap, ID3D12GraphicsCommandList * commandList) const
 {
-	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE));
-	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+
+	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE));
+	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
 
 	
 	UINT counter = 0;
@@ -95,7 +97,7 @@ void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resourc
 		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		srcLocation.SubresourceIndex = counter++;
 		
-		p_renderingManager->GetCommandList()->CopyTextureRegion(
+		gcl->CopyTextureRegion(
 			&dstLocation, 
 			0, 
 			0, 
@@ -104,16 +106,18 @@ void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resourc
 			nullptr);
 	}
 	
-	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-	p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
 }
 
-void X12ShaderResourceView::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex)
+void X12ShaderResourceView::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex, ID3D12GraphicsCommandList * commandList)
 {
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_descriptorHeap };
-	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(rootParameterIndex, m_descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	gcl->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_descriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }
 
 

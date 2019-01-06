@@ -19,7 +19,7 @@ public:
 
 	ID3D12DescriptorHeap * GetId3D12DescriptorHeap() const;
 
-	void MapTexture(RenderingManager * renderingManager, const UINT & rootParameterIndex) const;
+	void MapTexture(RenderingManager * renderingManager, const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr) const;
 
 private:
 	RenderingManager * m_renderingManager;

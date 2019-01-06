@@ -2,8 +2,8 @@
 #include "X12DepthStencil.h"
 #include <wincodec.h>
 
-X12DepthStencil::X12DepthStencil(RenderingManager* renderingManager, const Window& window)
-	: IX12Object(renderingManager, window)
+X12DepthStencil::X12DepthStencil(RenderingManager* renderingManager, const Window& window, ID3D12GraphicsCommandList * commandList)
+	: IX12Object(renderingManager, window, commandList)
 {
 	m_currentState = {};
 }
@@ -133,27 +133,33 @@ ID3D12DescriptorHeap* X12DepthStencil::GetTextureDescriptorHeap() const
 	return this->m_depthStencilTextureDescriptorHeap;
 }
 
-void X12DepthStencil::ClearDepthStencil() const
+void X12DepthStencil::ClearDepthStencil(ID3D12GraphicsCommandList * commandList) const
 {
-	p_renderingManager->GetCommandList()->ClearDepthStencilView(
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+
+	gcl->ClearDepthStencilView(
 		m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		D3D12_CLEAR_FLAG_DEPTH,
 		1.0f, 0, 0,
 		nullptr);
+	
 }
 
-void X12DepthStencil::SwitchToDSV()
+void X12DepthStencil::SwitchToDSV(ID3D12GraphicsCommandList * commandList)
 {
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;	
 	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState)
-		p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE));
-	m_currentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+	m_currentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;	
 }
 
-void X12DepthStencil::SwitchToSRV()
+void X12DepthStencil::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 {
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;	
 	if (D3D12_RESOURCE_STATE_DEPTH_WRITE == m_currentState)
-		p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
 }
 
 

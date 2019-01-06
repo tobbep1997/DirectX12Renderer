@@ -5,12 +5,12 @@ class X12ConstantBuffer :
 	public IX12Object
 {
 public:
-	X12ConstantBuffer(RenderingManager * renderingManager, const Window & window);
+	X12ConstantBuffer(RenderingManager * renderingManager, const Window & window, ID3D12GraphicsCommandList * commandList = nullptr);
 	~X12ConstantBuffer();
 
 	HRESULT CreateBuffer(const std::wstring & name, void const* data, const UINT & sizeOf);
 
-	void SetGraphicsRootConstantBufferView(const UINT & rootParameterIndex);
+	void SetGraphicsRootConstantBufferView(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
 	void Copy(void const* data, const UINT & sizeOf);
 	void Release() override;
 

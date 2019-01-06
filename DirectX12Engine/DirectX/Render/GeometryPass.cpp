@@ -23,12 +23,6 @@ GeometryPass::~GeometryPass()
 HRESULT GeometryPass::Init()
 {
 	HRESULT hr;
-	m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window);
-	for (UINT i = 0; i < RENDER_TARGETS; i++)
-	{
-		m_renderTarget[i] = new X12RenderTargetView(p_renderingManager, *p_window);
-	}
-	
 	if (SUCCEEDED(hr = _preInit()))
 	{
 		if (FAILED(hr = _signalGPU()))
@@ -41,6 +35,7 @@ HRESULT GeometryPass::Init()
 
 void GeometryPass::Update(const Camera & camera)
 {	
+	OpenCommandList();
 	m_objectValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
 		camera.GetPosition().z,
@@ -69,13 +64,13 @@ void GeometryPass::Update(const Camera & camera)
 		d12CpuDescriptorHandle[i] = rtvHandle;
 	}
 
-	p_renderingManager->GetCommandList()->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
+	p_commandList->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
 
-	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
-	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
-	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
-	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
-	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+	p_commandList->SetPipelineState(m_pipelineState);
+	p_commandList->SetGraphicsRootSignature(m_rootSignature);
+	p_commandList->RSSetViewports(1, &m_viewport);
+	p_commandList->RSSetScissorRects(1, &m_rect);
+	p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 }
 
 void GeometryPass::Draw()
@@ -84,40 +79,38 @@ void GeometryPass::Draw()
 	for (UINT i = 0; i < drawQueueSize; i++)
 	{	
 		if (p_drawQueue->at(i)->GetTexture())				
-			p_drawQueue->at(i)->GetTexture()->MapTexture(p_renderingManager, 2);
+			p_drawQueue->at(i)->GetTexture()->MapTexture(p_renderingManager, 2, p_commandList);
 		
 		if (p_drawQueue->at(i)->GetNormal())		
-			p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 3);
+			p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 3, p_commandList);
 		
 		if (p_drawQueue->at(i)->GetMetallic())		
-			p_drawQueue->at(i)->GetMetallic()->MapTexture(p_renderingManager, 4);
+			p_drawQueue->at(i)->GetMetallic()->MapTexture(p_renderingManager, 4, p_commandList);
 		
 		if (p_drawQueue->at(i)->GetDisplacement())
 		{
-			p_drawQueue->at(i)->GetDisplacement()->MapTexture(p_renderingManager, 5);
+			p_drawQueue->at(i)->GetDisplacement()->MapTexture(p_renderingManager, 5, p_commandList);
 
 			if (p_drawQueue->at(i)->GetNormal())			
-				p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 6);
+				p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 6, p_commandList);
 				
 		}
 
-		p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
+		p_commandList->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
 
-		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
-		p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(1, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+		p_commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
+		p_commandList->SetGraphicsRootConstantBufferView(1, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
 		
-		p_renderingManager->GetCommandList()->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
+		p_commandList->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
 	}
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
+	ExecuteCommandList();
 }
 
 void GeometryPass::Clear()
 {
 	this->p_drawQueue->clear();
-	this->p_lightQueue->clear();
-
-
-	
+	this->p_lightQueue->clear();	
 }
 
 void GeometryPass::Release()
@@ -128,7 +121,7 @@ void GeometryPass::Release()
 	m_depthStencil->Release();
 	SAFE_DELETE(m_depthStencil);
 
-
+	p_releaseCommandList();
 
 
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
@@ -148,32 +141,38 @@ void GeometryPass::Release()
 HRESULT GeometryPass::_preInit()
 {
 	HRESULT hr;
-	
-	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
+
+	if (SUCCEEDED(hr = p_createCommandList()))
 	{
-		if (SUCCEEDED(hr = _initID3D12RootSignature()))
+		if (SUCCEEDED(hr = OpenCommandList()))
 		{
-			if (SUCCEEDED(hr = _initShaders()))
+			if (SUCCEEDED(hr = _initID3D12RootSignature()))
 			{
-				if (SUCCEEDED(hr = _initID3D12PipelineState()))
+				if (SUCCEEDED(hr = _initShaders()))
 				{
-					if (SUCCEEDED(hr = _createViewport()))
+					if (SUCCEEDED(hr = _initID3D12PipelineState()))
 					{
-						if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
-							0, 0, 
-							1)))
+						if (SUCCEEDED(hr = _createViewport()))
 						{
-							if (SUCCEEDED(hr = _createConstantBuffer()))
+							m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window, p_commandList);
+							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
+								0, 0,
+								1)))
 							{
-								for (UINT i = 0; i < RENDER_TARGETS; i++)
+								if (SUCCEEDED(hr = _createConstantBuffer()))
 								{
-									if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
-										0, 0, 
-										1, 
-										TRUE, 
-										RENDER_TARGET_FORMAT)))
+									for (UINT i = 0; i < RENDER_TARGETS; i++)									
+										m_renderTarget[i] = new X12RenderTargetView(p_renderingManager, *p_window, p_commandList);									
+									for (UINT i = 0; i < RENDER_TARGETS; i++)
 									{
-										break;
+										if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
+											0, 0,
+											1,
+											TRUE,
+											RENDER_TARGET_FORMAT)))
+										{
+											break;
+										}
 									}
 								}
 							}
@@ -192,7 +191,7 @@ HRESULT GeometryPass::_signalGPU() const
 {
 	HRESULT hr;
 
-	if (SUCCEEDED(hr = p_renderingManager->SignalGPU()))
+	if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList)))
 	{	}
 
 	return hr;

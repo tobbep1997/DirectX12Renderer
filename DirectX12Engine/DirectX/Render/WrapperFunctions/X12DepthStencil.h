@@ -3,7 +3,7 @@
 class X12DepthStencil : public IX12Object
 {
 public:
-	X12DepthStencil(RenderingManager * renderingManager, const Window & window);
+	X12DepthStencil(RenderingManager * renderingManager, const Window & window, ID3D12GraphicsCommandList * commandList = nullptr);
 	~X12DepthStencil();
 
 	HRESULT CreateDepthStencil(const std::wstring & name, 
@@ -16,10 +16,10 @@ public:
 	ID3D12DescriptorHeap * GetDescriptorHeap() const;
 	ID3D12DescriptorHeap * GetTextureDescriptorHeap() const;
 
-	void ClearDepthStencil() const;
+	void ClearDepthStencil(ID3D12GraphicsCommandList * commandList = nullptr) const;
 
-	void SwitchToDSV();
-	void SwitchToSRV();
+	void SwitchToDSV(ID3D12GraphicsCommandList * commandList = nullptr);
+	void SwitchToSRV(ID3D12GraphicsCommandList * commandList = nullptr);
 
 private:
 	UINT m_width = 0;

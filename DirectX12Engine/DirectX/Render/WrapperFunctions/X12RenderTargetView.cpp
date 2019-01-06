@@ -3,8 +3,9 @@
 
 X12RenderTargetView::X12RenderTargetView(
 	RenderingManager* renderingManager, 
-	const Window& window)
-	: IX12Object(renderingManager, window)
+	const Window& window, 
+	ID3D12GraphicsCommandList * commandList)
+	: IX12Object(renderingManager, window, commandList)
 {
 }
 
@@ -180,23 +181,27 @@ const UINT& X12RenderTargetView::GetDescriptorSize() const
 	return this->m_rtvDescriptorSize;
 }
 
-void X12RenderTargetView::SwitchToRTV()
+void X12RenderTargetView::SwitchToRTV(ID3D12GraphicsCommandList * commandList)
 {
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState)
-		p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[*p_renderingManager->GetFrameIndex()], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[*p_renderingManager->GetFrameIndex()], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	
 }
 
-void X12RenderTargetView::SwitchToSRV()
+void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 {
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 	if (D3D12_RESOURCE_STATE_RENDER_TARGET == m_currentState)
-		p_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[*p_renderingManager->GetFrameIndex()], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[*p_renderingManager->GetFrameIndex()], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
-void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle) const
+void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList) const
 {	
-	p_renderingManager->GetCommandList()->ClearRenderTargetView(rtvHandle, m_clearColor, 0, nullptr);
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+	gcl->ClearRenderTargetView(rtvHandle, m_clearColor, 0, nullptr);
 }
 
 void X12RenderTargetView::Release()

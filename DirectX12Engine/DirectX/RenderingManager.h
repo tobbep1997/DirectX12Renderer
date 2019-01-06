@@ -42,6 +42,7 @@ public:
 
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
+	HRESULT SignalGPU(ID3D12GraphicsCommandList * commandList);
 
 private:
 

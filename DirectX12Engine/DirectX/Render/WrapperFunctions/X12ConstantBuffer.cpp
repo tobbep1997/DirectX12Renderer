@@ -5,8 +5,8 @@
 
 
 
-X12ConstantBuffer::X12ConstantBuffer(RenderingManager* renderingManager, const Window& window)
-	: IX12Object(renderingManager, window)
+X12ConstantBuffer::X12ConstantBuffer(RenderingManager* renderingManager, const Window& window, ID3D12GraphicsCommandList * commandList)
+	: IX12Object(renderingManager, window, commandList)
 {
 }
 
@@ -64,9 +64,11 @@ HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* d
 	return hr;
 }
 
-void X12ConstantBuffer::SetGraphicsRootConstantBufferView(const UINT& rootParameterIndex)
+void X12ConstantBuffer::SetGraphicsRootConstantBufferView(const UINT& rootParameterIndex, ID3D12GraphicsCommandList * commandList)
 {
-	p_renderingManager->GetCommandList()->SetGraphicsRootConstantBufferView(rootParameterIndex, 
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+
+	gcl->SetGraphicsRootConstantBufferView(rootParameterIndex,
 		m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
 }
 
