@@ -28,9 +28,14 @@ TODO::
 **Shadows**
 ```diff
 +Shadow mapping
--Omnidirection shadow mapping
++Omnidirection shadow mapping
 ```
 **Effects**
 ```diff
 -Particles
+```
+**Optimizations**
+```diff
+-Multiple Commandlists
+-Multi threading
 ```
