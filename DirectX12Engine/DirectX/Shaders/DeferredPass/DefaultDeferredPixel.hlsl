@@ -53,7 +53,13 @@ float4 main(VS_OUTPUT input) : SV_Target
     int divider = 1;
     for (int i = 0; i < values.x; i++)
     {
-        divider += ShadowCalculations(shadowMap, i, shadowSampler, TexelSize(shadowMap), FragmentLightPos(worldPos, ShadowViewProjection[i]), shadowCoeff);
+        divider += ShadowCalculations(shadowMap, 
+            i, 
+            shadowSampler, 
+            TexelSize(shadowMap), 
+            FragmentLightPos(worldPos, ShadowViewProjection[i]), 
+            shadowCoeff,
+            1);
     }
     shadowCoeff /= divider;
     return saturate((finalColor + specular) * shadowCoeff + ambient);;

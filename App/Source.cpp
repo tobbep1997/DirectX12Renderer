@@ -84,7 +84,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 
-	const int floorSize = 10;
+	const int floorSize = 50;
 
 	Drawable * floor = new Drawable();
 	floor->SetPosition(0, -2, 0);
@@ -106,7 +106,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		720, 
 		FALSE,
 		TRUE,
-		TRUE))
+		FALSE))
 	{
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadTexture("../Texture/Brick/Brick_diffuse.bmp", renderingManager);
@@ -114,13 +114,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		metallic->LoadTexture("../Texture/Brick/Brick_metallic.bmp", renderingManager);
 		displacement->LoadTexture("../Texture/Brick/Brick_height.bmp", renderingManager);
 
-		const int pointLightSize = 1;
+		const int pointLightSize = 5;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
 			pointLights[i]->Init();
-			pointLights[i]->SetPosition(-2, 3.0f, 0);
+			pointLights[i]->SetPosition(1 * i, 3.0f, 1 * i);
 			pointLights[i]->SetIntensity(5.5f);
 			pointLights[i]->SetDropOff(1.0f);
 			pointLights[i]->SetPow(1.5f);
@@ -171,7 +171,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 
 			floor->Draw(renderingManager);
-			directionalLight->Queue();
+			//directionalLight->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
 				pointLights[i]->Queue();

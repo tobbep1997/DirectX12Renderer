@@ -31,7 +31,7 @@
 #include "DirectX/Objects/Light/PointLight.h"
 #include "DirectX/Objects/Light/DirectionalLight.h"
 
-constexpr UINT SHADOW_MAP_SIZE = 1024;
+constexpr UINT SHADOW_MAP_SIZE = 512;
 
 inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)
 {
