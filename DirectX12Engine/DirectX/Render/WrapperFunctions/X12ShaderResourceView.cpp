@@ -83,7 +83,8 @@ HRESULT X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Reso
 
 	
 	UINT counter = 0;
-	for (UINT i = dstIndex; i < resource->GetDesc().DepthOrArraySize + dstIndex; i++)
+	const D3D12_RESOURCE_DESC desc = resource->GetDesc();
+	for (UINT i = dstIndex; i < desc.DepthOrArraySize + dstIndex; i++)
 	{
 		D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
 		dstLocation.pResource = m_resource;
@@ -93,7 +94,7 @@ HRESULT X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Reso
 		D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
 		srcLocation.pResource = resource;
 		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-		srcLocation.SubresourceIndex = counter;
+		srcLocation.SubresourceIndex = counter++;
 		
 		p_renderingManager->GetCommandList()->CopyTextureRegion(
 			&dstLocation, 

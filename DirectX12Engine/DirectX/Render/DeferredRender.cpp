@@ -112,13 +112,19 @@ void DeferredRender::Update(const Camera& camera)
 	}
 
 	//-------------------------------------------------------------------------------	Shadows
-
-	for (UINT i = 0; i < m_shadowMaps->size() && i < MAX_SHADOWS; i++)
+	UINT index = 0;
+	for (UINT i = 0; i < m_shadowMaps->size() && i < MAX_SHADOWS && index < MAX_SHADOWS; i++)
 	{
-		m_shadowValues.ViewProjection[i] = m_shadowMaps->at(i)->ViewProjection;
-		m_shaderResourceView->CopySubresource(i, m_shadowMaps->at(i)->Resource, m_shadowMaps->at(i)->Map);
+		const D3D12_RESOURCE_DESC desc = m_shadowMaps->at(i)->Resource->GetDesc();
+		UINT currentMatrix = 0;
+		for (UINT pos = index; pos < desc.DepthOrArraySize + index; pos++)
+		{
+			m_shadowValues.ViewProjection[pos] = m_shadowMaps->at(i)->ViewProjection[currentMatrix++];
+		}
+		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource, m_shadowMaps->at(i)->Map);
+		index += m_shadowMaps->at(i)->Resource->GetDesc().DepthOrArraySize;
 	}
-	m_shadowValues.values.x = static_cast<int>(m_shadowMaps->size());
+	m_shadowValues.values.x = index;
 	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
 	m_shadowBuffer->SetGraphicsRootConstantBufferView(5);
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);
@@ -178,12 +184,15 @@ void DeferredRender::SetRenderTarget(X12RenderTargetView** renderTarget, const U
 void DeferredRender::AddShadowMap(
 	ID3D12Resource* resource,
 	ID3D12DescriptorHeap* map, 
-	DirectX::XMFLOAT4X4A ViewProjection) const
+	DirectX::XMFLOAT4X4A const* ViewProjection) const
 {
 	ShadowMap * sm = new ShadowMap();
 	sm->Resource = resource;
 	sm->Map = map;
-	sm->ViewProjection = ViewProjection;
+	for (UINT i = 0; i < resource->GetDesc().DepthOrArraySize; i++)
+	{
+		sm->ViewProjection[i] = ViewProjection[i];
+	}
 
 	m_shadowMaps->push_back(sm);
 }
@@ -206,7 +215,7 @@ HRESULT DeferredRender::_preInit()
 						{
 							if (SUCCEEDED(hr = m_lightBuffer->CreateBuffer(L"LightBuffer", &m_lightValues, sizeof(LightBuffer))))
 							{
-								if (SUCCEEDED(hr = m_shadowBuffer->CreateBuffer(L"Geometry Shadow", &m_shadowValues, sizeof(ShadowLightBuffer))))
+								if (SUCCEEDED(hr = m_shadowBuffer->CreateBuffer(L"Deferred Shadow matrix", &m_shadowValues, sizeof(ShadowLightBuffer))))
 								{
 									if (SUCCEEDED(hr = m_shaderResourceView->CreateShaderResourceView(
 										SHADOW_MAP_SIZE,

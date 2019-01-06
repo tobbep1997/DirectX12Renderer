@@ -38,11 +38,10 @@ PointLight::PointLight(RenderingManager* renderingManager, const Window& window)
 		m_cameras[i]->Update();
 	}
 
-	for (UINT i = 0; i < 6; i++)
-	{
-		m_renderTargetViews[i] = new X12RenderTargetView(renderingManager, window);
-		m_depthStencils[i] = new X12DepthStencil(renderingManager, window);
-	}
+
+	p_renderTarget = new X12RenderTargetView(renderingManager, window);
+	p_depthStencil = new X12DepthStencil(renderingManager, window);
+	
 }
 
 PointLight::~PointLight()
@@ -53,11 +52,10 @@ PointLight::~PointLight()
 		delete m_cameras[i];
 	}
 
-	for (UINT i = 0; i < 6; i++)
-	{
-		delete m_renderTargetViews[i];
-		delete m_depthStencils[i];
-	}
+
+	delete p_renderTarget;
+	delete p_depthStencil;
+	
 }
 
 void PointLight::SetDropOff(const float& dropOff)
@@ -101,29 +99,22 @@ void PointLight::Init()
 
 	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
 	{		
-		for (UINT i = 0; i < 6; i++)
-		{
-			if (FAILED(hr = m_depthStencils[i]->CreateDepthStencil(L"PointLight",
-				SHADOW_MAP_SIZE, SHADOW_MAP_SIZE,
-				1,
-				TRUE)))
-			{
-				break;
-			}
 
-			if (FAILED(hr = m_renderTargetViews[i]->CreateRenderTarget(
-				SHADOW_MAP_SIZE, SHADOW_MAP_SIZE,
-				1,
-				TRUE)))
-			{
-				break;
-			}
-		}
-		if (SUCCEEDED(hr = p_renderingManager->SignalGPU()))
+		if (SUCCEEDED(hr = p_depthStencil->CreateDepthStencil(L"PointLight",
+			SHADOW_MAP_SIZE, SHADOW_MAP_SIZE,
+			p_renderTargets)))
 		{
-			
+			if (SUCCEEDED(hr = p_renderTarget->CreateRenderTarget(
+				SHADOW_MAP_SIZE, SHADOW_MAP_SIZE,
+				p_renderTargets)))
+			{		
+				if (SUCCEEDED(hr = p_renderingManager->SignalGPU()))
+				{
+				}
+			}			
 		}
 	}
+
 
 	if (FAILED(hr))
 	{
@@ -134,23 +125,16 @@ void PointLight::Init()
 
 void PointLight::Update()
 {
+	Transform::Update();
+	for (UINT i = 0; i < 6; i++)
+	{
+		m_cameras[i]->SetPosition(GetPosition());
+		m_cameras[i]->Update();
+	}
 }
 
 void PointLight::Release()
 {
-	for (UINT i = 0; i < 6; i++)
-	{
-		m_renderTargetViews[i]->Release();
-		m_depthStencils[i]->Release();
-	}
-}
-
-X12DepthStencil* const* PointLight::GetDepthStencil() const
-{
-	return this->m_depthStencils;
-}
-
-X12RenderTargetView* const* PointLight::GetRenderTargetView() const
-{
-	return this->m_renderTargetViews;
+	p_renderTarget->Release();
+	p_depthStencil->Release();	
 }

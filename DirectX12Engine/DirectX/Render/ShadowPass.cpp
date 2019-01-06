@@ -100,30 +100,25 @@ void ShadowPass::Draw()
 
 			directionalLight->GetRenderTargetView()->Clear(rtvHandle);
 			
-			p_renderingManager->GetCommandList()->OMSetRenderTargets(directionalLight->GetNumRenderTargets(), &rtvHandle, FALSE, &dsvHandle);
+			p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 		}
 		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
 		{
-			PointLight* pointLight = dynamic_cast<PointLight*>(p_lightQueue->at(i));
-			for (UINT j = 0; j < 6; j++)
-			{
-				pointLight->GetDepthStencil()[j]->SwitchToDSV();
-				pointLight->GetDepthStencil()[j]->ClearDepthStencil();
-				const CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(pointLight->GetDepthStencil()[j]->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+			PointLight* pointLight = dynamic_cast<PointLight*>(p_lightQueue->at(i));		
 
-				CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-					pointLight->GetRenderTargetView()[j]->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-					*p_renderingManager->GetFrameIndex(),
-					pointLight->GetRenderTargetView()[j]->GetDescriptorSize());
+			pointLight->GetDepthStencil()->SwitchToDSV();
+			pointLight->GetDepthStencil()->ClearDepthStencil();
+			const CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(pointLight->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
-				pointLight->GetRenderTargetView()[j]->Clear(rtvHandle);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+				pointLight->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
+				*p_renderingManager->GetFrameIndex(),
+				pointLight->GetRenderTargetView()->GetDescriptorSize());
 
-				rtvHandleArray[j] = rtvHandle;
-				dsvHandleArray[j] = dsvHandle;
+			pointLight->GetRenderTargetView()->Clear(rtvHandle);
 
-			}
 
-			p_renderingManager->GetCommandList()->OMSetRenderTargets(pointLight->GetNumRenderTargets(), rtvHandleArray, FALSE, dsvHandleArray);
+			p_renderingManager->GetCommandList()->OMSetRenderTargets(pointLight->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
 		}
 
 		for (UINT j = 0; j < drawQueueSize; j++)
@@ -143,23 +138,31 @@ void ShadowPass::Draw()
 
 			directionalLight->GetDepthStencil()->SwitchToSRV();
 
+			DirectX::XMFLOAT4X4A arr[1] = { dynamic_cast<DirectionalLight*>(directionalLight)->GetCamera()->GetViewProjectionMatrix() };
+
 			p_renderingManager->GetDeferredRender()->AddShadowMap(
 				directionalLight->GetDepthStencil()->GetResource(),
 				directionalLight->GetDepthStencil()->GetTextureDescriptorHeap(),
-				dynamic_cast<DirectionalLight*>(directionalLight)->GetCamera()->GetViewProjectionMatrix());
+				arr);
 		}
 		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
 		{
 			PointLight* pointLight = dynamic_cast<PointLight*>(p_lightQueue->at(i));
 
-			for (UINT j = 0; j < 6; j++)
+			for (UINT j = 0; j < 1; j++)
 			{
-				pointLight->GetDepthStencil()[j]->SwitchToSRV();
+				pointLight->GetDepthStencil()->SwitchToSRV();
+
+				DirectX::XMFLOAT4X4A arr[6];
+				for (UINT k = 0; k < 6; k++)
+				{
+					arr[k] = pointLight->GetCameras()[k]->GetViewProjectionMatrix();
+				}
 
 				p_renderingManager->GetDeferredRender()->AddShadowMap(
-					pointLight->GetDepthStencil()[j]->GetResource(),
-					pointLight->GetDepthStencil()[j]->GetTextureDescriptorHeap(),
-					pointLight->GetCameras()[j]->GetViewProjectionMatrix());
+					pointLight->GetDepthStencil()->GetResource(),
+					pointLight->GetDepthStencil()->GetTextureDescriptorHeap(),
+					arr);
 			}
 		}
 
@@ -333,7 +336,7 @@ HRESULT ShadowPass::_initPipelineState()
 	graphicsPipelineStateDesc.RTVFormats[5] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
 	graphicsPipelineStateDesc.RasterizerState = 
-	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
+	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_NONE, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
 	graphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;

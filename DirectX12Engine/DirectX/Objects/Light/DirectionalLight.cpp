@@ -87,15 +87,13 @@ HRESULT DirectionalLight::_createDirectXContent()
 	{
 		if (SUCCEEDED(hr = p_renderTarget->CreateRenderTarget(SHADOW_MAP_SIZE,
 			SHADOW_MAP_SIZE,
-			1, 
-			FALSE)))
+			1)))
 		{
 			if (SUCCEEDED(hr = p_depthStencil->CreateDepthStencil(
 				L"Directional Light",
 				SHADOW_MAP_SIZE,
 				SHADOW_MAP_SIZE,
-				1, 
-				TRUE)))
+				1)))
 			{
 				if (SUCCEEDED(hr = p_renderingManager->SignalGPU()))
 				{

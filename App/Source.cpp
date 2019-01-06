@@ -84,7 +84,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 
-	const int floorSize = 100;
+	const int floorSize = 10;
 
 	Drawable * floor = new Drawable();
 	floor->SetPosition(0, -2, 0);
@@ -120,11 +120,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
 			pointLights[i]->Init();
-			pointLights[i]->SetPosition(0, 1.0f, 0);
+			pointLights[i]->SetPosition(-2, 3.0f, 0);
 			pointLights[i]->SetIntensity(5.5f);
 			pointLights[i]->SetDropOff(1.0f);
 			pointLights[i]->SetPow(1.5f);
 			pointLights[i]->SetColor(static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f);
+			pointLights[i]->Update();
 		}
 
 		DirectionalLight* directionalLight = new DirectionalLight(renderingManager, *window);
@@ -170,12 +171,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 
 			floor->Draw(renderingManager);
-			//directionalLight->Queue();
-			//directionalLight2->Queue();
+			directionalLight->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
 				pointLights[i]->Queue();
 			}
+			//directionalLight2->Queue();
 
 			if (Input::IsKeyPressed(97))
 				directionalLight->SetPosition(5, 5, 5);

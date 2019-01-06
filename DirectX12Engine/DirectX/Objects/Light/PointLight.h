@@ -26,17 +26,10 @@ public:
 	void Init() override;
 	void Update() override;
 	void Release() override;
-
-	X12DepthStencil *const* GetDepthStencil() const;
-	X12RenderTargetView *const* GetRenderTargetView() const;
-
 private:
 	float m_dropOff;
 	float m_pow;
 
 	Camera * m_cameras[6];
-
-	X12DepthStencil * m_depthStencils[6];
-	X12RenderTargetView * m_renderTargetViews[6];
 };
 
