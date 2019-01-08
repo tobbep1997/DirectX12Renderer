@@ -81,6 +81,24 @@
     <ClCompile Include="DirectX\Render\Template\IRender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Submodule\DirectXTK\Src\WICTextureLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Submodule\DirectXTK\Src\pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Submodule\DirectXTK\Src\GraphicsMemory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Submodule\DirectXTK\Src\ResourceUploadBatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Submodule\DirectXTK\Src\LinearAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Submodule\DirectXTK\Src\DDSTextureLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -174,6 +192,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DirectX\Render\WrapperFunctions\Functions\Instancing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Submodule\DirectXTK\Inc\WICTextureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Submodule\DirectXTK\Src\pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Submodule\DirectXTK\Inc\ResourceUploadBatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Submodule\DirectXTK\Inc\GraphicsMemory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Submodule\DirectXTK\Src\LinearAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Submodule\DirectXTK\Inc\DDSTextureLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

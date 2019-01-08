@@ -1,7 +1,7 @@
 #include "DirectX12Engine.h"
 #include "Utility/DeltaTime.h"
 
-void CameraMovment(Camera * camera, const float & deltaTime)
+void CameraMovement(Camera * camera, const float & deltaTime)
 {
 
 	float sprintMod = 0.5f;
@@ -73,7 +73,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	for (UINT i = 0; i < cubesSize; i++)
 	{
 		cubes[i] = new Drawable();
-		cubes[i]->SetPosition(static_cast<float>(rand() % cubesSize) - (cubesSize / 2), 0.0f, static_cast<float>(rand() % cubesSize) - (cubesSize / 2));
+		cubes[i]->SetPosition(static_cast<float>(rand() % cubesSize) - (cubesSize / 2), 0.0f, static_cast<float>(rand() % cubesSize) - (cubesSize / 2)); //NOLINT
 		cubes[i]->SetScale(1, 1, 1);
 		cubes[i]->SetMesh(*staticCubeMesh);
 		cubes[i]->Update();
@@ -109,10 +109,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		FALSE))
 	{
 		staticCubeMesh->CreateBuffer(renderingManager);
-		texture->LoadTexture("../Texture/Brick/Brick_diffuse.bmp", renderingManager);
-		normal->LoadTexture("../Texture/Brick/Brick_normal.bmp", renderingManager);
-		metallic->LoadTexture("../Texture/Brick/Brick_metallic.bmp", renderingManager);
-		displacement->LoadTexture("../Texture/Brick/Brick_height.bmp", renderingManager);
+		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);
+		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE, renderingManager);
+		metallic->LoadDDSTexture("../Texture/Brick/Brick_metallic.DDS", TRUE, renderingManager);
+		displacement->LoadDDSTexture("../Texture/Brick/Brick_height.DDS", TRUE, renderingManager);
 
 		const int pointLightSize = 5;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
@@ -156,7 +156,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			{
 			}
 
-			CameraMovment(camera, deltaTime);
+			CameraMovement(camera, deltaTime);
 			camera->Update();
 
 			drawable->SetRotation(0, drawable->GetRotation().y + deltaTime * 0.25f, 0);
