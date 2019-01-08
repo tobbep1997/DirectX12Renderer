@@ -4,6 +4,7 @@
 class DeferredRender;
 class ShadowPass;
 class GeometryPass;
+class ParticlePass;
 class Camera;
 
 const UINT FRAME_BUFFER_COUNT = 3;
@@ -39,6 +40,7 @@ public:
 	GeometryPass * GetGeometryPass() const;
 	ShadowPass * GetShadowPass() const;
 	DeferredRender * GetDeferredRender() const;
+	ParticlePass * GetParticlePass() const;
 
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
@@ -80,6 +82,7 @@ private:
 	GeometryPass *	m_geometryPass = nullptr;
 	ShadowPass *	m_shadowPass = nullptr;
 	DeferredRender * m_deferredPass = nullptr;
+	ParticlePass * m_particlePass = nullptr;
 
 private:
 	//DEBUG LAYER

@@ -5,6 +5,7 @@
 #include "Render/GeometryPass.h"
 #include "Render/ShadowPass.h"
 #include "Render/DeferredRender.h"
+#include "Render/ParticlePass.h"
 
 RenderingManager::RenderingManager()
 = default;
@@ -68,7 +69,11 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 												m_deferredPass = new DeferredRender(this, window);
 												if (SUCCEEDED(hr = m_deferredPass->Init()))
 												{
-													
+													m_particlePass = new ParticlePass(this, window);
+													if (SUCCEEDED(hr = m_particlePass->Init()))
+													{
+														
+													}
 												}
 											}
 										}
@@ -138,6 +143,9 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 
 	//---------------------------------------------------------------------
 
+	m_particlePass->Update(camera);
+	m_particlePass->Draw();
+
 	m_shadowPass->Update(camera);
 	m_shadowPass->Draw();
 
@@ -191,6 +199,7 @@ void RenderingManager::_clear() const
 	m_geometryPass->Clear();
 	m_shadowPass->Clear();
 	m_deferredPass->Clear();
+	m_particlePass->Clear();
 }
 
 void RenderingManager::Present() const
@@ -237,6 +246,9 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 
 	m_shadowPass->Release();
 	SAFE_DELETE(m_shadowPass);
+
+	m_particlePass->Release();
+	SAFE_DELETE(m_particlePass);
 
 	if (m_device->Release() > 0)
 	{
@@ -319,6 +331,11 @@ ShadowPass* RenderingManager::GetShadowPass() const
 DeferredRender* RenderingManager::GetDeferredRender() const
 {
 	return this->m_deferredPass;
+}
+
+ParticlePass* RenderingManager::GetParticlePass() const
+{
+	return this->m_particlePass;
 }
 
 HRESULT RenderingManager::OpenCommandList()

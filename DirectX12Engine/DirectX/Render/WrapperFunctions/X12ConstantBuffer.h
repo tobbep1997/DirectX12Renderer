@@ -10,6 +10,7 @@ public:
 
 	HRESULT CreateBuffer(const std::wstring & name, void const* data, const UINT & sizeOf);
 
+	void SetComputeRootConstantBufferView(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
 	void SetGraphicsRootConstantBufferView(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
 	void Copy(void const* data, const UINT & sizeOf);
 	void Release() override;

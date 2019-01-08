@@ -168,6 +168,7 @@
     <ClInclude Include="DirectX\Objects\Light\PointLight.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\RenderingHelpClass.h" />
     <ClInclude Include="DirectX\Render\ShadowPass.h" />
+    <ClInclude Include="DirectX\Render\ParticlePass.h" />
     <ClInclude Include="Submodule\DirectXTK\Inc\DDSTextureLoader.h" />
     <ClInclude Include="Submodule\DirectXTK\Inc\GraphicsMemory.h" />
     <ClInclude Include="Submodule\DirectXTK\Inc\ResourceUploadBatch.h" />
@@ -204,6 +205,7 @@
     <ClCompile Include="DirectX\Render\Template\IRender.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\RenderingHelpClass.cpp" />
     <ClCompile Include="DirectX\Render\ShadowPass.cpp" />
+    <ClCompile Include="DirectX\Render\ParticlePass.cpp" />
     <ClCompile Include="Submodule\DirectXTK\Src\DDSTextureLoader.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)$(TargetName)DirectXTK.pch</PrecompiledHeaderOutputFile>
@@ -349,6 +351,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="DirectX\Shaders\ParticlePass\DefaultParticleCompute.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
     </FxCompile>
     <FxCompile Include="DirectX\Shaders\ShadowPass\DefaultShadowGeometry.hlsl">
