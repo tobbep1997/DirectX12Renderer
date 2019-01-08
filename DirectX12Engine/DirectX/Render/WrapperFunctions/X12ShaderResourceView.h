@@ -10,6 +10,8 @@ public:
 
 	HRESULT CreateShaderResourceView(const UINT & width = 0, const UINT & height = 0, const UINT& arraySize = 1, const DXGI_FORMAT& format = DXGI_FORMAT_R8G8B8A8_UNORM);
 
+	void BeginCopy(ID3D12GraphicsCommandList * commandList = nullptr);
+	void EndCopy(ID3D12GraphicsCommandList * commandList = nullptr);
 	void CopySubresource(const UINT & dstIndex, ID3D12Resource * resource, ID3D12DescriptorHeap * descriptorHeap, ID3D12GraphicsCommandList * commandList = nullptr) const;
 
 	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);

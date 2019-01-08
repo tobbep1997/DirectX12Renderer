@@ -108,6 +108,7 @@ void DeferredRender::Update(const Camera& camera)
 	}
 
 	UINT index = 0;
+	m_shaderResourceView->BeginCopy();
 	for (UINT i = 0; i < m_shadowMaps->size() && i < MAX_SHADOWS && index < MAX_SHADOWS; i++)
 	{
 		const D3D12_RESOURCE_DESC desc = m_shadowMaps->at(i)->Resource->GetDesc();
@@ -119,6 +120,8 @@ void DeferredRender::Update(const Camera& camera)
 		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource, m_shadowMaps->at(i)->Map);
 		index += m_shadowMaps->at(i)->Resource->GetDesc().DepthOrArraySize;
 	}
+	m_shaderResourceView->EndCopy();
+
 
 	m_shadowValues.values.x = index;
 	

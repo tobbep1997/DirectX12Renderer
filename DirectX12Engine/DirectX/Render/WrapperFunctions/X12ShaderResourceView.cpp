@@ -75,12 +75,23 @@ HRESULT X12ShaderResourceView::CreateShaderResourceView(const UINT& width, const
 	return hr;
 }
 
+void X12ShaderResourceView::BeginCopy(ID3D12GraphicsCommandList * commandList)
+{
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+}
+
+void X12ShaderResourceView::EndCopy(ID3D12GraphicsCommandList * commandList)
+{
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+}
+
 void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resource* resource, ID3D12DescriptorHeap * descriptorHeap, ID3D12GraphicsCommandList * commandList) const
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 
 	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE));
-	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
 
 	
 	UINT counter = 0;
@@ -107,7 +118,6 @@ void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resourc
 	}
 	
 	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
 }
 

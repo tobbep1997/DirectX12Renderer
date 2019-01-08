@@ -104,8 +104,6 @@ void GeometryPass::Release()
 
 	m_cameraBuffer->Release();
 	SAFE_DELETE(m_cameraBuffer);
-
-
 }
 
 
