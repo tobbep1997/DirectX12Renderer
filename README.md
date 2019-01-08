@@ -7,6 +7,7 @@ TODO::
 **Objects**
 ```diff
 +Textures
++DDS Textures
 +Specular
 +Normal mapping
 +Tessellation
@@ -20,7 +21,7 @@ TODO::
 ```
 **Draw**
 ```diff
--Mipmapping
++Mipmapping
 +Instancing
 +Deferred Rendering
 -Tiled based Rendering
