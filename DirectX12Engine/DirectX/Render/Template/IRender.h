@@ -1,5 +1,6 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
+#include "../WrapperFunctions/Functions/Instancing.h"
 
 class Camera;
 
@@ -13,14 +14,23 @@ protected:
 		const Window & window);
 
 
-	std::vector<Drawable*> * p_drawQueue;
-	std::vector<ILight*> * p_lightQueue;
+	std::vector<Drawable*> * p_drawQueue = nullptr;
+	std::vector<ILight*> * p_lightQueue = nullptr;
+
+	std::vector<Instancing::InstanceGroup> * p_instanceGroups = nullptr;
+	ID3D12Resource * p_instanceBuffer = nullptr;
+	ID3D12Resource * p_intermediateInstanceBuffer = nullptr;
 
 	ID3D12GraphicsCommandList * p_commandList = nullptr;
 	ID3D12CommandAllocator * p_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };
 
 	HRESULT p_createCommandList();
 	void p_releaseCommandList();
+
+	HRESULT p_createInstanceBuffer(const UINT & bufferSize = 1024u * 64u);
+	BOOL p_updateInstanceBuffer(const size_t & index, D3D12_VERTEX_BUFFER_VIEW & vertexBufferView) const;
+	void p_drawInstance(const UINT & textureStartIndex = 0, const BOOL & mapTextures = FALSE);
+	void p_releaseInstanceBuffer();
 
 public:
 

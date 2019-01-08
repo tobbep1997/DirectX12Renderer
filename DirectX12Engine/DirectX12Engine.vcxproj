@@ -160,6 +160,7 @@
     <ClInclude Include="DirectX\Objects\Mesh\StaticMesh.h" />
     <ClInclude Include="DirectX\Objects\Texture\Texture.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\Functions\DXGIFunctions.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\Functions\Instancing.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\Template\IX12Object.h" />
     <ClInclude Include="DirectX\Structs.h" />
     <ClInclude Include="DirectX\Objects\Drawable.h" />

@@ -16,13 +16,10 @@ private:
 	static const UINT RENDER_TARGETS = 4;
 	static const DXGI_FORMAT RENDER_TARGET_FORMAT = DXGI_FORMAT_R32G32B32A32_FLOAT;
 
-	struct ObjectBuffer
+	struct CameraBuffer
 	{
 		DirectX::XMFLOAT4A		CameraPosition;
-		DirectX::XMFLOAT4X4A	WorldMatrix;
 		DirectX::XMFLOAT4X4A	ViewProjection;
-		
-		DirectX::XMFLOAT4A		Padding[40];
 	};
 	struct LightBuffer
 	{
@@ -73,13 +70,9 @@ private:
 	D3D12_SHADER_BYTECODE m_pixelShader{};
 
 	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};
-	   
-	ID3D12Resource	* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
-	
-	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
-	UINT8* m_cameraBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };	
 
-	ObjectBuffer m_objectValues {};
+	CameraBuffer m_cameraValues {};
+	X12ConstantBuffer * m_cameraBuffer = nullptr;
 	struct Vertex
 	{
 		Vertex(const DirectX::XMFLOAT4 & position = DirectX::XMFLOAT4(0,0,0,0), 

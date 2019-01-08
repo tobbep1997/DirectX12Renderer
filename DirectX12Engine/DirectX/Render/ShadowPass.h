@@ -44,7 +44,6 @@ private:
 	HRESULT _createConstantBuffer();
 	void _createViewport();
 	
-	X12ConstantBuffer * m_lightConstantBuffer = nullptr;
 
 	ID3D12RootSignature *	m_rootSignature = nullptr;
 	D3D12_ROOT_PARAMETER	m_rootParameter[ROOT_PARAMETERS]{};

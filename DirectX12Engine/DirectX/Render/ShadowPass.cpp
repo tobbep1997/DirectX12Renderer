@@ -10,13 +10,10 @@
 ShadowPass::ShadowPass(RenderingManager* renderingManager, const Window& window)
 	: IRender(renderingManager, window)
 {
-	m_lightConstantBuffer = new X12ConstantBuffer(renderingManager, window);
 }
 
 ShadowPass::~ShadowPass()
 {
-	SAFE_DELETE(m_lightConstantBuffer);
-	m_lightConstantBuffer = nullptr;
 }
 
 HRESULT ShadowPass::Init()
@@ -104,12 +101,12 @@ void ShadowPass::Draw()
 
 		for (UINT j = 0; j < drawQueueSize; j++)
 		{
-			p_commandList->IASetVertexBuffers(0, 1, &p_drawQueue->at(j)->GetMesh().GetVertexBufferView());
+			p_commandList->IASetVertexBuffers(0, 1, &p_drawQueue->at(j)->GetMesh()->GetVertexBufferView());
 
 			p_commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + j * m_constantBufferPerObjectAlignedSize);
 			p_commandList->SetGraphicsRootConstantBufferView(1, m_constantLightBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + counter * m_constantLightBufferPerObjectAlignedSize);
 			
-			p_commandList->DrawInstanced(static_cast<UINT>(p_drawQueue->at(j)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
+			p_commandList->DrawInstanced(static_cast<UINT>(p_drawQueue->at(j)->GetMesh()->GetStaticMesh().size()), 1, 0, 0);
 		}
 		counter++;
 
@@ -149,6 +146,7 @@ void ShadowPass::Clear()
 {
 	p_drawQueue->clear();
 	p_lightQueue->clear();
+	Instancing::ClearInstanceGroup(p_instanceGroups);
 }
 
 void ShadowPass::Release()
@@ -162,7 +160,6 @@ void ShadowPass::Release()
 		SAFE_RELEASE(m_constantLightBuffer[i]);
 	}
 
-	m_lightConstantBuffer->Release();
 	p_releaseCommandList();
 }
 
@@ -183,10 +180,6 @@ HRESULT ShadowPass::_preInit()
 					{
 						if (SUCCEEDED(hr = _createConstantBuffer()))
 						{						
-							if (SUCCEEDED(hr = m_lightConstantBuffer->CreateBuffer(L"Shadow", &m_lightValues, sizeof(LightBuffer))))
-							{
-								
-							}
 						}
 					}
 				}

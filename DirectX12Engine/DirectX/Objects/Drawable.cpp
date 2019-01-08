@@ -37,9 +37,9 @@ void Drawable::SetMesh(StaticMesh& mesh)
 	this->m_mesh = &mesh;
 }
 
-const StaticMesh& Drawable::GetMesh() const
+const StaticMesh * Drawable::GetMesh() const
 {
-	return *this->m_mesh;
+	return this->m_mesh;
 }
 
 void Drawable::Draw(RenderingManager * renderingManager)
@@ -94,6 +94,15 @@ void Drawable::SetDisplacementMap(Texture* displacement)
 const Texture* Drawable::GetDisplacement() const
 {
 	return this->m_displacement;
+}
+
+bool Drawable::Instance(const Drawable& other) const
+{
+	return m_mesh == other.m_mesh &&
+		m_texture == other.m_texture &&
+		m_normal == other.m_normal &&
+		m_metallic == other.m_metallic &&
+		m_displacement == other.m_displacement;
 }
 
 const Texture* Drawable::GetMetallic() const

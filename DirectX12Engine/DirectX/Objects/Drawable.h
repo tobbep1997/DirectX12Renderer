@@ -18,7 +18,7 @@ public:
 	
 	void SetMesh(StaticMesh & mesh);
 
-	const StaticMesh & GetMesh() const;
+	const StaticMesh * GetMesh() const;
 
 	void Draw(RenderingManager * renderingManager);
 
@@ -37,6 +37,8 @@ public:
 	const Texture * GetNormal() const;
 	const Texture * GetMetallic() const;
 	const Texture * GetDisplacement() const;
+
+	bool Instance(const Drawable & other) const;
 
 private:	
 	StaticMesh * m_mesh;
