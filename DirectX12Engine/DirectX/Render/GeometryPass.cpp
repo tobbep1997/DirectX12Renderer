@@ -123,13 +123,13 @@ HRESULT GeometryPass::_preInit()
 					{
 						if (SUCCEEDED(hr = _createViewport()))
 						{
-							m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window, p_commandList);
+							SAFE_NEW(m_depthStencil, new X12DepthStencil(p_renderingManager, *p_window, p_commandList));
 							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
 								0, 0,
 								1)))
 							{								
 								for (UINT i = 0; i < RENDER_TARGETS; i++)									
-									m_renderTarget[i] = new X12RenderTargetView(p_renderingManager, *p_window, p_commandList);									
+									SAFE_NEW(m_renderTarget[i], new X12RenderTargetView(p_renderingManager, *p_window, p_commandList));
 								for (UINT i = 0; i < RENDER_TARGETS; i++)
 								{
 									if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
@@ -143,7 +143,7 @@ HRESULT GeometryPass::_preInit()
 								}
 								if (SUCCEEDED(hr = p_createInstanceBuffer()))
 								{
-									m_cameraBuffer = new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList);
+									SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList));
 
 									if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(
 										L"Geometry camera",

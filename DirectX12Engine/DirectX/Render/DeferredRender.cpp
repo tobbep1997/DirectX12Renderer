@@ -14,11 +14,11 @@ DeferredRender::DeferredRender(RenderingManager* renderingManager, const Window&
 	m_vertexList[2] = Vertex(DirectX::XMFLOAT4( 1.0f, -1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(1, 1, 0, 0));
 	m_vertexList[3] = Vertex(DirectX::XMFLOAT4( 1.0f,  1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(1, 0, 0, 0));
 
-	m_lightBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
-	m_shadowBuffer = new X12ConstantBuffer(p_renderingManager, *p_window);
-	m_shaderResourceView = new X12ShaderResourceView(p_renderingManager, *p_window);
+	SAFE_NEW(m_lightBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+	SAFE_NEW(m_shadowBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+	SAFE_NEW(m_shaderResourceView, new X12ShaderResourceView(p_renderingManager, *p_window));
 
-	m_shadowMaps = new std::vector<ShadowMap*>();
+	SAFE_NEW(m_shadowMaps, new std::vector<ShadowMap*>());
 }
 
 DeferredRender::~DeferredRender()
@@ -185,7 +185,8 @@ void DeferredRender::AddShadowMap(
 	ID3D12DescriptorHeap* map, 
 	DirectX::XMFLOAT4X4A const* ViewProjection) const
 {
-	ShadowMap * sm = new ShadowMap();
+	ShadowMap * sm = nullptr;
+	SAFE_NEW(sm, new ShadowMap());
 	sm->Resource = resource;
 	sm->Map = map;
 	for (UINT i = 0; i < resource->GetDesc().DepthOrArraySize; i++)

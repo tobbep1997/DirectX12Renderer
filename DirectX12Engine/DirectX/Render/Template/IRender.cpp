@@ -7,9 +7,9 @@ IRender::IRender(RenderingManager* renderingManager,
 {
 	this->p_renderingManager = renderingManager;
 	this->p_window = &window;
-	p_drawQueue = new std::vector<Drawable*>();
-	p_lightQueue = new std::vector<ILight*>();
-	p_instanceGroups = new std::vector<Instancing::InstanceGroup>();
+	SAFE_NEW(p_drawQueue, new std::vector<Drawable*>());
+	SAFE_NEW(p_lightQueue, new std::vector<ILight*>());
+	SAFE_NEW(p_instanceGroups, new std::vector<Instancing::InstanceGroup>());
 }
 
 IRender::~IRender()

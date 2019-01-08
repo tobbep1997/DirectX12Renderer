@@ -30,7 +30,7 @@ HRESULT ParticlePass::Init()
 				{
 					if (SUCCEEDED(hr = _initPipelineState()))
 					{
-						m_particleBuffer = new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList);
+						SAFE_NEW(m_particleBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList));
 						if (SUCCEEDED(hr = m_particleBuffer->CreateBuffer(L"Particle constant", &m_particleValues, sizeof(ParticleBuffer))))
 						{
 							if (SUCCEEDED(hr = _createUAVOutput()))

@@ -60,16 +60,16 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 								{
 									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
 									{		
-										m_geometryPass = new GeometryPass(this, window);
+										SAFE_NEW(m_geometryPass, new GeometryPass(this, window));
 										if (SUCCEEDED(hr = m_geometryPass->Init()))
 										{
-											m_shadowPass = new ShadowPass(this, window);
+											SAFE_NEW(m_shadowPass, new ShadowPass(this, window));
 											if (SUCCEEDED(hr = m_shadowPass->Init()))
 											{
-												m_deferredPass = new DeferredRender(this, window);
+												SAFE_NEW(m_deferredPass, new DeferredRender(this, window));
 												if (SUCCEEDED(hr = m_deferredPass->Init()))
 												{
-													m_particlePass = new ParticlePass(this, window);
+													SAFE_NEW(m_particlePass, new ParticlePass(this, window));
 													if (SUCCEEDED(hr = m_particlePass->Init()))
 													{
 														
