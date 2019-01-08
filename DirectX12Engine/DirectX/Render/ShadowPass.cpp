@@ -33,7 +33,6 @@ void ShadowPass::Update(const Camera& camera)
 {
 	OpenCommandList();
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
-
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
 	{
@@ -61,8 +60,7 @@ void ShadowPass::Update(const Camera& camera)
 	p_commandList->SetGraphicsRootSignature(m_rootSignature);
 	p_commandList->RSSetViewports(1, &m_viewport);
 	p_commandList->RSSetScissorRects(1, &m_rect);
-	p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	
+	p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	
 }
 
 void ShadowPass::Draw()

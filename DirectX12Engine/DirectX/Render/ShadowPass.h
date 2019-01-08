@@ -59,7 +59,6 @@ private:
 	int m_constantLightBufferPerObjectAlignedSize = (sizeof(LightBuffer) + 255) & ~255;
 	UINT8* m_constantLightBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
 
-	ObjectBuffer	m_objectValues{};
 	LightBuffer		m_lightValues{};
 };
 

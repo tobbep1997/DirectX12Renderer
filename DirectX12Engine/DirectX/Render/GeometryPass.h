@@ -49,9 +49,7 @@ private:
 	HRESULT _initID3D12RootSignature();
 	HRESULT _initID3D12PipelineState();
 	HRESULT _initShaders();
-	HRESULT _createViewport();
-	HRESULT _createConstantBuffer();
-	
+	HRESULT _createViewport();	
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;

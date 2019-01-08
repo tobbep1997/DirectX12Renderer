@@ -21,7 +21,7 @@ TODO::
 **Draw**
 ```diff
 -Mipmapping
--Instancing
++Instancing
 +Deferred Rendering
 -Tiled based Rendering
 ```

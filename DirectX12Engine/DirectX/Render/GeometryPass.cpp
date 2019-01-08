@@ -129,35 +129,32 @@ HRESULT GeometryPass::_preInit()
 							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
 								0, 0,
 								1)))
-							{
-								if (SUCCEEDED(hr = _createConstantBuffer()))
+							{								
+								for (UINT i = 0; i < RENDER_TARGETS; i++)									
+									m_renderTarget[i] = new X12RenderTargetView(p_renderingManager, *p_window, p_commandList);									
+								for (UINT i = 0; i < RENDER_TARGETS; i++)
 								{
-									for (UINT i = 0; i < RENDER_TARGETS; i++)									
-										m_renderTarget[i] = new X12RenderTargetView(p_renderingManager, *p_window, p_commandList);									
-									for (UINT i = 0; i < RENDER_TARGETS; i++)
+									if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
+										0, 0,
+										1,
+										TRUE,
+										RENDER_TARGET_FORMAT)))
 									{
-										if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
-											0, 0,
-											1,
-											TRUE,
-											RENDER_TARGET_FORMAT)))
-										{
-											return hr;
-										}
-									}
-									if (SUCCEEDED(hr = p_createInstanceBuffer()))
-									{
-										m_cameraBuffer = new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList);
-
-										if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(
-											L"Geometry camera",
-											&m_cameraValues,
-											sizeof(CameraBuffer))))
-										{
-											
-										}
+										return hr;
 									}
 								}
+								if (SUCCEEDED(hr = p_createInstanceBuffer()))
+								{
+									m_cameraBuffer = new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList);
+
+									if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(
+										L"Geometry camera",
+										&m_cameraValues,
+										sizeof(CameraBuffer))))
+									{
+										
+									}
+								}								
 							}
 						}
 					}
@@ -404,15 +401,4 @@ HRESULT GeometryPass::_createViewport()
 	m_rect.right = p_window->GetWidth();
 	m_rect.bottom = p_window->GetHeight();
 	return S_OK;
-}
-
-
-HRESULT GeometryPass::_createConstantBuffer()
-{
-	HRESULT hr = 0;
-
-
-	
-	
-	return hr;
 }

@@ -157,14 +157,16 @@ namespace Instancing
 			&pBytesPerRow,
 			&instanceData);
 
-
-		instanceBufferView.BufferLocation = dstResource->GetGPUVirtualAddress();
-		instanceBufferView.StrideInBytes = structSize;
-		instanceBufferView.SizeInBytes = dataSize;
+		if (retValue)
+		{			
+			instanceBufferView.BufferLocation = dstResource->GetGPUVirtualAddress();
+			instanceBufferView.StrideInBytes = structSize;
+			instanceBufferView.SizeInBytes = dataSize;
+		}
 
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dstResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 	
-		return TRUE;
+		return retValue;
 	}
 
 }
