@@ -13,7 +13,6 @@ GeometryPass::GeometryPass(RenderingManager * renderingManager,
 	if (!renderingManager)
 		Window::CreateError("GeometryPass : Missing RenderingManager");
 	m_inputLayoutDesc = {};
-	
 }
 
 
@@ -36,18 +35,12 @@ HRESULT GeometryPass::Init()
 void GeometryPass::Update(const Camera & camera)
 {	
 	OpenCommandList();
-	m_objectValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
+	m_cameraValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
 		camera.GetPosition().z,
 		camera.GetPosition().w);
-	m_objectValues.ViewProjection = camera.GetViewProjectionMatrix();
-	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
-	for (UINT i = 0; i < drawQueueSize; i++)
-	{
-		m_objectValues.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
-		memcpy(m_cameraBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectValues, sizeof(m_objectValues));
-	}	
-
+	m_cameraValues.ViewProjection = camera.GetViewProjectionMatrix();
+	   
 	m_depthStencil->ClearDepthStencil();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
@@ -71,38 +64,15 @@ void GeometryPass::Update(const Camera & camera)
 	p_commandList->RSSetViewports(1, &m_viewport);
 	p_commandList->RSSetScissorRects(1, &m_rect);
 	p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+
+	m_cameraBuffer->Copy(&m_cameraValues, sizeof(m_cameraValues));
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(0);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(1);
 }
 
 void GeometryPass::Draw()
 {	
-	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
-	for (UINT i = 0; i < drawQueueSize; i++)
-	{	
-		if (p_drawQueue->at(i)->GetTexture())				
-			p_drawQueue->at(i)->GetTexture()->MapTexture(p_renderingManager, 2, p_commandList);
-		
-		if (p_drawQueue->at(i)->GetNormal())		
-			p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 3, p_commandList);
-		
-		if (p_drawQueue->at(i)->GetMetallic())		
-			p_drawQueue->at(i)->GetMetallic()->MapTexture(p_renderingManager, 4, p_commandList);
-		
-		if (p_drawQueue->at(i)->GetDisplacement())
-		{
-			p_drawQueue->at(i)->GetDisplacement()->MapTexture(p_renderingManager, 5, p_commandList);
-
-			if (p_drawQueue->at(i)->GetNormal())			
-				p_drawQueue->at(i)->GetNormal()->MapTexture(p_renderingManager, 6, p_commandList);
-				
-		}
-
-		p_commandList->IASetVertexBuffers(0, 1, &p_drawQueue->at(i)->GetMesh().GetVertexBufferView());		
-
-		p_commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
-		p_commandList->SetGraphicsRootConstantBufferView(1, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantBufferPerObjectAlignedSize);
-		
-		p_commandList->DrawInstanced(static_cast<UINT>(p_drawQueue->at(i)->GetMesh().GetStaticMesh().size()), 1, 0, 0);
-	}
+	p_drawInstance(2, TRUE);
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
 	ExecuteCommandList();
 }
@@ -110,7 +80,8 @@ void GeometryPass::Draw()
 void GeometryPass::Clear()
 {
 	this->p_drawQueue->clear();
-	this->p_lightQueue->clear();	
+	this->p_lightQueue->clear();
+	Instancing::ClearInstanceGroup(p_instanceGroups);
 }
 
 void GeometryPass::Release()
@@ -121,6 +92,7 @@ void GeometryPass::Release()
 	m_depthStencil->Release();
 	SAFE_DELETE(m_depthStencil);
 
+	p_releaseInstanceBuffer();
 	p_releaseCommandList();
 
 
@@ -130,10 +102,9 @@ void GeometryPass::Release()
 		SAFE_DELETE(m_renderTarget[i]);
 	}
 
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
-	{			
-		SAFE_RELEASE(m_constantBuffer[i]);
-	}
+	m_cameraBuffer->Release();
+	SAFE_DELETE(m_cameraBuffer);
+
 
 }
 
@@ -171,7 +142,19 @@ HRESULT GeometryPass::_preInit()
 											TRUE,
 											RENDER_TARGET_FORMAT)))
 										{
-											break;
+											return hr;
+										}
+									}
+									if (SUCCEEDED(hr = p_createInstanceBuffer()))
+									{
+										m_cameraBuffer = new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList);
+
+										if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(
+											L"Geometry camera",
+											&m_cameraValues,
+											sizeof(CameraBuffer))))
+										{
+											
 										}
 									}
 								}
@@ -308,7 +291,12 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "TEXCORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
 	};
 
 	m_inputLayoutDesc.NumElements = sizeof(inputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
@@ -424,29 +412,6 @@ HRESULT GeometryPass::_createConstantBuffer()
 	HRESULT hr = 0;
 
 
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
-	{
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_constantBuffer[i]))))
-		{
-			SET_NAME(m_constantBuffer[i], L"Geometry ConstantBuffer Upload Resource Heap");
-		}
-		else
-			return hr;
-
-		CD3DX12_RANGE readRange(0, 0);
-		if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
-			0, &readRange,
-			reinterpret_cast<void **>(&m_cameraBufferGPUAddress[i]))))
-		{
-			memcpy(m_cameraBufferGPUAddress[i], &m_objectValues, sizeof(m_objectValues));
-		}
-	}
 	
 	
 	return hr;

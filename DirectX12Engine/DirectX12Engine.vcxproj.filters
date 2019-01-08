@@ -173,6 +173,9 @@
     <ClInclude Include="DirectX\Render\WrapperFunctions\Functions\DXGIFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DirectX\Render\WrapperFunctions\Functions\Instancing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryVertex.hlsl" />

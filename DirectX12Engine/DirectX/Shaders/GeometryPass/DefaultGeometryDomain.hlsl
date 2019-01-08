@@ -30,10 +30,7 @@ struct HS_CONSTANT_DATA_OUTPUT
 cbuffer CAMERA_BUFFER : register(b0)
 {
     float4 CameraPos;
-    float4x4 WorldMatrix;
     float4x4 ViewProjection;
-    
-    float4 Padding[40];
 }
 
 SamplerState defaultSampler : register(s0);

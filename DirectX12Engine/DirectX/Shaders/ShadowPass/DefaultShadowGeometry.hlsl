@@ -6,7 +6,7 @@ struct GSOutput
 
 #define MAX_RENDERTARGETS 6
 
-cbuffer LIGHT_BUFFER : register(b1)
+cbuffer LIGHT_BUFFER : register(b0)
 {
     uint4 LightType;
     float4x4 ViewProjection[6];
