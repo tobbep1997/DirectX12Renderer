@@ -9,7 +9,7 @@ class ShadowPass :
 	public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 2;
+	static const UINT ROOT_PARAMETERS = 1;
 
 	struct ObjectBuffer
 	{
@@ -54,11 +54,7 @@ private:
 	ID3D12PipelineState *	m_pipelineState = nullptr;
 	D3D12_VIEWPORT	m_viewport{};
 	D3D12_RECT		m_rect{};
-
-	ID3D12Resource *		m_constantBuffer[FRAME_BUFFER_COUNT]{ nullptr };
-	int m_constantBufferPerObjectAlignedSize = (sizeof(ObjectBuffer) + 255) & ~255;
-	UINT8* m_constantBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
-
+	   
 	ID3D12Resource *		m_constantLightBuffer[FRAME_BUFFER_COUNT]{ nullptr };
 	int m_constantLightBufferPerObjectAlignedSize = (sizeof(LightBuffer) + 255) & ~255;
 	UINT8* m_constantLightBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };

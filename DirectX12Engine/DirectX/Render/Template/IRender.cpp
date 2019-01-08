@@ -131,6 +131,7 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 
 void IRender::p_releaseInstanceBuffer()
 {
+	Instancing::ClearInstanceGroup(p_instanceGroups);
 	SAFE_RELEASE(p_instanceBuffer);
 	SAFE_RELEASE(p_intermediateInstanceBuffer);
 }

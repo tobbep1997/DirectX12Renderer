@@ -86,7 +86,6 @@ void GeometryPass::Clear()
 
 void GeometryPass::Release()
 {	
-	Instancing::ClearInstanceGroup(p_instanceGroups);
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
 

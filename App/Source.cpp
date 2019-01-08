@@ -171,7 +171,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 
 			floor->Draw(renderingManager);
-			//directionalLight->Queue();
+			directionalLight->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
 				pointLights[i]->Queue();

@@ -1,7 +1,6 @@
 #include "DirectX12EnginePCH.h"
 #include "ShadowPass.h"
 #include "WrapperFunctions/X12DepthStencil.h"
-#include "WrapperFunctions/X12ConstantBuffer.h"
 #include "WrapperFunctions/X12RenderTargetView.h"
 #include "GeometryPass.h"
 #include "DeferredRender.h"
@@ -33,13 +32,8 @@ HRESULT ShadowPass::Init()
 void ShadowPass::Update(const Camera& camera)
 {
 	OpenCommandList();
-	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
-	for (UINT i = 0; i < drawQueueSize; i++)
-	{		
-		m_objectValues.WorldMatrix = p_drawQueue->at(i)->GetWorldMatrix();
-		memcpy(m_constantBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantBufferPerObjectAlignedSize, &m_objectValues, sizeof(m_objectValues));
-	}
+
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
 	{
@@ -73,7 +67,6 @@ void ShadowPass::Update(const Camera& camera)
 
 void ShadowPass::Draw()
 {
-	const UINT drawQueueSize = static_cast<UINT>(p_drawQueue->size());
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
 
 	UINT counter = 0;
@@ -90,24 +83,12 @@ void ShadowPass::Draw()
 			p_lightQueue->at(i)->GetRenderTargetView()->GetDescriptorSize());
 		p_lightQueue->at(i)->GetRenderTargetView()->Clear(rtvHandle, p_commandList);
 		
-		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
-		{			
-			p_commandList->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, FALSE, &dsvHandle);
-		}
-		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
-		{
-			p_commandList->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
-		}
+		p_commandList->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
+		
+		p_commandList->SetGraphicsRootConstantBufferView(0, m_constantLightBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + counter * m_constantLightBufferPerObjectAlignedSize);
+		
+		p_drawInstance();
 
-		for (UINT j = 0; j < drawQueueSize; j++)
-		{
-			p_commandList->IASetVertexBuffers(0, 1, &p_drawQueue->at(j)->GetMesh()->GetVertexBufferView());
-
-			p_commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + j * m_constantBufferPerObjectAlignedSize);
-			p_commandList->SetGraphicsRootConstantBufferView(1, m_constantLightBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + counter * m_constantLightBufferPerObjectAlignedSize);
-			
-			p_commandList->DrawInstanced(static_cast<UINT>(p_drawQueue->at(j)->GetMesh()->GetStaticMesh().size()), 1, 0, 0);
-		}
 		counter++;
 
 		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV(p_commandList);
@@ -156,10 +137,9 @@ void ShadowPass::Release()
 	   
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		SAFE_RELEASE(m_constantBuffer[i]);
 		SAFE_RELEASE(m_constantLightBuffer[i]);
 	}
-
+	p_releaseInstanceBuffer();
 	p_releaseCommandList();
 }
 
@@ -179,7 +159,11 @@ HRESULT ShadowPass::_preInit()
 					if (SUCCEEDED(hr = _initPipelineState()))
 					{
 						if (SUCCEEDED(hr = _createConstantBuffer()))
-						{						
+						{
+							if (SUCCEEDED(hr = p_createInstanceBuffer()))
+							{
+								
+							}
 						}
 					}
 				}
@@ -202,22 +186,14 @@ HRESULT ShadowPass::_signalGPU() const
 HRESULT ShadowPass::_initRootSignature()
 {
 	HRESULT hr = 0;
-
-	D3D12_ROOT_DESCRIPTOR objectDescriptor;
-	objectDescriptor.RegisterSpace = 0;
-	objectDescriptor.ShaderRegister = 0;
-
+	   
 	D3D12_ROOT_DESCRIPTOR lightDescriptor;
 	lightDescriptor.RegisterSpace = 0;
-	lightDescriptor.ShaderRegister = 1;
+	lightDescriptor.ShaderRegister = 0;
 
 	m_rootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	m_rootParameter[0].Descriptor = objectDescriptor;
-	m_rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-	m_rootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	m_rootParameter[1].Descriptor = lightDescriptor;
-	m_rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	m_rootParameter[0].Descriptor = lightDescriptor;
+	m_rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(m_rootParameter),
@@ -286,7 +262,12 @@ HRESULT ShadowPass::_initPipelineState()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "TEXCORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
 	};
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
@@ -335,31 +316,7 @@ HRESULT ShadowPass::_initPipelineState()
 HRESULT ShadowPass::_createConstantBuffer()
 {
 	HRESULT hr = 0;
-
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
-	{
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_constantBuffer[i]))))
-		{
-			SET_NAME(m_constantBuffer[i], L"Shadow ConstantBuffer Upload Resource Heap");
-		}
-		else
-			return hr;
-
-		CD3DX12_RANGE readRange(0, 0);
-		if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
-			0, & readRange,
-			reinterpret_cast<void**>(&m_constantBufferGPUAddress[i]))))
-		{
-			memcpy(m_constantBufferGPUAddress[i], &m_objectValues, sizeof(ObjectBuffer));
-		}
-	}
-
+	   
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
