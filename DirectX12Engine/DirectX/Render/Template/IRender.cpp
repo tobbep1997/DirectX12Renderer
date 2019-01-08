@@ -121,7 +121,7 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 		gcl->IASetVertexBuffers(0, 2, bufferArr);
 
 		gcl->DrawInstanced(
-			p_instanceGroups->at(i).StaticMesh->GetStaticMesh().size(),
+			static_cast<UINT>(p_instanceGroups->at(i).StaticMesh->GetStaticMesh().size()),
 			p_instanceGroups->at(i).GetSize(),
 			0,
 			0);

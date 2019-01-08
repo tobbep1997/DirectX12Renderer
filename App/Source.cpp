@@ -120,7 +120,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
 			pointLights[i]->Init();
-			pointLights[i]->SetPosition(1 * i, 3.0f, 1 * i);
+			pointLights[i]->SetPosition(1.0f * i, 3.0f, 1.0f * i);
 			pointLights[i]->SetIntensity(5.5f);
 			pointLights[i]->SetDropOff(1.0f);
 			pointLights[i]->SetPow(1.5f);
