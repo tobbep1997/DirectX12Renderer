@@ -1,5 +1,7 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
+#include "Utility/DeltaTime.h"
+#include "DirectX/Objects/ParticleEmitter.h"
 
 
 #ifdef _DEBUG

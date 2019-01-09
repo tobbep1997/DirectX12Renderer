@@ -13,11 +13,14 @@ GeometryPass::GeometryPass(RenderingManager * renderingManager,
 	if (!renderingManager)
 		Window::CreateError("GeometryPass : Missing RenderingManager");
 	m_inputLayoutDesc = {};
+	SAFE_NEW(m_emitters, new std::vector<ParticleEmitter*>());
 }
 
 
 GeometryPass::~GeometryPass()
-= default;
+{
+	SAFE_DELETE(m_emitters);
+}
 
 HRESULT GeometryPass::Init()
 {
@@ -81,6 +84,7 @@ void GeometryPass::Clear()
 {
 	this->p_drawQueue->clear();
 	this->p_lightQueue->clear();
+	this->m_emitters->clear();
 	Instancing::ClearInstanceGroup(p_instanceGroups);
 }
 
@@ -88,6 +92,9 @@ void GeometryPass::Release()
 {	
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
+
+	SAFE_RELEASE(m_particlePipelineState);
+	SAFE_RELEASE(m_particleRootSignature);
 
 	m_depthStencil->Release();
 	SAFE_DELETE(m_depthStencil);
@@ -105,7 +112,6 @@ void GeometryPass::Release()
 	m_cameraBuffer->Release();
 	SAFE_DELETE(m_cameraBuffer);
 }
-
 
 HRESULT GeometryPass::_preInit()
 {
@@ -274,6 +280,41 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 		}
 	}
 	SAFE_RELEASE(signature);
+
+	D3D12_ROOT_DESCRIPTOR particleRootDescriptor;
+	particleRootDescriptor.RegisterSpace = 0;
+	particleRootDescriptor.ShaderRegister = 0;
+
+	m_particleRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_particleRootParameters[0].Descriptor = particleRootDescriptor;
+	m_particleRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	CD3DX12_ROOT_SIGNATURE_DESC particleRootSignatureDesc;
+	particleRootSignatureDesc.Init(_countof(m_particleRootParameters),
+		m_particleRootParameters,
+		0,
+		nullptr,
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
+
+	if (SUCCEEDED(hr = D3D12SerializeRootSignature(&particleRootSignatureDesc,
+		D3D_ROOT_SIGNATURE_VERSION_1,
+		&signature,
+		nullptr)))
+	{
+		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			IID_PPV_ARGS(&m_particleRootSignature))))
+		{
+			SAFE_RELEASE(m_particleRootSignature);
+		}
+	}
+	SAFE_RELEASE(signature);
+
 	return hr;
 }
 
@@ -381,6 +422,8 @@ HRESULT GeometryPass::_initShaders()
 		m_pixelShader.BytecodeLength = blob->GetBufferSize();
 		m_pixelShader.pShaderBytecode = blob->GetBufferPointer();
 	}
+
+
 
 	return hr;
 }

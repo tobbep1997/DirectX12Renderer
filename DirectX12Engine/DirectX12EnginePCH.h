@@ -71,10 +71,13 @@ namespace DEBUG
 }
 
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = nullptr; } }
+
 #define SAFE_DELETE(p) { if ( (p) ) { delete (p); (p) = nullptr; } }
 #define SAFE_DELETE_ARRAY(p) { if ( (p) ) { delete[] (p); (p) = nullptr; } }
+
 #define SAFE_NEW(p, i) {if ((p)) {SAFE_DELETE((p)); (p) = nullptr; (p) = (i);} else { (p) = (i); }}
 #define SAFE_NEW_ARRAY(p, i) {if ((p)) {SAFE_DELETE_ARRAY((p)); (p) = nullptr; (p) = (i);} else {(p) = (i)}}
+
 
 #ifdef _DEBUG
 	#include <iostream>

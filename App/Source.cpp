@@ -1,5 +1,4 @@
 #include "DirectX12Engine.h"
-#include "Utility/DeltaTime.h"
 
 void CameraMovement(Camera * camera, const float & deltaTime)
 {
@@ -147,6 +146,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight2->SetIntensity(0.2f);
 
 
+		ParticleEmitter * emitter = new ParticleEmitter(renderingManager);
+		emitter->Init();
+		
 
 		deltaTimer.Init();
 		while (Window::IsOpen())
@@ -177,6 +179,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				pointLights[i]->Queue();
 			}
 			//directionalLight2->Queue();
+
+			emitter->Draw();
 
 			if (Input::IsKeyPressed(97))
 				directionalLight->SetPosition(5, 5, 5);
@@ -213,6 +217,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		delete directionalLight2;
 		for (UINT i = 0; i < pointLightSize; i++)
 			delete pointLights[i];
+
+		emitter->Release();
+		SAFE_DELETE(emitter);
 	}
 	staticCylinderMesh->Release();
 	staticCubeMesh->Release();
@@ -222,19 +229,19 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	displacement->Release();
 	renderingManager->Release(FALSE);
 
-	delete camera;
-	delete staticCylinderMesh;
-	delete staticCubeMesh;
-	delete drawable;
+	SAFE_DELETE(camera);
+	SAFE_DELETE(staticCylinderMesh);
+	SAFE_DELETE(staticCubeMesh);
+	SAFE_DELETE(drawable);
 	for (UINT i = 0; i < cubesSize; i++)
 	{
 		delete cubes[i];
 	}
-	delete floor;
-	delete texture;
-	delete normal;
-	delete metallic;
-	delete displacement;
+	SAFE_DELETE(floor);
+	SAFE_DELETE(texture);
+	SAFE_DELETE(normal);
+	SAFE_DELETE(metallic);
+	SAFE_DELETE(displacement);
 
 	return 0;
 }

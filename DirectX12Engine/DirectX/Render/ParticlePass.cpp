@@ -1,7 +1,8 @@
 #include "DirectX12EnginePCH.h"
 #include "ParticlePass.h"
 #include "WrapperFunctions/X12ConstantBuffer.h"
-
+#include "../Objects/ParticleEmitter.h"
+#include "GeometryPass.h"
 
 ParticlePass::ParticlePass(RenderingManager* renderingManager, const Window& window)
 	: IRender(renderingManager, window)
@@ -11,10 +12,15 @@ ParticlePass::ParticlePass(RenderingManager* renderingManager, const Window& win
 	{
 		m_particleValues.ParticlePosition[i] = DirectX::XMFLOAT4A(1 * i, 5, 0, 1);
 	}
+	SAFE_NEW(m_emitters, new std::vector<ParticleEmitter*>());
+
+	this->m_geometryPass = renderingManager->GetGeometryPass();
 }
 
 ParticlePass::~ParticlePass()
-= default;
+{
+	SAFE_DELETE(m_emitters);
+}
 
 HRESULT ParticlePass::Init()
 {
@@ -30,13 +36,9 @@ HRESULT ParticlePass::Init()
 				{
 					if (SUCCEEDED(hr = _initPipelineState()))
 					{
-						SAFE_NEW(m_particleBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList));
-						if (SUCCEEDED(hr = m_particleBuffer->CreateBuffer(L"Particle constant", &m_particleValues, sizeof(ParticleBuffer))))
+						if (SUCCEEDED(hr = _createUAVOutput()))
 						{
-							if (SUCCEEDED(hr = _createUAVOutput()))
-							{
-								
-							}
+							
 						}
 					}
 				}
@@ -61,31 +63,55 @@ void ParticlePass::Update(const Camera& camera)
 		camera.GetPosition().y,
 		camera.GetPosition().z,
 		camera.GetPosition().w);
-	m_particleBuffer->Copy(&m_particleValues, sizeof(m_particleValues));
 
-	OpenCommandList();
-	
-	p_commandList->SetPipelineState(m_computePipelineState);
-	p_commandList->SetComputeRootSignature(m_rootSignature);
+	for (size_t i = 0; i < m_emitters->size(); i++)
+	{
+		for (size_t j = 0; j < m_emitters->at(i)->GetPositions().size(); j++)
+		{
+			m_particleValues.ParticlePosition[j] = DirectX::XMFLOAT4A(
+				m_emitters->at(i)->GetPositions()[j].x,
+				m_emitters->at(i)->GetPositions()[j].y,
+				m_emitters->at(i)->GetPositions()[j].z,
+				m_emitters->at(i)->GetPositions()[j].w
+			);
 
-	m_particleBuffer->SetComputeRootConstantBufferView(0);
-	p_commandList->SetComputeRootUnorderedAccessView(1, m_particleUAVOutput->GetGPUVirtualAddress());
-	
-	p_commandList->Dispatch(m_particleValues.ParticleInfo.x, 1, 1);
+			memcpy(m_constantParticleBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantParticleBufferPerObjectAlignedSize, &m_particleValues, sizeof(m_particleValues));
 
-	ExecuteCommandList();
+		}
+	}
+
+	ParticleEmitter * emitter = nullptr;
+
+	for (size_t i = 0; i < m_emitters->size(); i++)
+	{
+		emitter = m_emitters->at(i);
+		ID3D12GraphicsCommandList * commandList = emitter->GetCommandList();
+		emitter->OpenCommandList();
 
 
+		commandList->SetPipelineState(m_computePipelineState);
+		commandList->SetComputeRootSignature(m_rootSignature);
+
+
+		commandList->SetComputeRootConstantBufferView(0, m_constantParticleBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantParticleBufferPerObjectAlignedSize);
+		commandList->SetComputeRootUnorderedAccessView(1, emitter->GetResource()->GetGPUVirtualAddress());
+
+		commandList->Dispatch(m_particleValues.ParticleInfo.x, 1, 1);
+
+		emitter->ExecuteCommandList();
+	}	
 }
 
 void ParticlePass::Draw()
 {
+
 }
 
 void ParticlePass::Clear()
 {
 	this->p_drawQueue->clear();
 	this->p_lightQueue->clear();
+	this->m_emitters->clear();
 	Instancing::ClearInstanceGroup(this->p_instanceGroups);
 }
 
@@ -95,11 +121,15 @@ void ParticlePass::Release()
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_computePipelineState);
 
-	SAFE_RELEASE(m_particleUAVOutput);
-	SAFE_RELEASE(m_particleUAVOutputDescriptorHeap);
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		SAFE_RELEASE(m_constantParticleBuffer[i]);
+	}
+}
 
-	m_particleBuffer->Release();
-	SAFE_DELETE(m_particleBuffer);
+void ParticlePass::AddEmitter(ParticleEmitter* particleEmitter) const
+{
+	m_emitters->push_back(particleEmitter);
 }
 
 HRESULT ParticlePass::_initID3D12RootSignature()
@@ -150,7 +180,6 @@ HRESULT ParticlePass::_initID3D12RootSignature()
 		}
 	}
 	SAFE_RELEASE(signature);
-
 	return hr;
 }
 
@@ -193,50 +222,28 @@ HRESULT ParticlePass::_createUAVOutput()
 {
 	HRESULT hr = 0;
 
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-	descriptorHeapDesc.NumDescriptors = 1;
-	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&descriptorHeapDesc,
-		IID_PPV_ARGS(&m_particleUAVOutputDescriptorHeap))))
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(1024 * 64);
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;			   		 	  
-		
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&m_particleUAVOutput))))
+			IID_PPV_ARGS(&m_constantParticleBuffer[i]))))
 		{
-			SET_NAME(m_particleUAVOutput, L"Particle UAV output");
-
-			D3D12_BUFFER_UAV uav{};
-			uav.NumElements = 256;
-			uav.FirstElement = 0;
-			uav.StructureByteStride = sizeof(DirectX::XMFLOAT3X3);
-			uav.CounterOffsetInBytes = 0;
-			uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-		
-			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
-			unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
-			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-			unorderedAccessViewDesc.Buffer = uav;
-
-			p_renderingManager->GetDevice()->CreateUnorderedAccessView(
-				m_particleUAVOutput,
-				nullptr,
-				&unorderedAccessViewDesc,
-				m_particleUAVOutputDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+			SET_NAME(m_constantParticleBuffer[i], L"Particle ConstantLightBuffer Upload Resource Heap");
 		}
+		else
+			return hr;
 
-
-
+		CD3DX12_RANGE readRange(0, 0);
+		if (SUCCEEDED(hr = m_constantParticleBuffer[i]->Map(
+			0, &readRange,
+			reinterpret_cast<void**>(&m_constantParticleBufferGPUAddress[i]))))
+		{
+			memcpy(m_constantParticleBufferGPUAddress[i], &m_particleValues, sizeof(ParticleBuffer));
+		}
 	}
-
 	return hr;
 }
