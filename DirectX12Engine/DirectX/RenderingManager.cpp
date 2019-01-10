@@ -98,10 +98,10 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	return hr;
 }
 
-void RenderingManager::Flush(const Camera & camera, const BOOL & present)
+void RenderingManager::Flush(const Camera & camera, const float & deltaTime, const BOOL & present)
 {
 	HRESULT hr = 0;
-	if (FAILED(hr = this->_flush(camera)))
+	if (FAILED(hr = this->_flush(camera, deltaTime)))
 	{
 		Window::CreateError(hr);
 		Window::CloseWindow();
@@ -109,7 +109,7 @@ void RenderingManager::Flush(const Camera & camera, const BOOL & present)
 	this->Present();
 }
 
-HRESULT RenderingManager::_updatePipeline(const Camera & camera)
+HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & deltaTime)
 {
 	HRESULT hr = S_OK;
 	if (FAILED(hr = _waitForPreviousFrame()))
@@ -143,16 +143,16 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 
 	//---------------------------------------------------------------------
 
-	m_particlePass->Update(camera);
+	m_particlePass->Update(camera, deltaTime);
 	m_particlePass->Draw();
 
-	m_shadowPass->Update(camera);
+	m_shadowPass->Update(camera, deltaTime);
 	m_shadowPass->Draw();
 
-	m_geometryPass->Update(camera);
+	m_geometryPass->Update(camera, deltaTime);
 	m_geometryPass->Draw();
 
-	m_deferredPass->Update(camera);
+	m_deferredPass->Update(camera, deltaTime);
 	m_deferredPass->Draw();
 
 	//---------------------------------------------------------------------
@@ -166,11 +166,11 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 	return hr;
 }
 
-HRESULT RenderingManager::_flush(const Camera & camera)
+HRESULT RenderingManager::_flush(const Camera & camera, const float & deltaTime)
 {
 	HRESULT hr = 0;
 
-	if (FAILED(hr = _updatePipeline(camera)))
+	if (FAILED(hr = _updatePipeline(camera, deltaTime)))
 	{
 		return hr;
 	}

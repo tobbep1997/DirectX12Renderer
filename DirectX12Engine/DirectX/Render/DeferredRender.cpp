@@ -40,7 +40,7 @@ HRESULT DeferredRender::Init()
 	return hr;
 }
 
-void DeferredRender::Update(const Camera& camera)
+void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 {
 	const UINT lightQueueSize = static_cast<const UINT>(p_lightQueue->size());
 	for (UINT i = 0; i < lightQueueSize && i < 256; i++)
@@ -117,7 +117,7 @@ void DeferredRender::Update(const Camera& camera)
 		{
 			m_shadowValues.ViewProjection[pos] = m_shadowMaps->at(i)->ViewProjection[currentMatrix++];
 		}
-		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource, m_shadowMaps->at(i)->Map);
+		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource);
 		index += m_shadowMaps->at(i)->Resource->GetDesc().DepthOrArraySize;
 	}
 	m_shaderResourceView->EndCopy();

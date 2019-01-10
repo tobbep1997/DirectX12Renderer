@@ -159,6 +159,11 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 	return TRUE;
 }
 
+ID3D12Resource* Texture::GetResource() const
+{
+	return this->m_textureBuffer;
+}
+
 ID3D12DescriptorHeap* Texture::GetId3D12DescriptorHeap() const
 {
 	return m_textureDescriptorHeap;

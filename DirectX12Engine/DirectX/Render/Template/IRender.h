@@ -40,7 +40,7 @@ public:
 	virtual~IRender();
 
 	virtual HRESULT Init()	= 0;
-	virtual void Update(const Camera & camera)	= 0;
+	virtual void Update(const Camera & camera, const float & deltaTime)	= 0;
 	virtual void Draw()		= 0;
 	virtual void Clear()	= 0;
 	virtual void Release()	= 0;

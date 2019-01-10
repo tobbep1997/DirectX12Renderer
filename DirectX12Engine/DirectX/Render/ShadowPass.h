@@ -29,7 +29,7 @@ public:
 	~ShadowPass();
 
 	HRESULT Init() override;
-	void Update(const Camera& camera) override;
+	void Update(const Camera& camera, const float & deltaTime) override;
 	void Draw() override;
 	void Clear() override;
 	void Release() override;

@@ -69,10 +69,10 @@ inline BOOL InitDirectX12Engine(Window *& window,
 	return FALSE;
 }
 
-inline void UpdateRenderingManger(RenderingManager *& renderingManager, const Camera & camera, const BOOL & present = TRUE)
+inline void UpdateRenderingManger(RenderingManager *& renderingManager, const float & deltaTime, const Camera & camera, const BOOL & present = TRUE)
 {
 	if (renderingManager)
-		renderingManager->Flush(camera, present);
+		renderingManager->Flush(camera, deltaTime, present);
 	
 }
 

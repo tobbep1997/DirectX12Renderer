@@ -18,6 +18,7 @@ public:
 	BOOL LoadTexture(const std::string & path, const BOOL & generateMips = TRUE, RenderingManager * renderingManager = nullptr);
 	BOOL LoadDDSTexture(const std::string & path, const BOOL & generateMips = TRUE, RenderingManager * renderingManager = nullptr);
 
+	ID3D12Resource * GetResource() const;
 	ID3D12DescriptorHeap * GetId3D12DescriptorHeap() const;
 
 	void MapTexture(RenderingManager * renderingManager, const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr) const;

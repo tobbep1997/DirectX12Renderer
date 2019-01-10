@@ -8,20 +8,26 @@ class ParticlePass :
 	public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 2;
+	static const UINT ROOT_PARAMETERS = 3;
 
 	struct ParticleBuffer
 	{
 		DirectX::XMFLOAT4A CameraPosition;
-		DirectX::XMUINT4 ParticleInfo;
+		DirectX::XMFLOAT4X4A WorldMatrix;
+
+		DirectX::XMFLOAT4A ParticleInfo[256];
 		DirectX::XMFLOAT4A ParticlePosition[256];
+		DirectX::XMFLOAT4A ParticleSpeed[256];
+		DirectX::XMFLOAT4A ParticleSize[256];
 	};
+
+
 public:
 	ParticlePass(RenderingManager * renderingManager, const Window & window);
 	~ParticlePass();
 
 	HRESULT Init() override;
-	void Update(const Camera& camera) override;
+	void Update(const Camera& camera, const float & deltaTime) override;
 	void Draw() override;
 	void Clear() override;
 	void Release() override;
@@ -48,4 +54,5 @@ private:
 	UINT8* m_constantParticleBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
 
 	GeometryPass * m_geometryPass;
+
 };

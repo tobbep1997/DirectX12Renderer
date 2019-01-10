@@ -11,7 +11,7 @@ class GeometryPass :
 private:
 
 	static const UINT ROOT_PARAMETERS = 10;
-	static const UINT PARTICLE_ROOT_PARAMETERS = 1;
+	static const UINT PARTICLE_ROOT_PARAMETERS = 2;
 	static const UINT NUM_BUFFERS = 2;
 
 	static const UINT RENDER_TARGETS = 4;
@@ -37,12 +37,12 @@ public:
 	
 	
 	HRESULT Init() override;
-	void Update(const Camera & camera) override;
+	void Update(const Camera & camera, const float & deltaTime) override;
 	void Draw() override;
 	void Clear() override;
 	void Release() override;
 
-	void AddEmitter(ParticleEmitter * emitter);
+	void AddEmitter(ParticleEmitter * emitter) const;
 
 private:
 	HRESULT _preInit();
@@ -73,6 +73,10 @@ private:
 	D3D12_SHADER_BYTECODE m_hullShader{};
 	D3D12_SHADER_BYTECODE m_domainShader{};
 	D3D12_SHADER_BYTECODE m_pixelShader{};
+
+	D3D12_SHADER_BYTECODE m_particleVertexShader{};
+	D3D12_SHADER_BYTECODE m_particlePixelShader{};
+
 
 
 	CameraBuffer m_cameraValues {};

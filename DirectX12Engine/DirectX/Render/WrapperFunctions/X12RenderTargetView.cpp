@@ -63,7 +63,7 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 		heapDesc.SizeInBytes = allocationInfo.SizeInBytes;
 		heapDesc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES;
 		heapDesc.Properties = heapProperties;
-
+		
 		D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
 		depthOptimizedClearValue.Format = format;
 		depthOptimizedClearValue.Color[0] = m_clearColor[0];
