@@ -5,6 +5,7 @@
 #include "WrapperFunctions/X12ConstantBuffer.h"
 #include "WrapperFunctions/X12RenderTargetView.h"
 #include "DeferredRender.h"
+#include "WrapperFunctions/X12ShaderResourceView.h"
 
 GeometryPass::GeometryPass(RenderingManager * renderingManager, 
 	const Window & window) :
@@ -13,11 +14,14 @@ GeometryPass::GeometryPass(RenderingManager * renderingManager,
 	if (!renderingManager)
 		Window::CreateError("GeometryPass : Missing RenderingManager");
 	m_inputLayoutDesc = {};
+	SAFE_NEW(m_emitters, new std::vector<ParticleEmitter*>());
 }
 
 
 GeometryPass::~GeometryPass()
-= default;
+{
+	SAFE_DELETE(m_emitters);
+}
 
 HRESULT GeometryPass::Init()
 {
@@ -32,7 +36,7 @@ HRESULT GeometryPass::Init()
 	return hr;
 }
 
-void GeometryPass::Update(const Camera & camera)
+void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 {	
 	OpenCommandList();
 	m_cameraValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
@@ -73,6 +77,30 @@ void GeometryPass::Update(const Camera & camera)
 void GeometryPass::Draw()
 {	
 	p_drawInstance(2, TRUE);
+	const size_t emitterSize = m_emitters->size();
+
+	if (emitterSize)
+	{
+		p_commandList->SetPipelineState(m_particlePipelineState);
+		p_commandList->SetGraphicsRootSignature(m_particleRootSignature);
+		p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_cameraBuffer->SetGraphicsRootConstantBufferView(0);
+
+		ParticleEmitter * emitter = nullptr;
+		for (size_t i = 0; i < emitterSize; i++)
+		{
+			emitter = m_emitters->at(i);
+			emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, p_commandList);
+			p_commandList->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
+
+			p_commandList->DrawInstanced(
+				emitter->GetVertexSize(),
+				1, 0, 0);
+		}
+
+	}
+
+
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
 	ExecuteCommandList();
 }
@@ -81,6 +109,7 @@ void GeometryPass::Clear()
 {
 	this->p_drawQueue->clear();
 	this->p_lightQueue->clear();
+	this->m_emitters->clear();
 	Instancing::ClearInstanceGroup(p_instanceGroups);
 }
 
@@ -88,6 +117,9 @@ void GeometryPass::Release()
 {	
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
+
+	SAFE_RELEASE(m_particlePipelineState);
+	SAFE_RELEASE(m_particleRootSignature);
 
 	m_depthStencil->Release();
 	SAFE_DELETE(m_depthStencil);
@@ -106,6 +138,10 @@ void GeometryPass::Release()
 	SAFE_DELETE(m_cameraBuffer);
 }
 
+void GeometryPass::AddEmitter(ParticleEmitter* emitter) const
+{
+	m_emitters->push_back(emitter);
+}
 
 HRESULT GeometryPass::_preInit()
 {
@@ -123,13 +159,13 @@ HRESULT GeometryPass::_preInit()
 					{
 						if (SUCCEEDED(hr = _createViewport()))
 						{
-							m_depthStencil = new X12DepthStencil(p_renderingManager, *p_window, p_commandList);
+							SAFE_NEW(m_depthStencil, new X12DepthStencil(p_renderingManager, *p_window, p_commandList));
 							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
 								0, 0,
 								1)))
 							{								
 								for (UINT i = 0; i < RENDER_TARGETS; i++)									
-									m_renderTarget[i] = new X12RenderTargetView(p_renderingManager, *p_window, p_commandList);									
+									SAFE_NEW(m_renderTarget[i], new X12RenderTargetView(p_renderingManager, *p_window, p_commandList));
 								for (UINT i = 0; i < RENDER_TARGETS; i++)
 								{
 									if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
@@ -143,7 +179,7 @@ HRESULT GeometryPass::_preInit()
 								}
 								if (SUCCEEDED(hr = p_createInstanceBuffer()))
 								{
-									m_cameraBuffer = new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList);
+									SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList));
 
 									if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(
 										L"Geometry camera",
@@ -274,6 +310,51 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 		}
 	}
 	SAFE_RELEASE(signature);
+
+	D3D12_DESCRIPTOR_RANGE particleRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE particleTable;
+	RenderingHelpClass::CreateRootDescriptorTable(particleRangeTable, particleTable, 0, 0);
+
+	D3D12_ROOT_DESCRIPTOR particleRootDescriptor;
+	particleRootDescriptor.RegisterSpace = 0;
+	particleRootDescriptor.ShaderRegister = 0;
+
+	m_particleRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_particleRootParameters[0].Descriptor = particleRootDescriptor;
+	m_particleRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	m_particleRootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_particleRootParameters[1].DescriptorTable = particleTable;
+	m_particleRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	CD3DX12_ROOT_SIGNATURE_DESC particleRootSignatureDesc;
+	particleRootSignatureDesc.Init(_countof(m_particleRootParameters),
+		m_particleRootParameters,
+		1,
+		&sampler,
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
+
+	
+
+	if (SUCCEEDED(hr = D3D12SerializeRootSignature(&particleRootSignatureDesc,
+		D3D_ROOT_SIGNATURE_VERSION_1,
+		&signature,
+		nullptr)))
+	{
+		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			IID_PPV_ARGS(&m_particleRootSignature))))
+		{
+			SAFE_RELEASE(m_particleRootSignature);
+		}
+	}
+	SAFE_RELEASE(signature);
+
 	return hr;
 }
 
@@ -334,6 +415,43 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 		SAFE_RELEASE(m_pipelineState);
 	}
 
+	D3D12_INPUT_ELEMENT_DESC particleInputLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	};
+
+	m_inputLayoutDesc.NumElements = sizeof(particleInputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
+	m_inputLayoutDesc.pInputElementDescs = particleInputLayout;
+
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC particleGraphicsPipelineStateDesc = {};
+	particleGraphicsPipelineStateDesc.InputLayout = m_inputLayoutDesc;
+	particleGraphicsPipelineStateDesc.pRootSignature = m_particleRootSignature;
+	particleGraphicsPipelineStateDesc.VS = m_particleVertexShader;
+	particleGraphicsPipelineStateDesc.PS = m_particlePixelShader;
+	particleGraphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	particleGraphicsPipelineStateDesc.NumRenderTargets = RENDER_TARGETS;
+	for (UINT i = 0; i < RENDER_TARGETS; i++)
+	{
+		particleGraphicsPipelineStateDesc.RTVFormats[i] = RENDER_TARGET_FORMAT;
+
+	}
+	particleGraphicsPipelineStateDesc.SampleMask = 0xffffffff;
+	particleGraphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_WIREFRAME, D3D12_CULL_MODE_NONE, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
+	particleGraphicsPipelineStateDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	particleGraphicsPipelineStateDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	particleGraphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	particleGraphicsPipelineStateDesc.SampleDesc = desc.SampleDesc;
+
+	if (FAILED(hr = p_renderingManager->GetDevice()->CreateGraphicsPipelineState(
+		&particleGraphicsPipelineStateDesc,
+		IID_PPV_ARGS(&m_particlePipelineState))))
+	{
+		SAFE_RELEASE(m_particlePipelineState);
+	}
+
 	return hr;
 }
 
@@ -381,6 +499,30 @@ HRESULT GeometryPass::_initShaders()
 		m_pixelShader.BytecodeLength = blob->GetBufferSize();
 		m_pixelShader.pShaderBytecode = blob->GetBufferPointer();
 	}
+
+
+	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryParticleVertex.hlsl", blob, "vs_5_1")))
+	{
+		return hr;
+	}
+	else
+	{
+		m_particleVertexShader.BytecodeLength = blob->GetBufferSize();
+		m_particleVertexShader.pShaderBytecode = blob->GetBufferPointer();
+	}
+
+
+	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryParticlePixel.hlsl", blob, "ps_5_1")))
+	{
+		return hr;
+	}
+	else
+	{
+		m_particlePixelShader.BytecodeLength = blob->GetBufferSize();
+		m_particlePixelShader.pShaderBytecode = blob->GetBufferPointer();
+	}
+
+
 
 	return hr;
 }

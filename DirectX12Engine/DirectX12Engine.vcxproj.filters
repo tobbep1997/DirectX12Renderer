@@ -99,6 +99,12 @@
     <ClCompile Include="Submodule\DirectXTK\Src\DDSTextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\ParticlePass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectX\Objects\ParticleEmitter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -212,6 +218,12 @@
     <ClInclude Include="Submodule\DirectXTK\Inc\DDSTextureLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DirectX\Render\ParticlePass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX\Objects\ParticleEmitter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryVertex.hlsl" />
@@ -222,6 +234,9 @@
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredPixel.hlsl" />
     <FxCompile Include="DirectX\Shaders\ShadowPass\DefaultShadowGeometry.hlsl" />
+    <FxCompile Include="DirectX\Shaders\ParticlePass\DefaultParticleCompute.hlsl" />
+    <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryParticleVertex.hlsl" />
+    <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryParticlePixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectX\Shaders\ShaderIncludes\LightCalculations.hlsli" />

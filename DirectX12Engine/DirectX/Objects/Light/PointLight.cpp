@@ -11,7 +11,7 @@ PointLight::PointLight(RenderingManager* renderingManager, const Window& window)
 
 	for (UINT i = 0; i < 6; i++)
 	{
-		m_cameras[i] = new Camera(DirectX::XM_PI * 0.5f, 1.0f, 0.1f, 50.0f);
+		SAFE_NEW(m_cameras[i], new Camera(DirectX::XM_PI * 0.5f, 1.0f, 0.1f, 50.0f));
 	}
 
 	m_cameras[0]->SetDirection(0, 1, 0);

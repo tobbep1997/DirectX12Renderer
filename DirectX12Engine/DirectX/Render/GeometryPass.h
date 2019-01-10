@@ -11,6 +11,7 @@ class GeometryPass :
 private:
 
 	static const UINT ROOT_PARAMETERS = 10;
+	static const UINT PARTICLE_ROOT_PARAMETERS = 2;
 	static const UINT NUM_BUFFERS = 2;
 
 	static const UINT RENDER_TARGETS = 4;
@@ -36,11 +37,12 @@ public:
 	
 	
 	HRESULT Init() override;
-	void Update(const Camera & camera) override;
+	void Update(const Camera & camera, const float & deltaTime) override;
 	void Draw() override;
 	void Clear() override;
 	void Release() override;
 
+	void AddEmitter(ParticleEmitter * emitter) const;
 
 private:
 	HRESULT _preInit();
@@ -53,6 +55,11 @@ private:
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;
+	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};
+
+	ID3D12PipelineState * m_particlePipelineState = nullptr;
+	ID3D12RootSignature * m_particleRootSignature = nullptr;
+	D3D12_ROOT_PARAMETER m_particleRootParameters[PARTICLE_ROOT_PARAMETERS] {};
 
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc;
 
@@ -67,7 +74,10 @@ private:
 	D3D12_SHADER_BYTECODE m_domainShader{};
 	D3D12_SHADER_BYTECODE m_pixelShader{};
 
-	D3D12_ROOT_PARAMETER  m_rootParameters[ROOT_PARAMETERS] {};
+	D3D12_SHADER_BYTECODE m_particleVertexShader{};
+	D3D12_SHADER_BYTECODE m_particlePixelShader{};
+
+
 
 	CameraBuffer m_cameraValues {};
 	X12ConstantBuffer * m_cameraBuffer = nullptr;
@@ -83,5 +93,6 @@ private:
 		DirectX::XMFLOAT4 Color;
 	};
 
+	std::vector<ParticleEmitter*>* m_emitters = nullptr;
 };
 

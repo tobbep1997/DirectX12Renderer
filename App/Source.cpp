@@ -1,5 +1,4 @@
 #include "DirectX12Engine.h"
-#include "Utility/DeltaTime.h"
 
 void CameraMovement(Camera * camera, const float & deltaTime)
 {
@@ -98,6 +97,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 
 
+	Texture * fire1 = new Texture();
+	Texture * fire2 = new Texture();
+	Texture * fire3 = new Texture();
+
 	if(InitDirectX12Engine(window,
 		renderingManager, 
 		hInstance, 
@@ -106,13 +109,17 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		720, 
 		FALSE,
 		TRUE,
-		FALSE))
+		TRUE))
 	{
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);
 		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE, renderingManager);
 		metallic->LoadDDSTexture("../Texture/Brick/Brick_metallic.DDS", TRUE, renderingManager);
 		displacement->LoadDDSTexture("../Texture/Brick/Brick_height.DDS", TRUE, renderingManager);
+
+		fire1->LoadTexture("../Texture/Fire/Fire1.bmp", FALSE, renderingManager);
+		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
+		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
 		const int pointLightSize = 5;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
@@ -147,6 +154,19 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight2->SetIntensity(0.2f);
 
 
+		ParticleEmitter * emitter = new ParticleEmitter(
+			renderingManager, 
+			*window, 
+			256, 
+			256, 
+			3, 
+			DXGI_FORMAT_B8G8R8X8_UNORM);
+
+		Texture* emitterTextures[3] = { fire1, fire2, fire3 };
+		emitter->SetTextures(emitterTextures);
+		emitter->Init();
+		emitter->SetPosition(0, .25f, 0);
+		emitter->Update();
 
 		deltaTimer.Init();
 		while (Window::IsOpen())
@@ -178,6 +198,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 			//directionalLight2->Queue();
 
+			emitter->Draw();
+
 			if (Input::IsKeyPressed(97))
 				directionalLight->SetPosition(5, 5, 5);
 			else if (Input::IsKeyPressed(98))
@@ -199,7 +221,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			directionalLight->GetCamera()->Update();
 
 		
-			UpdateRenderingManger(renderingManager, *camera);
+			UpdateRenderingManger(renderingManager, deltaTime, *camera);
 			if (Input::IsKeyPressed('P'))
 				RestartRenderingManager(window, renderingManager, TRUE);
 		}	
@@ -213,6 +235,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		delete directionalLight2;
 		for (UINT i = 0; i < pointLightSize; i++)
 			delete pointLights[i];
+
+		emitter->Release();
+		SAFE_DELETE(emitter);
 	}
 	staticCylinderMesh->Release();
 	staticCubeMesh->Release();
@@ -220,21 +245,28 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	normal->Release();
 	metallic->Release();
 	displacement->Release();
+	fire1->Release();
+	fire2->Release();
+	fire3->Release();
 	renderingManager->Release(FALSE);
 
-	delete camera;
-	delete staticCylinderMesh;
-	delete staticCubeMesh;
-	delete drawable;
+	SAFE_DELETE(camera);
+	SAFE_DELETE(staticCylinderMesh);
+	SAFE_DELETE(staticCubeMesh);
+	SAFE_DELETE(drawable);
 	for (UINT i = 0; i < cubesSize; i++)
 	{
 		delete cubes[i];
 	}
-	delete floor;
-	delete texture;
-	delete normal;
-	delete metallic;
-	delete displacement;
+	SAFE_DELETE(floor);
+	SAFE_DELETE(texture);
+	SAFE_DELETE(normal);
+	SAFE_DELETE(metallic);
+	SAFE_DELETE(displacement);
+
+	SAFE_DELETE(fire1);
+	SAFE_DELETE(fire2);
+	SAFE_DELETE(fire3);
 
 	return 0;
 }

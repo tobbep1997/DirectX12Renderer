@@ -7,3 +7,9 @@ struct StaticVertex
 	DirectX::XMFLOAT4 Tangent;
 	DirectX::XMFLOAT4 TexCord;
 };
+
+struct ParticleVertex
+{
+	DirectX::XMFLOAT4 Position;
+	DirectX::XMFLOAT4 TexCord;
+};

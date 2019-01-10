@@ -4,6 +4,7 @@
 class DeferredRender;
 class ShadowPass;
 class GeometryPass;
+class ParticlePass;
 class Camera;
 
 const UINT FRAME_BUFFER_COUNT = 3;
@@ -16,7 +17,7 @@ public:
 	static RenderingManager * GetInstance();
 
 	HRESULT Init(const Window & window, const BOOL & EnableDebugLayer = FALSE);
-	void Flush(const Camera & camera, const BOOL & present = TRUE);
+	void Flush(const Camera & camera, const float & deltaTime, const BOOL & present = TRUE);
 	void Present() const;
 	void Release(const BOOL & waitForFrames = TRUE, const BOOL & reportMemoryLeaks = TRUE);
 	void WaitForFrames();
@@ -39,6 +40,7 @@ public:
 	GeometryPass * GetGeometryPass() const;
 	ShadowPass * GetShadowPass() const;
 	DeferredRender * GetDeferredRender() const;
+	ParticlePass * GetParticlePass() const;
 
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
@@ -62,11 +64,11 @@ private:
 	UINT m_frameIndex = 0;
 	UINT m_rtvDescriptorSize = 0;
 
-	HRESULT _flush(const Camera & camera);
+	HRESULT _flush(const Camera & camera, const float & deltaTime);
 	HRESULT _present() const;
 	void _clear() const;
 
-	HRESULT _updatePipeline(const Camera & camera);
+	HRESULT _updatePipeline(const Camera & camera, const float & deltaTime);
 	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE);
 
 	HRESULT _checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const;
@@ -80,6 +82,7 @@ private:
 	GeometryPass *	m_geometryPass = nullptr;
 	ShadowPass *	m_shadowPass = nullptr;
 	DeferredRender * m_deferredPass = nullptr;
+	ParticlePass * m_particlePass = nullptr;
 
 private:
 	//DEBUG LAYER

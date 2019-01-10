@@ -5,6 +5,7 @@
 #include "Render/GeometryPass.h"
 #include "Render/ShadowPass.h"
 #include "Render/DeferredRender.h"
+#include "Render/ParticlePass.h"
 
 RenderingManager::RenderingManager()
 = default;
@@ -59,16 +60,20 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 								{
 									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
 									{		
-										m_geometryPass = new GeometryPass(this, window);
+										SAFE_NEW(m_geometryPass, new GeometryPass(this, window));
 										if (SUCCEEDED(hr = m_geometryPass->Init()))
 										{
-											m_shadowPass = new ShadowPass(this, window);
+											SAFE_NEW(m_shadowPass, new ShadowPass(this, window));
 											if (SUCCEEDED(hr = m_shadowPass->Init()))
 											{
-												m_deferredPass = new DeferredRender(this, window);
+												SAFE_NEW(m_deferredPass, new DeferredRender(this, window));
 												if (SUCCEEDED(hr = m_deferredPass->Init()))
 												{
-													
+													SAFE_NEW(m_particlePass, new ParticlePass(this, window));
+													if (SUCCEEDED(hr = m_particlePass->Init()))
+													{
+														
+													}
 												}
 											}
 										}
@@ -93,10 +98,10 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	return hr;
 }
 
-void RenderingManager::Flush(const Camera & camera, const BOOL & present)
+void RenderingManager::Flush(const Camera & camera, const float & deltaTime, const BOOL & present)
 {
 	HRESULT hr = 0;
-	if (FAILED(hr = this->_flush(camera)))
+	if (FAILED(hr = this->_flush(camera, deltaTime)))
 	{
 		Window::CreateError(hr);
 		Window::CloseWindow();
@@ -104,7 +109,7 @@ void RenderingManager::Flush(const Camera & camera, const BOOL & present)
 	this->Present();
 }
 
-HRESULT RenderingManager::_updatePipeline(const Camera & camera)
+HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & deltaTime)
 {
 	HRESULT hr = S_OK;
 	if (FAILED(hr = _waitForPreviousFrame()))
@@ -138,13 +143,16 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 
 	//---------------------------------------------------------------------
 
-	m_shadowPass->Update(camera);
+	m_particlePass->Update(camera, deltaTime);
+	m_particlePass->Draw();
+
+	m_shadowPass->Update(camera, deltaTime);
 	m_shadowPass->Draw();
 
-	m_geometryPass->Update(camera);
+	m_geometryPass->Update(camera, deltaTime);
 	m_geometryPass->Draw();
 
-	m_deferredPass->Update(camera);
+	m_deferredPass->Update(camera, deltaTime);
 	m_deferredPass->Draw();
 
 	//---------------------------------------------------------------------
@@ -158,11 +166,11 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera)
 	return hr;
 }
 
-HRESULT RenderingManager::_flush(const Camera & camera)
+HRESULT RenderingManager::_flush(const Camera & camera, const float & deltaTime)
 {
 	HRESULT hr = 0;
 
-	if (FAILED(hr = _updatePipeline(camera)))
+	if (FAILED(hr = _updatePipeline(camera, deltaTime)))
 	{
 		return hr;
 	}
@@ -191,6 +199,7 @@ void RenderingManager::_clear() const
 	m_geometryPass->Clear();
 	m_shadowPass->Clear();
 	m_deferredPass->Clear();
+	m_particlePass->Clear();
 }
 
 void RenderingManager::Present() const
@@ -237,6 +246,9 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 
 	m_shadowPass->Release();
 	SAFE_DELETE(m_shadowPass);
+
+	m_particlePass->Release();
+	SAFE_DELETE(m_particlePass);
 
 	if (m_device->Release() > 0)
 	{
@@ -319,6 +331,11 @@ ShadowPass* RenderingManager::GetShadowPass() const
 DeferredRender* RenderingManager::GetDeferredRender() const
 {
 	return this->m_deferredPass;
+}
+
+ParticlePass* RenderingManager::GetParticlePass() const
+{
+	return this->m_particlePass;
 }
 
 HRESULT RenderingManager::OpenCommandList()

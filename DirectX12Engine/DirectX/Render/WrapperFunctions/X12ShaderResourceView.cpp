@@ -87,7 +87,7 @@ void X12ShaderResourceView::EndCopy(ID3D12GraphicsCommandList * commandList)
 	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 }
 
-void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resource* resource, ID3D12DescriptorHeap * descriptorHeap, ID3D12GraphicsCommandList * commandList) const
+void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resource* resource, ID3D12GraphicsCommandList * commandList) const
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 

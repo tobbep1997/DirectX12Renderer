@@ -29,7 +29,7 @@ HRESULT ShadowPass::Init()
 	return hr;	
 }
 
-void ShadowPass::Update(const Camera& camera)
+void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 {
 	OpenCommandList();
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
