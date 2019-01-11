@@ -108,8 +108,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		TRUE,
-		TRUE))
+		FALSE,
+		FALSE))
 	{
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);

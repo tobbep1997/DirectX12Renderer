@@ -7,6 +7,8 @@
 #include "Render/DeferredRender.h"
 #include "Render/ParticlePass.h"
 
+#include <thread>
+
 RenderingManager::RenderingManager()
 = default;
 
@@ -142,15 +144,15 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 	//---------------------------------------------------------------------
+	m_particlePass->ThreadUpdate(camera, deltaTime);
+	m_shadowPass->ThreadUpdate(camera, deltaTime);
 
-	m_particlePass->Update(camera, deltaTime);
-	m_particlePass->Draw();
 
-	m_shadowPass->Update(camera, deltaTime);
-	m_shadowPass->Draw();
+	m_particlePass->ThreadJoin();
+	m_geometryPass->ThreadUpdate(camera, deltaTime);
 
-	m_geometryPass->Update(camera, deltaTime);
-	m_geometryPass->Draw();
+	m_geometryPass->ThreadJoin();
+	m_shadowPass->ThreadJoin();
 
 	m_deferredPass->Update(camera, deltaTime);
 	m_deferredPass->Draw();
@@ -238,15 +240,19 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_frameIndex = 0;
 	m_rtvDescriptorSize = 0;
 
+	m_geometryPass->KillThread();
 	m_geometryPass->Release();
 	SAFE_DELETE(m_geometryPass);
 
+	m_deferredPass->KillThread();
 	m_deferredPass->Release();
 	SAFE_DELETE(m_deferredPass);
 
+	m_shadowPass->KillThread();
 	m_shadowPass->Release();
 	SAFE_DELETE(m_shadowPass);
 
+	m_particlePass->KillThread();
 	m_particlePass->Release();
 	SAFE_DELETE(m_particlePass);
 

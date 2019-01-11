@@ -33,11 +33,11 @@ TODO::
 ```
 **Effects**
 ```diff
--Particles
++Particles
 ```
 **Optimizations**
 ```diff
 +Multiple Commandlists
--Multi threading
++Multi threading
 -Single DescriptorHeaps
 ```

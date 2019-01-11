@@ -2,6 +2,23 @@
 #include "IRender.h"
 #include "DirectX/Render/WrapperFunctions/Functions/Instancing.h"
 
+void IRender::_updateWithThreads()
+{
+	if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL))
+		PRINT(L"FAILED TO SET PRIORITY LEVEL OF THREAD") NEW_LINE;
+	
+	while (m_threadRunning)
+	{
+		if (!m_threadDone)
+		{
+			this->Update(this->m_camera, this->m_deltaTime);
+			this->Draw();
+			m_threadDone = true;
+		}
+	}
+	m_threadRunning = false;
+}
+
 IRender::IRender(RenderingManager* renderingManager,
                  const Window& window)
 {
@@ -10,6 +27,10 @@ IRender::IRender(RenderingManager* renderingManager,
 	SAFE_NEW(p_drawQueue, new std::vector<Drawable*>());
 	SAFE_NEW(p_lightQueue, new std::vector<ILight*>());
 	SAFE_NEW(p_instanceGroups, new std::vector<Instancing::InstanceGroup>());
+
+	m_threadRunning = true;
+	m_threadDone = true;
+	m_thread = std::thread(&IRender::_updateWithThreads, this);
 }
 
 IRender::~IRender()
@@ -17,6 +38,27 @@ IRender::~IRender()
 	SAFE_DELETE(p_lightQueue);
 	SAFE_DELETE(p_drawQueue);
 	SAFE_DELETE(p_instanceGroups);
+}
+
+void IRender::ThreadUpdate(const Camera & camera, const float & deltaTime)
+{
+	if (m_threadDone && m_threadRunning)
+	{
+		this->m_camera = camera;
+		this->m_deltaTime = deltaTime;
+		m_threadDone = false;
+	}
+}
+
+void IRender::ThreadJoin() const
+{
+	while (!m_threadDone);
+}
+
+void IRender::KillThread()
+{
+	this->m_threadRunning = false;
+	m_thread.join();
 }
 
 void IRender::Queue(Drawable* drawable) const
