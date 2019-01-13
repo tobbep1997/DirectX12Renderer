@@ -60,7 +60,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	Drawable * drawable = new Drawable();
 	drawable->SetPosition(0, 0, 0);
 	drawable->SetScale(1, 1, 1);
-	drawable->SetMesh(*staticCylinderMesh);
+	drawable->SetMesh(*staticCubeMesh);
 	drawable->Update();
 	drawable->SetTexture(texture);
 	drawable->SetNormalMap(normal);
@@ -111,7 +111,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		TRUE,
 		FALSE))
 	{
-		staticCylinderMesh->CreateBuffer(renderingManager);
+		//staticCylinderMesh->CreateBuffer(renderingManager);
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);
 		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE, renderingManager);
@@ -122,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
-		const int pointLightSize = 5;
+		const int pointLightSize = 1;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{

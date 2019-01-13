@@ -10,8 +10,10 @@ ILight::ILight(RenderingManager* renderingManager, const Window& window, const L
 {
 	p_renderingManager = renderingManager;
 	p_window = &window;
-
+	   
 	this->p_lightType = lightType;
+
+	this->m_lightTypeInteger = lightType;
 
 	this->m_intensity = 1;
 	this->m_color = DirectX::XMFLOAT4(1, 1, 1, 1);
@@ -113,7 +115,7 @@ const BOOL& ILight::GetCastShadows() const
 
 const UINT& ILight::GetType() const
 {
-	return p_lightType;
+	return m_lightTypeInteger;
 }
 
 const UINT& ILight::GetNumRenderTargets() const

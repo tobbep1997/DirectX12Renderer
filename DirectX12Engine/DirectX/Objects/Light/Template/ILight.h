@@ -49,6 +49,7 @@ protected:
 private:
 	DirectX::XMFLOAT4 m_color = DirectX::XMFLOAT4(1, 1, 1, 1);
 	
+	UINT m_lightTypeInteger;
 	float m_intensity = 1;
 	BOOL m_castShadows = TRUE;
 };

@@ -42,13 +42,14 @@ HRESULT DeferredRender::Init()
 
 void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 {
+	m_lightValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
+		camera.GetPosition().y,
+		camera.GetPosition().z,
+		camera.GetPosition().w);
+
 	const UINT lightQueueSize = static_cast<const UINT>(p_lightQueue->size());
 	for (UINT i = 0; i < lightQueueSize && i < 256; i++)
 	{
-		m_lightValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
-			camera.GetPosition().y,
-			camera.GetPosition().z,
-			camera.GetPosition().w);
 		m_lightValues.Type[i] = DirectX::XMUINT4(lightQueueSize,
 			p_lightQueue->at(i)->GetType(),
 			0, 0);

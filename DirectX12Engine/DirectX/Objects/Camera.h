@@ -60,7 +60,7 @@ public:
 	const float & GetNearPlane() const;
 	const float & GetFarPlane() const;
 
-	const DirectX::XMFLOAT4 & GetDirection() const;
+	const DirectX::XMFLOAT4 & GetDirection();
 	const DirectX::XMFLOAT4 & GetUp() const;
 
 	const DirectX::XMFLOAT4X4A & GetViewMatrix() const;
