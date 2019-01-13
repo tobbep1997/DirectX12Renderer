@@ -41,7 +41,6 @@ protected:
 	HRESULT p_createInstanceBuffer(const UINT & bufferSize = 1024u * 64u);
 	UINT64 p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferView) const;
 
-	void p_updateInstance();
 	void p_drawInstance(const UINT & textureStartIndex = 0, const BOOL & mapTextures = FALSE) const;
 	void p_releaseInstanceBuffer();
 	

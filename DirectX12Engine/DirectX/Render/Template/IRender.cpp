@@ -42,6 +42,8 @@ IRender::~IRender()
 
 void IRender::ThreadUpdate(const Camera & camera, const float & deltaTime)
 {
+	if (p_commandList == nullptr)
+		throw "Missing command list";
 	if (m_threadDone && m_threadRunning)
 	{
 		this->m_camera = camera;

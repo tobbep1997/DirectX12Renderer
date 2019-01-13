@@ -10,7 +10,7 @@ constexpr auto MAX_SHADOWS = 32u;
 class DeferredRender : public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 7;
+	static const UINT ROOT_PARAMETERS = 8;
 	struct LightBuffer
 	{
 		DirectX::XMFLOAT4A	CameraPosition;
@@ -47,6 +47,8 @@ public:
 	void SetRenderTarget(X12RenderTargetView ** renderTarget, const UINT & size);
 	void AddShadowMap(ID3D12Resource * resource, ID3D12DescriptorHeap * map, DirectX::XMFLOAT4X4A const* ViewProjection) const;
 
+	void SetSSAO(X12RenderTargetView * renderTarget);
+
 private:
 
 	HRESULT _preInit();
@@ -77,6 +79,7 @@ private:
 	X12ConstantBuffer * m_lightBuffer = nullptr;
 	X12ConstantBuffer * m_shadowBuffer = nullptr;
 	X12ShaderResourceView * m_shaderResourceView = nullptr;
+	X12RenderTargetView * m_ssao = nullptr;
 
 	LightBuffer m_lightValues{};
 	ShadowLightBuffer m_shadowValues{};

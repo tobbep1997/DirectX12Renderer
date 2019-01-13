@@ -105,6 +105,9 @@
     <ClCompile Include="DirectX\Objects\ParticleEmitter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\SSAOPass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -224,6 +227,9 @@
     <ClInclude Include="DirectX\Objects\ParticleEmitter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DirectX\Render\SSAOPass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryVertex.hlsl" />
@@ -237,6 +243,8 @@
     <FxCompile Include="DirectX\Shaders\ParticlePass\DefaultParticleCompute.hlsl" />
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryParticleVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryParticlePixel.hlsl" />
+    <FxCompile Include="DirectX\Shaders\SSAOPass\DefaultSSAOVertex.hlsl" />
+    <FxCompile Include="DirectX\Shaders\SSAOPass\DefaultSSAOPixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectX\Shaders\ShaderIncludes\LightCalculations.hlsli" />

@@ -6,6 +6,7 @@
 #include "WrapperFunctions/X12RenderTargetView.h"
 #include "DeferredRender.h"
 #include "WrapperFunctions/X12ShaderResourceView.h"
+#include "SSAOPass.h"
 
 GeometryPass::GeometryPass(RenderingManager * renderingManager, 
 	const Window & window) :
@@ -44,7 +45,8 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 		camera.GetPosition().z,
 		camera.GetPosition().w);
 	m_cameraValues.ViewProjection = camera.GetViewProjectionMatrix();
-	   
+
+	m_depthStencil->SwitchToDSV();
 	m_depthStencil->ClearDepthStencil();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
@@ -85,7 +87,7 @@ void GeometryPass::Draw()
 		p_commandList->SetGraphicsRootSignature(m_particleRootSignature);
 		p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		m_cameraBuffer->SetGraphicsRootConstantBufferView(0);
-
+		
 		ParticleEmitter * emitter = nullptr;
 		for (size_t i = 0; i < emitterSize; i++)
 		{
@@ -100,8 +102,12 @@ void GeometryPass::Draw()
 
 	}
 
+	m_depthStencil->SwitchToSRV();
 
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
+	p_renderingManager->GetSSAOPass()->SetWorldPos(m_renderTarget[0]);
+	p_renderingManager->GetSSAOPass()->SetDepthStencil(m_depthStencil);
+	
 	ExecuteCommandList();
 }
 
@@ -162,7 +168,7 @@ HRESULT GeometryPass::_preInit()
 							SAFE_NEW(m_depthStencil, new X12DepthStencil(p_renderingManager, *p_window, p_commandList));
 							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
 								0, 0,
-								1)))
+								1, TRUE)))
 							{								
 								for (UINT i = 0; i < RENDER_TARGETS; i++)									
 									SAFE_NEW(m_renderTarget[i], new X12RenderTargetView(p_renderingManager, *p_window, p_commandList));

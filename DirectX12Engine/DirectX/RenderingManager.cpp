@@ -8,6 +8,7 @@
 #include "Render/ParticlePass.h"
 
 #include <thread>
+#include "Render/SSAOPass.h"
 
 RenderingManager::RenderingManager()
 = default;
@@ -74,7 +75,11 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 													SAFE_NEW(m_particlePass, new ParticlePass(this, window));
 													if (SUCCEEDED(hr = m_particlePass->Init()))
 													{
-														
+														SAFE_NEW(m_ssaoPass, new SSAOPass(this, window));
+														if (SUCCEEDED(hr = m_ssaoPass->Init()))
+														{
+															
+														}
 													}
 												}
 											}
@@ -152,7 +157,10 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 	m_geometryPass->ThreadUpdate(camera, deltaTime);
 
 	m_geometryPass->ThreadJoin();
+	m_ssaoPass->ThreadUpdate(camera, deltaTime);
 	m_shadowPass->ThreadJoin();
+
+	m_ssaoPass->ThreadJoin();
 
 	m_deferredPass->Update(camera, deltaTime);
 	m_deferredPass->Draw();
@@ -202,6 +210,7 @@ void RenderingManager::_clear() const
 	m_shadowPass->Clear();
 	m_deferredPass->Clear();
 	m_particlePass->Clear();
+	m_ssaoPass->Clear();
 }
 
 void RenderingManager::Present() const
@@ -255,6 +264,10 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_particlePass->KillThread();
 	m_particlePass->Release();
 	SAFE_DELETE(m_particlePass);
+
+	m_ssaoPass->KillThread();
+	m_ssaoPass->Release();
+	SAFE_DELETE(m_ssaoPass);
 
 	if (m_device->Release() > 0)
 	{
@@ -342,6 +355,11 @@ DeferredRender* RenderingManager::GetDeferredRender() const
 ParticlePass* RenderingManager::GetParticlePass() const
 {
 	return this->m_particlePass;
+}
+
+SSAOPass* RenderingManager::GetSSAOPass() const
+{
+	return this->m_ssaoPass;
 }
 
 HRESULT RenderingManager::OpenCommandList()

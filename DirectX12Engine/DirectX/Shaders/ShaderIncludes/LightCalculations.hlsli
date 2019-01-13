@@ -69,6 +69,13 @@ float TexelSize(Texture2DArray tTexture)
     return 1.0f / width;
 }
 
+float TexelSize(Texture2D tTexture)
+{
+    float width, height, element;
+    tTexture.GetDimensions(0, width, height, element);
+    return 1.0f / width;
+}
+
 int ShadowCalculations(Texture2DArray shadowMap, uint index, SamplerComparisonState samplerState, in float texelSize, in float4 fragmentLightPos, inout float shadowCoeff, in int PFCSampleRate = 1, in float min = 0.0f, in float max = 1.0f)
 {    
     

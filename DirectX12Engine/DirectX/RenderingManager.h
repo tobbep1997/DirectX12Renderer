@@ -1,6 +1,7 @@
 #pragma once
 #include "DirectX12EnginePCH.h"
 
+class SSAOPass;
 class DeferredRender;
 class ShadowPass;
 class GeometryPass;
@@ -41,6 +42,7 @@ public:
 	ShadowPass * GetShadowPass() const;
 	DeferredRender * GetDeferredRender() const;
 	ParticlePass * GetParticlePass() const;
+	SSAOPass * GetSSAOPass() const;
 
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
@@ -83,6 +85,7 @@ private:
 	ShadowPass *	m_shadowPass = nullptr;
 	DeferredRender * m_deferredPass = nullptr;
 	ParticlePass * m_particlePass = nullptr;
+	SSAOPass * m_ssaoPass = nullptr;
 
 private:
 	//DEBUG LAYER

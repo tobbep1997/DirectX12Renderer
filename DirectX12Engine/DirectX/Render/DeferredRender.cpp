@@ -102,7 +102,6 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 
 	for (UINT i = 0; i < this->m_renderTargetSize; i++)
 	{
-		m_geometryRenderTargetView[i]->SwitchToSRV(p_renderingManager->GetCommandList());
 		ID3D12DescriptorHeap* descriptorHeaps[] = { m_geometryRenderTargetView[i]->GetTextureDescriptorHeap() };
 		p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 		p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(i, m_geometryRenderTargetView[i]->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
@@ -130,6 +129,13 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 	m_shadowBuffer->SetGraphicsRootConstantBufferView(5);
 	
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);
+
+	{
+		ID3D12DescriptorHeap* descriptorHeaps[] = { m_ssao->GetTextureDescriptorHeap() };
+		p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(7, m_ssao->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+	}
+	
 }
 
 void DeferredRender::Draw()
@@ -137,10 +143,6 @@ void DeferredRender::Draw()
 	p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 
 	p_renderingManager->GetCommandList()->DrawInstanced(4, 1, 0, 0);
-	for (UINT i = 0; i < this->m_renderTargetSize; i++)
-	{
-		m_geometryRenderTargetView[i]->SwitchToRTV(p_renderingManager->GetCommandList());
-	}
 }
 
 void DeferredRender::Clear()
@@ -196,6 +198,11 @@ void DeferredRender::AddShadowMap(
 	}
 
 	m_shadowMaps->push_back(sm);
+}
+
+void DeferredRender::SetSSAO(X12RenderTargetView* renderTarget)
+{
+	this->m_ssao = renderTarget;
 }
 
 
@@ -259,6 +266,10 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	D3D12_ROOT_DESCRIPTOR_TABLE shadowTable;
 	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 0, 1);
 
+	D3D12_DESCRIPTOR_RANGE ssaoRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE ssaoTable;
+	RenderingHelpClass::CreateRootDescriptorTable(ssaoRangeTable, ssaoTable, 0, 2);
+
 	D3D12_ROOT_DESCRIPTOR lightRootDescriptor;
 	lightRootDescriptor.RegisterSpace = 0;
 	lightRootDescriptor.ShaderRegister = 0;
@@ -294,6 +305,10 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	m_rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[6].DescriptorTable = shadowTable;
 	m_rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[7].DescriptorTable = ssaoTable;
+	m_rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
