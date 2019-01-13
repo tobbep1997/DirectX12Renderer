@@ -112,12 +112,22 @@ namespace Instancing
 		D3D12_VERTEX_BUFFER_VIEW & instanceBufferView,
 		ID3D12Resource * dstResource, 
 		ID3D12Resource * intermediate, 
-		InstanceGroup * group, 
-		UINT structSize = sizeof(InstanceBuffer))
+		std::vector<InstanceGroup> * groups, 
+		UINT structSize = sizeof(InstanceBuffer),
+		const UINT64 & offset = 0)
 	{
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dstResource, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
-			
-		const UINT dataSize = static_cast<UINT>(structSize * group->GetMaxSize());
+		UINT64 dataSize = 0;
+		UINT current = 0;
+		InstanceBuffer arr[4096];
+		for (size_t i = 0; i < groups->size(); i++)
+		{
+			dataSize += static_cast<UINT64>(structSize * groups->at(i).GetSize());
+			for (size_t j = 0; j < groups->at(i).GetSize(); j++)
+			{
+				arr[current++] = groups->at(i).Transforms[j];
+			}
+		}
 
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedSubresourceFootprint;
 		UINT pNumRows;
@@ -126,24 +136,22 @@ namespace Instancing
 
 		ID3D12Device * device = nullptr;
 		dstResource->GetDevice(IID_PPV_ARGS(&device));
-		D3D12_RESOURCE_DESC dstResourceDesc = dstResource->GetDesc();
 
+		D3D12_RESOURCE_DESC dstResourceDesc = dstResource->GetDesc();
 		device->GetCopyableFootprints(
 			&dstResourceDesc,
 			0,
 			1,
-			0,
+			offset,
 			&placedSubresourceFootprint,
 			&pNumRows,
 			&pBytesPerRow,
 			&pTotalSize);
 
-		device->Release();
-
-		
+		device->Release();		
 
 		D3D12_SUBRESOURCE_DATA instanceData = {};
-		instanceData.pData = group->Transforms;
+		instanceData.pData = arr;
 		instanceData.RowPitch = dataSize;
 		instanceData.SlicePitch = dataSize;
 
@@ -154,18 +162,13 @@ namespace Instancing
 			0, 1, pTotalSize,
 			&placedSubresourceFootprint,
 			&pNumRows,
-			&pBytesPerRow,
+			&pTotalSize,
 			&instanceData);
 
-		if (retValue)
-		{			
-			instanceBufferView.BufferLocation = dstResource->GetGPUVirtualAddress();
-			instanceBufferView.StrideInBytes = structSize;
-			instanceBufferView.SizeInBytes = dataSize;
-		}
-
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dstResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-	
+
+		if (retValue)
+			return dataSize;
 		return retValue;
 	}
 

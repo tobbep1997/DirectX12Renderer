@@ -60,14 +60,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	Drawable * drawable = new Drawable();
 	drawable->SetPosition(0, 0, 0);
 	drawable->SetScale(1, 1, 1);
-	drawable->SetMesh(*staticCubeMesh);
+	drawable->SetMesh(*staticCylinderMesh);
 	drawable->Update();
 	drawable->SetTexture(texture);
 	drawable->SetNormalMap(normal);
 	drawable->SetMetallicMap(metallic);
 	drawable->SetDisplacementMap(displacement);
 
-	const int cubesSize = 16;
+	const int cubesSize = 0;
 	std::vector<Drawable*> cubes = std::vector<Drawable*>(cubesSize);
 	for (UINT i = 0; i < cubesSize; i++)
 	{
@@ -83,7 +83,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 
-	const int floorSize = 50;
+	const int floorSize = 10;
 
 	Drawable * floor = new Drawable();
 	floor->SetPosition(0, -2, 0);
@@ -111,6 +111,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		FALSE,
 		FALSE))
 	{
+		staticCylinderMesh->CreateBuffer(renderingManager);
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);
 		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE, renderingManager);
@@ -121,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
-		const int pointLightSize = 5;
+		const int pointLightSize = 0;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
@@ -142,7 +143,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->GetCamera()->SetFocusPoint(TRUE);
 		directionalLight->GetCamera()->SetUp(1, 0, 0);
 		directionalLight->GetCamera()->Update();
-		directionalLight->SetIntensity(0.2f);
+		directionalLight->SetIntensity(1.0f);
 
 		DirectionalLight* directionalLight2 = new DirectionalLight(renderingManager, *window);
 		directionalLight2->Init();
@@ -182,6 +183,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			drawable->SetRotation(0, drawable->GetRotation().y + deltaTime * 0.25f, 0);
 			drawable->Update();
 			drawable->Draw(renderingManager);
+			floor->Draw(renderingManager);
 
 			for (UINT i = 0; i < cubesSize; i++)
 			{
@@ -190,7 +192,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				cubes[i]->Draw(renderingManager);
 			}
 
-			floor->Draw(renderingManager);
 			directionalLight->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{

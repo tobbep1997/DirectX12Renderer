@@ -109,7 +109,7 @@ void IRender::p_releaseCommandList()
 HRESULT IRender::p_createInstanceBuffer(const UINT & bufferSize)
 {
 	HRESULT hr = 0;
-	
+
 	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
@@ -118,6 +118,7 @@ HRESULT IRender::p_createInstanceBuffer(const UINT & bufferSize)
 		nullptr,
 		IID_PPV_ARGS(&p_instanceBuffer))))
 	{
+		SET_NAME(p_instanceBuffer, L"INSTANCE BUFFER");
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -132,25 +133,41 @@ HRESULT IRender::p_createInstanceBuffer(const UINT & bufferSize)
 	return hr;
 }
 
-BOOL IRender::p_updateInstanceBuffer(const size_t& index, D3D12_VERTEX_BUFFER_VIEW & vertexBufferView) const
+UINT64 IRender::p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferView) const
 {
-	return static_cast<BOOL>(Instancing::UpdateInstanceGroup(p_commandList,
+	UINT64 bufferSize = 0;
+
+	bufferSize = Instancing::UpdateInstanceGroup(p_commandList,
 		vertexBufferView,
 		p_instanceBuffer,
 		p_intermediateInstanceBuffer,
-		&p_instanceGroups->at(index)));
+		p_instanceGroups,
+		sizeof(Instancing::InstanceBuffer),
+		bufferSize);
+	
+	if (bufferSize)
+	{
+		vertexBufferView.BufferLocation = p_instanceBuffer->GetGPUVirtualAddress();
+		vertexBufferView.StrideInBytes = sizeof(Instancing::InstanceBuffer);
+		vertexBufferView.SizeInBytes = static_cast<UINT>(bufferSize);
+	}
+
+	return bufferSize;
 }
 
-void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapTextures)
+void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapTextures) const
 {
 	ID3D12GraphicsCommandList * gcl = p_commandList ? p_commandList : p_renderingManager->GetCommandList();
 
 	const size_t instanceGroupSize = p_instanceGroups->size();
+
+	D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
+	if (!p_updateInstanceBuffer(instanceBufferView))
+		throw "FAILED TO UPDATE INSTANCE BUFFER";
+
 	for (size_t i = 0; i < instanceGroupSize; i++)
 	{		
-		D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
-		if (!p_updateInstanceBuffer(i, instanceBufferView))
-			throw "FAILED TO UPDATE INSTANCE BUFFER";
+
 		if (mapTextures)
 			p_instanceGroups->at(i).MapTextures(textureStartIndex, p_commandList);
 
@@ -166,7 +183,7 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 			static_cast<UINT>(p_instanceGroups->at(i).StaticMesh->GetStaticMesh().size()),
 			p_instanceGroups->at(i).GetSize(),
 			0,
-			0);
+			static_cast<UINT>(i));
 
 	}
 }
