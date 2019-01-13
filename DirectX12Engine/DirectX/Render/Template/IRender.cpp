@@ -50,10 +50,12 @@ void IRender::ThreadUpdate(const Camera & camera, const float & deltaTime)
 	}
 }
 
+#pragma optimize( "", off )
 void IRender::ThreadJoin() const
 {
 	while (!m_threadDone);
 }
+#pragma optimize( "", on )
 
 void IRender::KillThread()
 {

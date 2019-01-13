@@ -67,7 +67,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	drawable->SetMetallicMap(metallic);
 	drawable->SetDisplacementMap(displacement);
 
-	const int cubesSize = 0;
+	const int cubesSize = 16;
 	std::vector<Drawable*> cubes = std::vector<Drawable*>(cubesSize);
 	for (UINT i = 0; i < cubesSize; i++)
 	{
@@ -108,7 +108,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		FALSE,
+		TRUE,
 		FALSE))
 	{
 		staticCylinderMesh->CreateBuffer(renderingManager);
@@ -122,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
-		const int pointLightSize = 0;
+		const int pointLightSize = 5;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
