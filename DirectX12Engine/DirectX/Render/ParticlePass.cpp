@@ -19,7 +19,7 @@ ParticlePass::~ParticlePass()
 HRESULT ParticlePass::Init()
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = p_createCommandList()))
+	if (SUCCEEDED(hr = p_createCommandList(L"Particle")))
 	{
 		if (SUCCEEDED(hr = OpenCommandList()))
 		{

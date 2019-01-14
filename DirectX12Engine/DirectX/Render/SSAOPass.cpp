@@ -26,7 +26,7 @@ SSAOPass::~SSAOPass()
 HRESULT SSAOPass::Init()
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = p_createCommandList()))
+	if (SUCCEEDED(hr = p_createCommandList(L"SSAO")))
 	{
 		if (SUCCEEDED(hr = _preInit()))
 		{
@@ -81,9 +81,9 @@ void SSAOPass::Draw()
 	p_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	p_commandList->DrawInstanced(4, 1, 0, 0);
 
-	p_renderingManager->GetDeferredRender()->SetSSAO(m_renderTarget);
-
 	ExecuteCommandList();
+
+	p_renderingManager->GetDeferredRender()->SetSSAO(m_renderTarget);
 }
 
 void SSAOPass::Clear()

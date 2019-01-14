@@ -130,12 +130,9 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 	
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);
 
-	{
-		ID3D12DescriptorHeap* descriptorHeaps[] = { m_ssao->GetTextureDescriptorHeap() };
-		p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(7, m_ssao->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-	}
-	
+	ID3D12DescriptorHeap* descriptorHeaps[] = { this->m_ssao->GetTextureDescriptorHeap() };
+	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(7, this->m_ssao->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 }
 
 void DeferredRender::Draw()
@@ -268,7 +265,7 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 
 	D3D12_DESCRIPTOR_RANGE ssaoRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE ssaoTable;
-	RenderingHelpClass::CreateRootDescriptorTable(ssaoRangeTable, ssaoTable, 0, 2);
+	RenderingHelpClass::CreateRootDescriptorTable(ssaoRangeTable, ssaoTable, 4, 0);
 
 	D3D12_ROOT_DESCRIPTOR lightRootDescriptor;
 	lightRootDescriptor.RegisterSpace = 0;
@@ -328,7 +325,7 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(m_rootParameters),
 		m_rootParameters,
-		2,
+		_countof(samplers),
 		samplers,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS |
@@ -444,8 +441,6 @@ HRESULT DeferredRender::_createViewport()
 
 HRESULT DeferredRender::_createQuadBuffer()
 {
-
-
 	m_vertexBufferSize = sizeof(m_vertexList);
 
 	HRESULT hr = 0;

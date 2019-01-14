@@ -152,14 +152,14 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 	m_particlePass->ThreadUpdate(camera, deltaTime);
 	m_shadowPass->ThreadUpdate(camera, deltaTime);
 
-
 	m_particlePass->ThreadJoin();
+
 	m_geometryPass->ThreadUpdate(camera, deltaTime);
-
 	m_geometryPass->ThreadJoin();
-	m_ssaoPass->ThreadUpdate(camera, deltaTime);
-	m_shadowPass->ThreadJoin();
 
+	m_ssaoPass->ThreadUpdate(camera, deltaTime);
+
+	m_shadowPass->ThreadJoin();
 	m_ssaoPass->ThreadJoin();
 
 	m_deferredPass->Update(camera, deltaTime);

@@ -67,7 +67,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	drawable->SetMetallicMap(metallic);
 	drawable->SetDisplacementMap(displacement);
 
-	const int cubesSize = 16;
+	const int cubesSize = 0;
 	std::vector<Drawable*> cubes = std::vector<Drawable*>(cubesSize);
 	for (UINT i = 0; i < cubesSize; i++)
 	{
@@ -122,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
-		const int pointLightSize = 1;
+		const int pointLightSize = 0;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
@@ -240,6 +240,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		emitter->Release();
 		SAFE_DELETE(emitter);
 	}
+
 	staticCylinderMesh->Release();
 	staticCubeMesh->Release();
 	texture->Release();
@@ -249,6 +250,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	fire1->Release();
 	fire2->Release();
 	fire3->Release();
+	floor->Release();
+	drawable->Release();
 	renderingManager->Release(FALSE);
 
 	SAFE_DELETE(camera);

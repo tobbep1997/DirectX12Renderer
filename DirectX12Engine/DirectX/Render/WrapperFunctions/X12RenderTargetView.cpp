@@ -109,7 +109,7 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 				{
 					D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
 					renderTargetViewDesc.Format = format;
-					renderTargetViewDesc.ViewDimension = arraySize ? D3D12_RTV_DIMENSION_TEXTURE2DARRAY : D3D12_RTV_DIMENSION_TEXTURE2D;
+					renderTargetViewDesc.ViewDimension = arraySize > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DARRAY : D3D12_RTV_DIMENSION_TEXTURE2D;
 					if (renderTargetViewDesc.ViewDimension == D3D12_RTV_DIMENSION_TEXTURE2D)
 					{
 						renderTargetViewDesc.Texture2D.MipSlice = 0;
@@ -131,7 +131,7 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 					{
 						D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 						srvDesc.Format = format;
-						srvDesc.ViewDimension = arraySize ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
+						srvDesc.ViewDimension = arraySize > 1 ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
 						srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 						if (srvDesc.ViewDimension == D3D12_SRV_DIMENSION_TEXTURE2D)
 						{

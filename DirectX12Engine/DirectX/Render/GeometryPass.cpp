@@ -153,7 +153,7 @@ HRESULT GeometryPass::_preInit()
 {
 	HRESULT hr;
 
-	if (SUCCEEDED(hr = p_createCommandList()))
+	if (SUCCEEDED(hr = p_createCommandList(L"Geometry")))
 	{
 		if (SUCCEEDED(hr = OpenCommandList()))
 		{
@@ -183,7 +183,7 @@ HRESULT GeometryPass::_preInit()
 										return hr;
 									}
 								}
-								if (SUCCEEDED(hr = p_createInstanceBuffer()))
+								if (SUCCEEDED(hr = p_createInstanceBuffer(L"Geometry")))
 								{
 									SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList));
 
@@ -272,8 +272,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[6].DescriptorTable = displacementNormalTable;
 	m_rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
-
-	   
+		   
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
 
@@ -342,9 +341,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
-
 	
-
 	if (SUCCEEDED(hr = D3D12SerializeRootSignature(&particleRootSignatureDesc,
 		D3D_ROOT_SIGNATURE_VERSION_1,
 		&signature,
@@ -383,8 +380,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 
 	m_inputLayoutDesc.NumElements = sizeof(inputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
 	m_inputLayoutDesc.pInputElementDescs = inputLayout;
-
-
+	
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc = {};
 	graphicsPipelineStateDesc.InputLayout = m_inputLayoutDesc;
 	graphicsPipelineStateDesc.pRootSignature = m_rootSignature;
@@ -429,8 +425,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 
 	m_inputLayoutDesc.NumElements = sizeof(particleInputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
 	m_inputLayoutDesc.pInputElementDescs = particleInputLayout;
-
-
+	
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC particleGraphicsPipelineStateDesc = {};
 	particleGraphicsPipelineStateDesc.InputLayout = m_inputLayoutDesc;
 	particleGraphicsPipelineStateDesc.pRootSignature = m_particleRootSignature;
@@ -506,7 +501,6 @@ HRESULT GeometryPass::_initShaders()
 		m_pixelShader.pShaderBytecode = blob->GetBufferPointer();
 	}
 
-
 	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryParticleVertex.hlsl", blob, "vs_5_1")))
 	{
 		return hr;
@@ -517,7 +511,6 @@ HRESULT GeometryPass::_initShaders()
 		m_particleVertexShader.pShaderBytecode = blob->GetBufferPointer();
 	}
 
-
 	if (FAILED(hr = ShaderCreator::CreateShader(L"../DirectX12Engine/DirectX/Shaders/GeometryPass/DefaultGeometryParticlePixel.hlsl", blob, "ps_5_1")))
 	{
 		return hr;
@@ -527,8 +520,6 @@ HRESULT GeometryPass::_initShaders()
 		m_particlePixelShader.BytecodeLength = blob->GetBufferSize();
 		m_particlePixelShader.pShaderBytecode = blob->GetBufferPointer();
 	}
-
-
 
 	return hr;
 }
