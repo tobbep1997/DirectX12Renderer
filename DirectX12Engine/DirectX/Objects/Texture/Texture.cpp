@@ -131,7 +131,10 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 		uploadResourceFinish.wait();
 	}
 	else
+	{
 		Window::CreateError(hr);
+		return FALSE;
+	}
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.NumDescriptors = 1;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;

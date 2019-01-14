@@ -94,9 +94,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	floor->SetNormalMap(normal);
 	floor->SetMetallicMap(metallic);
 	floor->SetDisplacementMap(displacement);
-
-
-
+	   
 	Texture * fire1 = new Texture();
 	Texture * fire2 = new Texture();
 	Texture * fire3 = new Texture();
@@ -111,7 +109,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		TRUE,
 		FALSE))
 	{
-		//staticCylinderMesh->CreateBuffer(renderingManager);
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);
 		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE, renderingManager);
@@ -144,17 +141,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->GetCamera()->SetUp(1, 0, 0);
 		directionalLight->GetCamera()->Update();
 		directionalLight->SetIntensity(1.0f);
-
-		DirectionalLight* directionalLight2 = new DirectionalLight(renderingManager, *window);
-		directionalLight2->Init();
-		directionalLight2->SetPosition(0, 5, 0);
-		directionalLight2->SetDirection(0, 0, 0);
-		directionalLight2->GetCamera()->SetFocusPoint(TRUE);
-		directionalLight2->GetCamera()->SetUp(1, 0, 0);
-		directionalLight2->GetCamera()->Update();
-		directionalLight2->SetIntensity(0.2f);
-
-
+				
 		ParticleEmitter * emitter = new ParticleEmitter(
 			renderingManager, 
 			*window, 
@@ -228,12 +215,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		}	
 		renderingManager->WaitForFrames();
 		directionalLight->Release();
-		directionalLight2->Release();
 		for (UINT i = 0; i < pointLightSize; i++)
 			pointLights[i]->Release();
 
 		delete directionalLight;
-		delete directionalLight2;
 		for (UINT i = 0; i < pointLightSize; i++)
 			delete pointLights[i];
 
