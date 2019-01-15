@@ -16,7 +16,7 @@ SamplerComparisonState comparisonSampler : register(s1);
 Texture2D worldPos : register(t0);
 Texture2D depthStencil : register(t1);
 
-float main(VS_OUTPUT input) : SV_TARGET
+float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float4 position = worldPos.Sample(defaultSampler, input.uv.xy);
 
@@ -41,5 +41,5 @@ float main(VS_OUTPUT input) : SV_TARGET
     }
     currentAO /= divider;
 
-    return currentAO;
+    return float4(currentAO, currentAO, currentAO, 1);
 }

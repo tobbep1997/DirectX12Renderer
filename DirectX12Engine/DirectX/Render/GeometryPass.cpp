@@ -394,7 +394,6 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
 		graphicsPipelineStateDesc.RTVFormats[i] = RENDER_TARGET_FORMAT;
-
 	}
 	graphicsPipelineStateDesc.SampleMask = 0xffffffff;
 	graphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);

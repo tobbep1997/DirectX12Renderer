@@ -47,8 +47,6 @@ float4 main(VS_OUTPUT input) : SV_Target
 
     if (length(normal) < .5f)
         return albedo;
-    //return float4(ssao.rgb, 1);
-
     float4 finalColor = LightCalculation(LightType, 
                                     LightPosition, 
                                     LightColor, 
@@ -71,5 +69,5 @@ float4 main(VS_OUTPUT input) : SV_Target
             1);
     }
     shadowCoeff = pow(shadowCoeff /= divider, 2);
-    return saturate((finalColor + specular) * shadowCoeff + (ambient * float4(ssao.r, ssao.r, ssao.r, 1)));
+    return saturate((finalColor + specular) * shadowCoeff + (ambient * pow(ssao, 4)));
 }

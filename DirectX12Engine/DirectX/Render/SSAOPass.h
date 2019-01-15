@@ -8,6 +8,9 @@ class SSAOPass : //NOLINT
 {
 private:
 	static const UINT ROOT_PARAMETERS = 3;
+	static const UINT BLUR_ROOT_PARAMETERS = 2;
+
+	const DXGI_FORMAT RENDER_TARGET_FORMAT = DXGI_FORMAT_R32G32B32A32_FLOAT;
 
 	struct CameraBuffer
 	{
@@ -34,6 +37,12 @@ private:
 	HRESULT _initID3D12RootSignature();
 	HRESULT _initShaders();
 	HRESULT _initID3D12PipelineState();
+	HRESULT _initBlurPass();
+
+	HRESULT _createLocalCommandList();
+	HRESULT _openCommandList();
+	HRESULT _executeCommandList() const;
+
 	void _createViewport();
 
 	HRESULT _createQuadBuffer();
@@ -52,6 +61,23 @@ private:
 	D3D12_SHADER_BYTECODE m_vertexShader{};
 	D3D12_SHADER_BYTECODE m_pixelShader{};
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc{};
+
+	ID3D12CommandAllocator * m_blurCommandAllocator[FRAME_BUFFER_COUNT] {nullptr};
+	ID3D12GraphicsCommandList * m_blurCommandList = nullptr;
+
+	ID3D12Resource * m_blurTextureOutput = nullptr;
+	ID3D12DescriptorHeap * m_blurTextureOutputDescriptorHeap = nullptr;
+
+	ID3D12RootSignature * m_blurRootSignature = nullptr;
+	ID3D12PipelineState * m_blurPipelineState = nullptr;
+
+	D3D12_INPUT_LAYOUT_DESC  m_blurInputLayoutDesc{};
+
+	D3D12_SHADER_BYTECODE m_blurVertex{};
+	D3D12_SHADER_BYTECODE m_blurPixel {};
+	D3D12_ROOT_PARAMETER m_blurRootParameter[BLUR_ROOT_PARAMETERS]{};
+
+	X12RenderTargetView * m_blurRenderTarget = nullptr;
 
 	CameraBuffer m_cameraValues{};
 	X12ConstantBuffer * m_cameraBuffer = nullptr;

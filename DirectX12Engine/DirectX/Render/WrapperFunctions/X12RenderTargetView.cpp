@@ -126,7 +126,11 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 					
 					p_renderingManager->GetDevice()->CreateRenderTargetView(m_renderTargets[i], &renderTargetViewDesc, rtvHandle);
 					rtvHandle.Offset(1, m_rtvDescriptorSize);
-					m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+					
+					for (UINT j = 0; j < FRAME_BUFFER_COUNT; j++)
+					{
+						m_currentState[j] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+					}
 					if (createTexture)
 					{
 						D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -184,18 +188,24 @@ const UINT& X12RenderTargetView::GetDescriptorSize() const
 void X12RenderTargetView::SwitchToRTV(ID3D12GraphicsCommandList * commandList)
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState)
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[*p_renderingManager->GetFrameIndex()], m_currentState, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	const UINT frameIndex = *p_renderingManager->GetFrameIndex();;
+
+	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState[frameIndex])
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], m_currentState[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET));
+	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	
 }
 
 void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	if (D3D12_RESOURCE_STATE_RENDER_TARGET == m_currentState)
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[*p_renderingManager->GetFrameIndex()], m_currentState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-	m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+	const UINT frameIndex = *p_renderingManager->GetFrameIndex();;
+
+	if (D3D12_RESOURCE_STATE_RENDER_TARGET == m_currentState[frameIndex])
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], m_currentState[frameIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
 void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList) const
