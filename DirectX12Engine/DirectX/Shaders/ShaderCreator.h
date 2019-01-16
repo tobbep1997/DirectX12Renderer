@@ -22,6 +22,8 @@ public:
 			&errorBlob
 		)))
 		{
+			if (!errorBlob)
+				return hr;
 			OutputDebugStringW(std::wstring(L"\n" + path + L"\n{\n\n ").c_str());
 			OutputDebugStringA(static_cast<char*>(errorBlob->GetBufferPointer()));
 			OutputDebugStringW(std::wstring(L"\n\n}\n").c_str());

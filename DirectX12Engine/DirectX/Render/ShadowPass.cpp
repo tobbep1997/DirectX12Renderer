@@ -146,7 +146,7 @@ HRESULT ShadowPass::_preInit()
 	HRESULT hr = 0;
 
 	_createViewport();
-	if (SUCCEEDED(hr = p_createCommandList()))
+	if (SUCCEEDED(hr = p_createCommandList(L"Shadow")))
 	{
 		if (SUCCEEDED(hr = OpenCommandList()))
 		{
@@ -158,7 +158,7 @@ HRESULT ShadowPass::_preInit()
 					{
 						if (SUCCEEDED(hr = _createConstantBuffer()))
 						{
-							if (SUCCEEDED(hr = p_createInstanceBuffer()))
+							if (SUCCEEDED(hr = p_createInstanceBuffer(L"Shadow")))
 							{
 								
 							}

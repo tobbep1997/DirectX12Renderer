@@ -35,10 +35,10 @@ protected:
 	ID3D12GraphicsCommandList * p_commandList = nullptr;
 	ID3D12CommandAllocator * p_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };
 
-	HRESULT p_createCommandList();
+	HRESULT p_createCommandList(const std::wstring & name);
 	void p_releaseCommandList();
 
-	HRESULT p_createInstanceBuffer(const UINT & bufferSize = 1024u * 64u);
+	HRESULT p_createInstanceBuffer(const std::wstring & name, const UINT & bufferSize = 1024u * 64u);
 	UINT64 p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferView) const;
 
 	void p_drawInstance(const UINT & textureStartIndex = 0, const BOOL & mapTextures = FALSE) const;

@@ -32,8 +32,8 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
     ParticleCalculations(particlePos, particleInfo, ParticleDirection[DTid.x]);
 
-    float4 particleWorldPos = mul(particlePos, WorldMatrix);
 
+    float4 particleWorldPos = mul(particlePos, WorldMatrix);
     float4 cameraPos = float4(CameraPosition.x * 2.0f, CameraPosition.y * 2.0f, CameraPosition.z * 2.0f, 1);
 
     float3 dir      = normalize(particleWorldPos.xyz - cameraPos.xyz);

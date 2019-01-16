@@ -138,6 +138,20 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 			m_renderTargets[m_frameIndex],
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
+	//---------------------------------------------------------------------
+	m_particlePass->ThreadUpdate(camera, deltaTime);
+	m_shadowPass->ThreadUpdate(camera, deltaTime);
+
+	m_particlePass->ThreadJoin();
+
+	m_geometryPass->ThreadUpdate(camera, deltaTime);
+	m_geometryPass->ThreadJoin();
+
+	m_ssaoPass->ThreadUpdate(camera, deltaTime);
+
+	m_shadowPass->ThreadJoin();
+	m_ssaoPass->ThreadJoin();
+
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_frameIndex,
@@ -147,20 +161,6 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 
 	const float clearColor[] = { 1.0f, 0.0f, 1.0f, 1.0f };
 	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-
-	//---------------------------------------------------------------------
-	m_particlePass->ThreadUpdate(camera, deltaTime);
-	m_shadowPass->ThreadUpdate(camera, deltaTime);
-
-
-	m_particlePass->ThreadJoin();
-	m_geometryPass->ThreadUpdate(camera, deltaTime);
-
-	m_geometryPass->ThreadJoin();
-	m_ssaoPass->ThreadUpdate(camera, deltaTime);
-	m_shadowPass->ThreadJoin();
-
-	m_ssaoPass->ThreadJoin();
 
 	m_deferredPass->Update(camera, deltaTime);
 	m_deferredPass->Draw();
@@ -268,9 +268,10 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_ssaoPass->KillThread();
 	m_ssaoPass->Release();
 	SAFE_DELETE(m_ssaoPass);
-
-	if (m_device->Release() > 0)
+	ULONG unReleaseObjects;
+	if (unReleaseObjects = m_device->Release())
 	{
+		OutputDebugStringW((std::wstring(std::to_wstring(unReleaseObjects)) + std::wstring(L"\n")).c_str());
 		if (m_debugLayerEnabled && reportMemoryLeaks)
 		{
 			ID3D12DebugDevice * dbgDevice = nullptr;

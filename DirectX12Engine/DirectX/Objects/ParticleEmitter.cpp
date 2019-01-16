@@ -262,7 +262,6 @@ HRESULT ParticleEmitter::_createBuffer()
 				m_vertexOutputDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 		}
 	}
-
 	if (FAILED(hr))
 		return hr;
 

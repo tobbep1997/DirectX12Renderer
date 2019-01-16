@@ -109,7 +109,7 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 				{
 					D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
 					renderTargetViewDesc.Format = format;
-					renderTargetViewDesc.ViewDimension = arraySize ? D3D12_RTV_DIMENSION_TEXTURE2DARRAY : D3D12_RTV_DIMENSION_TEXTURE2D;
+					renderTargetViewDesc.ViewDimension = arraySize > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DARRAY : D3D12_RTV_DIMENSION_TEXTURE2D;
 					if (renderTargetViewDesc.ViewDimension == D3D12_RTV_DIMENSION_TEXTURE2D)
 					{
 						renderTargetViewDesc.Texture2D.MipSlice = 0;
@@ -126,12 +126,16 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 					
 					p_renderingManager->GetDevice()->CreateRenderTargetView(m_renderTargets[i], &renderTargetViewDesc, rtvHandle);
 					rtvHandle.Offset(1, m_rtvDescriptorSize);
-					m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+					
+					for (UINT j = 0; j < FRAME_BUFFER_COUNT; j++)
+					{
+						m_currentState[j] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+					}
 					if (createTexture)
 					{
 						D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 						srvDesc.Format = format;
-						srvDesc.ViewDimension = arraySize ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
+						srvDesc.ViewDimension = arraySize > 1 ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
 						srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 						if (srvDesc.ViewDimension == D3D12_SRV_DIMENSION_TEXTURE2D)
 						{
@@ -184,18 +188,24 @@ const UINT& X12RenderTargetView::GetDescriptorSize() const
 void X12RenderTargetView::SwitchToRTV(ID3D12GraphicsCommandList * commandList)
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState)
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[*p_renderingManager->GetFrameIndex()], m_currentState, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	const UINT frameIndex = *p_renderingManager->GetFrameIndex();;
+
+	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState[frameIndex])
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], m_currentState[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET));
+	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	
 }
 
 void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	if (D3D12_RESOURCE_STATE_RENDER_TARGET == m_currentState)
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[*p_renderingManager->GetFrameIndex()], m_currentState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-	m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+	const UINT frameIndex = *p_renderingManager->GetFrameIndex();;
+
+	if (D3D12_RESOURCE_STATE_RENDER_TARGET == m_currentState[frameIndex])
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], m_currentState[frameIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
 void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList) const

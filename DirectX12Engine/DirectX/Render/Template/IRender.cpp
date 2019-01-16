@@ -5,8 +5,9 @@
 void IRender::_updateWithThreads()
 {
 	if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL))
-		PRINT(L"FAILED TO SET PRIORITY LEVEL OF THREAD") NEW_LINE;
-	
+	{
+		PRINT("FAILED TO SET PRIORITY LEVEL OF THREAD \n");
+	}
 	while (m_threadRunning)
 	{
 		if (!m_threadDone)
@@ -76,7 +77,7 @@ void IRender::QueueLight(ILight* light) const
 	p_lightQueue->push_back(light);
 }
 
-HRESULT IRender::p_createCommandList()
+HRESULT IRender::p_createCommandList(const std::wstring & name)
 {
 	HRESULT hr = 0;
 
@@ -86,6 +87,7 @@ HRESULT IRender::p_createCommandList()
 			D3D12_COMMAND_LIST_TYPE_DIRECT, 
 			IID_PPV_ARGS(&p_commandAllocator[i]))))
 		{
+			SET_NAME(p_commandAllocator[i], name + L" Command allocator");
 			return hr;
 		}
 	}
@@ -96,6 +98,7 @@ HRESULT IRender::p_createCommandList()
 		nullptr, 
 		IID_PPV_ARGS(&p_commandList))))
 	{		
+		SET_NAME(p_commandList, name + L" Command list");
 		p_commandList->Close();
 	}
 	return hr;
@@ -110,7 +113,7 @@ void IRender::p_releaseCommandList()
 	}
 }
 
-HRESULT IRender::p_createInstanceBuffer(const UINT & bufferSize)
+HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & bufferSize)
 {
 	HRESULT hr = 0;
 
@@ -122,7 +125,7 @@ HRESULT IRender::p_createInstanceBuffer(const UINT & bufferSize)
 		nullptr,
 		IID_PPV_ARGS(&p_instanceBuffer))))
 	{
-		SET_NAME(p_instanceBuffer, L"INSTANCE BUFFER");
+		SET_NAME(p_instanceBuffer, name + L" intermediate INSTANCE BUFFER");
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -131,6 +134,7 @@ HRESULT IRender::p_createInstanceBuffer(const UINT & bufferSize)
 			nullptr,
 			IID_PPV_ARGS(&p_intermediateInstanceBuffer))))
 		{
+			SET_NAME(p_intermediateInstanceBuffer, name + L" intermediate INSTANCE BUFFER");
 
 		}
 	}
