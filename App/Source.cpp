@@ -83,12 +83,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 
-	const int floorSize = 5;
+	const int floorSize = 10;
 
 	Drawable * floor = new Drawable();
 	floor->SetPosition(0, -2, 0);
 	floor->SetScale(floorSize, 1, floorSize);
-	floor->SetMesh(*staticCylinderMesh);
+	floor->SetMesh(*staticCubeMesh);
 	floor->Update();
 	floor->SetTexture(texture);
 	floor->SetNormalMap(normal);
@@ -106,10 +106,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		TRUE,
+		FALSE,
 		FALSE))
 	{
-		staticCylinderMesh->CreateBuffer(renderingManager);
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);
 		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE, renderingManager);

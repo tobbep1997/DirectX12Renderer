@@ -25,14 +25,16 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
     float2 smTex;
     float2 baseUV = input.uv.xy;
-    float texelSize = TexelSize(depthStencil);
+    float2 texelSize = TexelSize2(depthStencil);
 
     float currentAO = 0;
     float divider = 1;
 
-    for (int x = -1; x <= 1; ++x)
+    int ssaoSize = 10;
+
+    for (int x = -ssaoSize; x <= ssaoSize; ++x)
     {
-        for (int y = -1; y <= 1; ++y)
+        for (int y = -ssaoSize; y <= ssaoSize; ++y)
         {
             smTex = baseUV + (float2(x, y) * texelSize);
             currentAO += depthStencil.SampleCmpLevelZero(comparisonSampler, smTex, depth).r;
@@ -41,5 +43,5 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     }
     currentAO /= divider;
 
-    return float4(currentAO, currentAO, currentAO, 1);
+    return float4(currentAO, 0, 0, 1);
 }

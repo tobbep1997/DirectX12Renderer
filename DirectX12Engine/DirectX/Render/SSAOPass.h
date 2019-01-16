@@ -8,7 +8,7 @@ class SSAOPass : //NOLINT
 {
 private:
 	static const UINT ROOT_PARAMETERS = 3;
-	static const UINT BLUR_ROOT_PARAMETERS = 2;
+	static const UINT BLUR_ROOT_PARAMETERS = 1;
 
 	const DXGI_FORMAT RENDER_TARGET_FORMAT = DXGI_FORMAT_R32G32B32A32_FLOAT;
 
@@ -64,9 +64,6 @@ private:
 
 	ID3D12CommandAllocator * m_blurCommandAllocator[FRAME_BUFFER_COUNT] {nullptr};
 	ID3D12GraphicsCommandList * m_blurCommandList = nullptr;
-
-	ID3D12Resource * m_blurTextureOutput = nullptr;
-	ID3D12DescriptorHeap * m_blurTextureOutputDescriptorHeap = nullptr;
 
 	ID3D12RootSignature * m_blurRootSignature = nullptr;
 	ID3D12PipelineState * m_blurPipelineState = nullptr;

@@ -87,14 +87,11 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	p_commandList->DrawInstanced(4, 1, 0, 0);
 
 	ExecuteCommandList();
-
-	p_renderingManager->GetDeferredRender()->SetSSAO(m_renderTarget);
 }
 
 void SSAOPass::Draw()
 {
 	_openCommandList();
-	m_blurCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_blurTextureOutput, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_blurRenderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -111,18 +108,17 @@ void SSAOPass::Draw()
 	m_blurCommandList->RSSetScissorRects(1, &m_rect);
 	m_blurCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	ID3D12DescriptorHeap* worldDescriptorHeaps[] = { m_renderTarget->GetTextureDescriptorHeap() };
-	m_blurCommandList->SetDescriptorHeaps(_countof(worldDescriptorHeaps), worldDescriptorHeaps);
-	m_blurCommandList->SetGraphicsRootDescriptorTable(0, m_renderTarget->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-
-	//m_blurCommandList->SetGraphicsRootUnorderedAccessView(1, m_blurTextureOutput->GetGPUVirtualAddress());
+	{
+		ID3D12DescriptorHeap* worldDescriptorHeaps[] = { m_renderTarget->GetTextureDescriptorHeap() };
+		m_blurCommandList->SetDescriptorHeaps(_countof(worldDescriptorHeaps), worldDescriptorHeaps);
+		m_blurCommandList->SetGraphicsRootDescriptorTable(0, m_renderTarget->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+	}
 	
 	m_blurCommandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	m_blurCommandList->DrawInstanced(4, 1, 0, 0);
 
-	m_blurCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_blurTextureOutput, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
 	_executeCommandList();
+	p_renderingManager->GetDeferredRender()->SetSSAO(m_blurRenderTarget);
 }
 
 void SSAOPass::Clear()
@@ -149,9 +145,6 @@ void SSAOPass::Release()
 
 	SAFE_RELEASE(m_blurPipelineState);
 	SAFE_RELEASE(m_blurRootSignature);
-
-	SAFE_RELEASE(m_blurTextureOutput);
-	SAFE_RELEASE(m_blurTextureOutputDescriptorHeap);
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
@@ -374,15 +367,10 @@ HRESULT SSAOPass::_initBlurPass()
 	D3D12_ROOT_DESCRIPTOR_TABLE ssaoTable;
 	RenderingHelpClass::CreateRootDescriptorTable(ssaoRangeTable, ssaoTable, 0);
 
-	const D3D12_ROOT_DESCRIPTOR uavOutput{0,0};
-
 	m_blurRootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_blurRootParameter[0].DescriptorTable = ssaoTable;
 	m_blurRootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-	m_blurRootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
-	m_blurRootParameter[1].Descriptor = uavOutput;
-	m_blurRootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC samplerDesc;
 	RenderingHelpClass::CreateSampler(samplerDesc, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
@@ -492,55 +480,7 @@ HRESULT SSAOPass::_initBlurPass()
 	{
 		return hr;
 	}
-
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-	descriptorHeapDesc.NumDescriptors = 1;
-	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&descriptorHeapDesc,
-		IID_PPV_ARGS(&m_blurTextureOutputDescriptorHeap))))
-	{
-		D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D (
-			RENDER_TARGET_FORMAT,
-			p_window->GetWidth(), 
-			p_window->GetHeight(),
-			1,
-			0,
-			1,
-			0,
-			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
-			D3D12_TEXTURE_LAYOUT_UNKNOWN);
-
-		D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_CUSTOM);
-		heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-		heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
-
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			nullptr,
-			IID_PPV_ARGS(&m_blurTextureOutput))))
-		{			
-			SET_NAME(m_blurTextureOutput, L"SSAO blur UAV output");
-					   
-			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
-			unorderedAccessViewDesc.Format = RENDER_TARGET_FORMAT;
-			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-			
-			p_renderingManager->GetDevice()->CreateUnorderedAccessView(
-				m_blurTextureOutput,
-				nullptr,
-				&unorderedAccessViewDesc,
-				m_blurTextureOutputDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-			m_blurCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_blurTextureOutput, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-		}
-	}
-
+	
 	return hr;
 }
 

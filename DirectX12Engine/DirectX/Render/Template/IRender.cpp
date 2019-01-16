@@ -5,8 +5,9 @@
 void IRender::_updateWithThreads()
 {
 	if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL))
-		PRINT(L"FAILED TO SET PRIORITY LEVEL OF THREAD") NEW_LINE;
-	
+	{
+		PRINT("FAILED TO SET PRIORITY LEVEL OF THREAD \n");
+	}
 	while (m_threadRunning)
 	{
 		if (!m_threadDone)
