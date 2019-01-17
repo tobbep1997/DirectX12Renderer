@@ -228,9 +228,10 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	if (waitForFrames)
 		WaitForFrames();
 
-	BOOL fs = false;
-	if (m_swapChain->GetFullscreenState(&fs, nullptr))
-		m_swapChain->SetFullscreenState(false, nullptr);
+	BOOL fullscreen = FALSE;
+	m_swapChain->GetFullscreenState(&fullscreen, nullptr);
+	if (fullscreen)
+		m_swapChain->SetFullscreenState(FALSE, nullptr);
 
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_commandQueue);

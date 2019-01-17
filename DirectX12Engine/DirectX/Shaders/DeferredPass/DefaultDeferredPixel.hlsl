@@ -50,6 +50,7 @@ float4 main(VS_OUTPUT input) : SV_Target
 
     if (length(normal) < .5f)
         return albedo;
+
     float4 finalColor = LightCalculation(LightType, 
                                     LightPosition, 
                                     LightColor, 

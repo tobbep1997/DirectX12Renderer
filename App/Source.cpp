@@ -36,15 +36,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	int nShowCmd)
 {
 	Window * window = nullptr;
-	RenderingManager * renderingManager = nullptr;
-	
+	RenderingManager * renderingManager = nullptr;	
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
 		hInstance, 
 		"Victor is Gay",
-		1280, 
-		720, 
+		1600, 
+		900, 
 		FALSE,
 		TRUE,
 		FALSE))
@@ -78,7 +77,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		drawable->SetMetallicMap(metallic);
 		drawable->SetDisplacementMap(displacement);
 
-		const int cubesSize = 0;
+		const int cubesSize = 16;
 		std::vector<Drawable*> cubes = std::vector<Drawable*>(cubesSize);
 		for (UINT i = 0; i < cubesSize; i++)
 		{
@@ -120,13 +119,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
-		const int pointLightSize = 0;
+		const int pointLightSize = 4;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
 			pointLights[i]->Init();
-			pointLights[i]->SetPosition(1.0f * i, 3.0f, 1.0f * i);
+			pointLights[i]->SetPosition(static_cast<float>(rand() % pointLightSize) - (pointLightSize / 2), 0.0f, static_cast<float>(rand() % pointLightSize) - (pointLightSize / 2)); //NOLINT
 			pointLights[i]->SetIntensity(5.5f);
 			pointLights[i]->SetDropOff(1.0f);
 			pointLights[i]->SetPow(1.5f);

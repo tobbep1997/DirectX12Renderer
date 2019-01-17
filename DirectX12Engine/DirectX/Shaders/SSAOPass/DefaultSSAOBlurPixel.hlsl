@@ -32,7 +32,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float finalColor = 0;
     float2 texelSize = TexelSize2(ssaoTexture);
-    int sampleRadius = 5;
+    int sampleRadius = 2;
 
 
     float2 smTex;

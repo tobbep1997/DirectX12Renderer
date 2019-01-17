@@ -37,7 +37,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         for (int y = -ssaoSize; y <= ssaoSize; ++y)
         {
             smTex = baseUV + (float2(x, y) * texelSize);
-            currentAO += depthStencil.SampleCmpLevelZero(comparisonSampler, smTex, depth).r;
+            currentAO += depthStencil.SampleCmpLevelZero(comparisonSampler, smTex, depth - 0.000001).r;
             divider += 1.0f;
         }
     }
