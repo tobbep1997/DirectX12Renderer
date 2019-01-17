@@ -19,8 +19,9 @@ Drawable::~Drawable()
 {
 }
 
-void Drawable::Init()
+BOOL Drawable::Init()
 {
+	return Transform::Init();
 }
 
 void Drawable::Update()
@@ -30,6 +31,7 @@ void Drawable::Update()
 
 void Drawable::Release()
 {
+	Transform::Release();
 }
 
 void Drawable::SetMesh(StaticMesh& mesh)

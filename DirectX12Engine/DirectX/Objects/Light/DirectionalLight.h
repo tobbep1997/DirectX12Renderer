@@ -7,7 +7,7 @@ public:
 	DirectionalLight(RenderingManager * renderingManager, const Window & window);
 	~DirectionalLight();
 
-	void Init() override;
+	BOOL Init() override;
 	void Update() override;
 	void Release() override;
 

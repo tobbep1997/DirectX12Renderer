@@ -48,7 +48,7 @@ public:
 		const DXGI_FORMAT& textureFormat = DXGI_FORMAT_R8G8B8A8_UNORM);
 	~ParticleEmitter();
 
-	void Init() override;
+	BOOL Init() override;
 	void Release() override;
 	void Update() override;
 	void Draw();

@@ -4,7 +4,7 @@ class Camera :
 	public Transform
 {
 public:
-	void Init() override;
+	BOOL Init() override;
 	void Update() override;
 	void Release() override;
 private:

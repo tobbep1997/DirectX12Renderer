@@ -12,13 +12,15 @@ Transform::~Transform()
 {
 }
 
-void Transform::Init()
+BOOL Transform::Init()
 {
 	m_position	= DirectX::XMFLOAT4(0, 0, 0, 1);
 	m_scale		= DirectX::XMFLOAT4(1, 1, 1, 1);
 	m_rotation	= DirectX::XMFLOAT4(0, 0, 0, 1);
 
 	_calcWorldMatrix();
+
+	return TRUE;
 }
 
 void Transform::Update()

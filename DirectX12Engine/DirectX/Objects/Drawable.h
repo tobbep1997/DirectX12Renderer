@@ -12,7 +12,7 @@ public:
 	Drawable();
 	~Drawable();
 
-	void Init() override;
+	BOOL Init() override;
 	void Update() override;
 	void Release() override;
 	

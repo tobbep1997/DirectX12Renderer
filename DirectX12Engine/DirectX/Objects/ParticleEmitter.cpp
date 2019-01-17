@@ -25,8 +25,11 @@ ParticleEmitter::~ParticleEmitter()
 {
 }
 
-void ParticleEmitter::Init()
+BOOL ParticleEmitter::Init()
 {
+	if (!Transform::Init())
+		return FALSE;
+
 	HRESULT hr = 0;	
 	if (SUCCEEDED(hr = _createCommandList()))
 	{
@@ -59,9 +62,13 @@ void ParticleEmitter::Init()
 		}
 	}
 	if (FAILED(hr))
+	{
 		this->Release();
+		return FALSE;
+	}
 
 	SAFE_NEW(m_particles, new std::vector<Particle>());
+	return TRUE;
 }
 
 void ParticleEmitter::Release()
@@ -84,12 +91,12 @@ void ParticleEmitter::Release()
 	{
 		SAFE_RELEASE(m_commandAllocator[i]);
 	}
+	Transform::Release();
 }
 
 void ParticleEmitter::Update()
 {
 	Transform::Update();
-
 }
 
 ID3D12Resource* ParticleEmitter::GetVertexResource() const
@@ -312,12 +319,10 @@ HRESULT ParticleEmitter::_createBuffer()
 void ParticleEmitter::_updateParticles(const float & deltaTime)
 {
 	using namespace DirectX;
-	for (int i = 0; i < m_particles->size(); i++)
+	for (size_t i = 0; i < m_particles->size(); i++)
 	{
 		if (m_particles->at(i).TimeAlive >= m_particles->at(i).TimeToLive)
 		{
-			//m_particles->erase(m_particles->begin() + i);
-			//i = -1;
 			const XMVECTOR baseSpawn = XMVectorAdd(
 				XMLoadFloat4(&GetPosition()),
 				XMLoadFloat4(&XMFLOAT4(

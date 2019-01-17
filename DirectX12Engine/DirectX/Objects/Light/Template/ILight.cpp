@@ -55,6 +55,16 @@ BOOL ILight::p_createDirectXContext(const UINT& renderTargets, const BOOL& creat
 	return FALSE;
 }
 
+BOOL ILight::Init()
+{
+	return Transform::Init();
+}
+
+void ILight::Update()
+{
+	Transform::Update();
+}
+
 void ILight::Release()
 {
 	Transform::Release();

@@ -8,7 +8,7 @@ class StaticMesh : //NOLINT
 	public IObject
 {
 public:
-	void Init() override;
+	BOOL Init() override;
 	void Update() override;
 	void Release() override;
 	StaticMesh();
@@ -25,7 +25,7 @@ public:
 private:
 	HRESULT _createBuffer(RenderingManager * renderingManager);
 	void _clearMesh();
-	void _createMesh(const aiScene * scene);
+	BOOL _createMesh(const aiScene * scene);
 
 	BOOL m_meshLoaded = FALSE;
 	UINT m_vertexBufferSize = 0;

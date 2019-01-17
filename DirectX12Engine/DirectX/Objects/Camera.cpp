@@ -3,11 +3,14 @@
 
 #pragma warning (disable : 4172)
 
-void Camera::Init()
+BOOL Camera::Init()
 {
+	if (!Transform::Init())
+		return FALSE;
 	this->m_direction	= DirectX::XMFLOAT4(0, 0, 1, 0);
 	this->m_up			= DirectX::XMFLOAT4(0, 1, 0, 0);
 	this->m_focusPoint	= DirectX::XMFLOAT4(0, 0, 0, 1);
+	return TRUE;
 }
 
 void Camera::Update()
@@ -20,6 +23,7 @@ void Camera::Update()
 
 void Camera::Release()
 {
+	Transform::Release();
 }
 
 void Camera::_calcView()

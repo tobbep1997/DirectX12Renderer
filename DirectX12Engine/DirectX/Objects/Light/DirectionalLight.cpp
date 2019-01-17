@@ -12,13 +12,16 @@ DirectionalLight::~DirectionalLight()
 	SAFE_DELETE(m_camera);
 }
 
-void DirectionalLight::Init()
+BOOL DirectionalLight::Init()
 {
+	if (!ILight::Init())
+		return FALSE;
 	m_camera->Init();
 	if (FAILED(p_createDirectXContext()))
 	{
-		Window::CreateError("FAILED: to create directional light");
-	}	
+		return FALSE;
+	}
+	return TRUE;
 }
 
 void DirectionalLight::Update()

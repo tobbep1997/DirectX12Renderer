@@ -63,19 +63,22 @@ const Camera* const* PointLight::GetCameras() const
 	return this->m_cameras;
 }
 
-void PointLight::Init()
+BOOL PointLight::Init()
 {
+	if (!ILight::Init())
+		return FALSE;
 	HRESULT hr = 0;
 
 	if (FAILED(hr = p_createDirectXContext(6u)))
 	{
-		Window::CreateError("FAILED: to create pointLight");
+		return FALSE;
 	}
+	return TRUE;
 }
 
 void PointLight::Update()
 {
-	Transform::Update();
+	ILight::Update();
 	for (UINT i = 0; i < 6; i++)
 	{
 		m_cameras[i]->SetPosition(GetPosition());

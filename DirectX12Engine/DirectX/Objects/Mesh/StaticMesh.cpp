@@ -20,10 +20,10 @@ void StaticMesh::_clearMesh()
 	m_staticMesh.clear();
 }
 
-void StaticMesh::_createMesh(const aiScene* scene)
+BOOL StaticMesh::_createMesh(const aiScene* scene)
 {
 	if (!scene->HasMeshes())
-		Window::CreateError("Mesh has no Mesh");
+		return FALSE;
 
 	_clearMesh();
 	for (UINT i = 0; i < scene->mNumMeshes; i++)
@@ -38,11 +38,13 @@ void StaticMesh::_createMesh(const aiScene* scene)
 			m_staticMesh.push_back(vertex);
 		}
 	}
+	return TRUE;
 }
 
-void StaticMesh::Init()
+BOOL StaticMesh::Init()
 {
 	m_staticMesh = std::vector<StaticVertex>();
+	return TRUE;
 }
 
 void StaticMesh::Update()
@@ -71,8 +73,7 @@ const BOOL & StaticMesh::LoadStaticMesh(const std::string& path)
 		m_meshLoaded = FALSE;
 		return m_meshLoaded;
 	}
-	m_meshLoaded = TRUE;
-	_createMesh(scene);
+	m_meshLoaded = _createMesh(scene);
 	return m_meshLoaded;
 }
 

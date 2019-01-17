@@ -14,8 +14,9 @@ Texture::~Texture()
 {
 }
 
-void Texture::Init()
+BOOL Texture::Init()
 {
+	return TRUE;
 }
 
 void Texture::Update()

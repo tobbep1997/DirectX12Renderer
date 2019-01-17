@@ -20,7 +20,7 @@ public:
 
 	const Camera *const* GetCameras() const;
 
-	void Init() override;
+	BOOL Init() override;
 	void Update() override;
 	void Release() override;
 private:

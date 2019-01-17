@@ -44,6 +44,9 @@ protected:
 	X12RenderTargetView * p_renderTarget = nullptr;
 
 	BOOL p_createDirectXContext(const UINT & renderTargets = 1, const BOOL & createTexture = FALSE);
+	
+	BOOL Init() override;
+	void Update() override;
 	void Release() override;
 	
 private:

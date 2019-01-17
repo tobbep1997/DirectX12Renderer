@@ -37,67 +37,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 {
 	Window * window = nullptr;
 	RenderingManager * renderingManager = nullptr;
-
-	Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);
-	camera->SetPosition(0, 0, -5);
-
-	DeltaTime deltaTimer;
-	   
-	StaticMesh * staticCylinderMesh = new StaticMesh();
-	staticCylinderMesh->Init();
-	staticCylinderMesh->LoadStaticMesh("../Models/Cylinder.fbx");
-
-	StaticMesh * staticCubeMesh = new StaticMesh();
-	staticCubeMesh->Init();
-	staticCubeMesh->LoadStaticMesh("../Models/Cube.fbx");
-
-	Texture * texture = new Texture();
-	Texture * normal = new Texture();
-	Texture * metallic = new Texture();
-	Texture * displacement = new Texture();
 	
-
-	Drawable * drawable = new Drawable();
-	drawable->SetPosition(0, 0, 0);
-	drawable->SetScale(1, 1, 1);
-	drawable->SetMesh(*staticCubeMesh);
-	drawable->Update();
-	drawable->SetTexture(texture);
-	drawable->SetNormalMap(normal);
-	drawable->SetMetallicMap(metallic);
-	drawable->SetDisplacementMap(displacement);
-
-	const int cubesSize = 0;
-	std::vector<Drawable*> cubes = std::vector<Drawable*>(cubesSize);
-	for (UINT i = 0; i < cubesSize; i++)
-	{
-		cubes[i] = new Drawable();
-		cubes[i]->SetPosition(static_cast<float>(rand() % cubesSize) - (cubesSize / 2), 0.0f, static_cast<float>(rand() % cubesSize) - (cubesSize / 2)); //NOLINT
-		cubes[i]->SetScale(1, 1, 1);
-		cubes[i]->SetMesh(*staticCubeMesh);
-		cubes[i]->Update();
-		cubes[i]->SetTexture(texture);
-		cubes[i]->SetNormalMap(normal);
-		cubes[i]->SetMetallicMap(metallic);
-		cubes[i]->SetDisplacementMap(displacement);
-	}
-
-
-	const int floorSize = 10;
-
-	Drawable * floor = new Drawable();
-	floor->SetPosition(0, -2, 0);
-	floor->SetScale(floorSize, 1, floorSize);
-	floor->SetMesh(*staticCubeMesh);
-	floor->Update();
-	floor->SetTexture(texture);
-	floor->SetNormalMap(normal);
-	floor->SetMetallicMap(metallic);
-	floor->SetDisplacementMap(displacement);
-	   
-	Texture * fire1 = new Texture();
-	Texture * fire2 = new Texture();
-	Texture * fire3 = new Texture();
 
 	if(InitDirectX12Engine(window,
 		renderingManager, 
@@ -106,9 +46,70 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		FALSE,
+		TRUE,
 		FALSE))
 	{
+		Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);
+		camera->SetPosition(0, 0, -5);
+
+		DeltaTime deltaTimer;
+
+		StaticMesh * staticCylinderMesh = new StaticMesh();
+		staticCylinderMesh->Init();
+		staticCylinderMesh->LoadStaticMesh("../Models/Cylinder.fbx");
+
+		StaticMesh * staticCubeMesh = new StaticMesh();
+		staticCubeMesh->Init();
+		staticCubeMesh->LoadStaticMesh("../Models/Cube.fbx");
+
+		Texture * texture = new Texture();
+		Texture * normal = new Texture();
+		Texture * metallic = new Texture();
+		Texture * displacement = new Texture();
+
+
+		Drawable * drawable = new Drawable();
+		drawable->SetPosition(0, 0, 0);
+		drawable->SetScale(1, 1, 1);
+		drawable->SetMesh(*staticCubeMesh);
+		drawable->Update();
+		drawable->SetTexture(texture);
+		drawable->SetNormalMap(normal);
+		drawable->SetMetallicMap(metallic);
+		drawable->SetDisplacementMap(displacement);
+
+		const int cubesSize = 0;
+		std::vector<Drawable*> cubes = std::vector<Drawable*>(cubesSize);
+		for (UINT i = 0; i < cubesSize; i++)
+		{
+			cubes[i] = new Drawable();
+			cubes[i]->SetPosition(static_cast<float>(rand() % cubesSize) - (cubesSize / 2), 0.0f, static_cast<float>(rand() % cubesSize) - (cubesSize / 2)); //NOLINT
+			cubes[i]->SetScale(1, 1, 1);
+			cubes[i]->SetMesh(*staticCubeMesh);
+			cubes[i]->Update();
+			cubes[i]->SetTexture(texture);
+			cubes[i]->SetNormalMap(normal);
+			cubes[i]->SetMetallicMap(metallic);
+			cubes[i]->SetDisplacementMap(displacement);
+		}
+
+
+		const int floorSize = 10;
+
+		Drawable * floor = new Drawable();
+		floor->SetPosition(0, -2, 0);
+		floor->SetScale(floorSize, 1, floorSize);
+		floor->SetMesh(*staticCubeMesh);
+		floor->Update();
+		floor->SetTexture(texture);
+		floor->SetNormalMap(normal);
+		floor->SetMetallicMap(metallic);
+		floor->SetDisplacementMap(displacement);
+
+		Texture * fire1 = new Texture();
+		Texture * fire2 = new Texture();
+		Texture * fire3 = new Texture();
+
 		staticCubeMesh->CreateBuffer(renderingManager);
 		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);
 		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE, renderingManager);
@@ -224,38 +225,40 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 		emitter->Release();
 		SAFE_DELETE(emitter);
+
+		staticCylinderMesh->Release();
+		staticCubeMesh->Release();
+		texture->Release();
+		normal->Release();
+		metallic->Release();
+		displacement->Release();
+		fire1->Release();
+		fire2->Release();
+		fire3->Release();
+		floor->Release();
+		drawable->Release();
+		renderingManager->Release(FALSE);
+
+		SAFE_DELETE(camera);
+		SAFE_DELETE(staticCylinderMesh);
+		SAFE_DELETE(staticCubeMesh);
+		SAFE_DELETE(drawable);
+		for (UINT i = 0; i < cubesSize; i++)
+		{
+			delete cubes[i];
+		}
+		SAFE_DELETE(floor);
+		SAFE_DELETE(texture);
+		SAFE_DELETE(normal);
+		SAFE_DELETE(metallic);
+		SAFE_DELETE(displacement);
+
+		SAFE_DELETE(fire1);
+		SAFE_DELETE(fire2);
+		SAFE_DELETE(fire3);
 	}
 
-	staticCylinderMesh->Release();
-	staticCubeMesh->Release();
-	texture->Release();
-	normal->Release();
-	metallic->Release();
-	displacement->Release();
-	fire1->Release();
-	fire2->Release();
-	fire3->Release();
-	floor->Release();
-	drawable->Release();
-	renderingManager->Release(FALSE);
 
-	SAFE_DELETE(camera);
-	SAFE_DELETE(staticCylinderMesh);
-	SAFE_DELETE(staticCubeMesh);
-	SAFE_DELETE(drawable);
-	for (UINT i = 0; i < cubesSize; i++)
-	{
-		delete cubes[i];
-	}
-	SAFE_DELETE(floor);
-	SAFE_DELETE(texture);
-	SAFE_DELETE(normal);
-	SAFE_DELETE(metallic);
-	SAFE_DELETE(displacement);
-
-	SAFE_DELETE(fire1);
-	SAFE_DELETE(fire2);
-	SAFE_DELETE(fire3);
 
 	return 0;
 }
