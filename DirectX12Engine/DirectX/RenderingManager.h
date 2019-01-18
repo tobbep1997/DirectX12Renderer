@@ -1,5 +1,7 @@
 #pragma once
-#include "DirectX12EnginePCH.h"
+#include <Windows.h>
+#include <d3d12.h>
+#include <dxgi1_4.h>
 
 class SSAOPass;
 class DeferredRender;
@@ -7,6 +9,7 @@ class ShadowPass;
 class GeometryPass;
 class ParticlePass;
 class Camera;
+
 
 const UINT FRAME_BUFFER_COUNT = 3;
 class RenderingManager
@@ -17,12 +20,13 @@ public:
 
 	static RenderingManager * GetInstance();
 
-	HRESULT Init(const Window & window, const BOOL & EnableDebugLayer = FALSE);
-	void Flush(const Camera & camera, const float & deltaTime, const BOOL & present = TRUE);
+	HRESULT Init(const Window * window, const BOOL & EnableDebugLayer = FALSE);
+	void Flush(const Camera * camera, const float & deltaTime, const BOOL & present = TRUE);
 	void Present() const;
 	void Release(const BOOL & waitForFrames = TRUE, const BOOL & reportMemoryLeaks = TRUE);
 	void WaitForFrames();
 
+	void UnsafeInit(const Window * window, const bool & enableDebugTools);
 
 	ID3D12Device * GetDevice() const;
 	IDXGISwapChain3 * GetSwapChain() const;

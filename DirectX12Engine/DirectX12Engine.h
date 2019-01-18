@@ -58,7 +58,7 @@ inline BOOL InitDirectX12Engine(Window *& window,
 	{
 		PRINT("Init Window Done") NEW_LINE;
 		PRINT("Init DirectX12Engine Start") NEW_LINE;
-		if (SUCCEEDED(hr = renderingManager->Init(*window, debuggingTools)))
+		if (SUCCEEDED(hr = renderingManager->Init(window, debuggingTools)))
 		{
 			PRINT("Init DirectX12Engine Done") NEW_LINE;
 			return TRUE;
@@ -69,7 +69,7 @@ inline BOOL InitDirectX12Engine(Window *& window,
 	return FALSE;
 }
 
-inline void UpdateRenderingManger(RenderingManager *& renderingManager, const float & deltaTime, const Camera & camera, const BOOL & present = TRUE)
+inline void UpdateRenderingManger(RenderingManager *& renderingManager, const float & deltaTime, const Camera * camera, const BOOL & present = TRUE)
 {
 	if (renderingManager)
 		renderingManager->Flush(camera, deltaTime, present);
@@ -85,7 +85,7 @@ inline BOOL RestartRenderingManager(Window *& window, RenderingManager *& render
 
 	renderingManager->Release(TRUE, FALSE);
 
-	if (SUCCEEDED(hr = renderingManager->Init(*window, debuggingTools)))
+	if (SUCCEEDED(hr = renderingManager->Init(window, debuggingTools)))
 	{
 		OutputDebugString("DirectX12 Restart\n");
 		return TRUE;

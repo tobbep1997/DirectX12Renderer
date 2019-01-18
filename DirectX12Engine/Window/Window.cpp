@@ -63,6 +63,8 @@ HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const
 	this->m_fullscreen = fullscreen;
 	WNDCLASSEX wc;
 
+	m_windowName = "WNDCLASS";
+
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -112,6 +114,12 @@ HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const
 		return CreateError(std::wstring(L"Error registering class"));
 	}
 	return S_OK;
+}
+
+HRESULT Window::Create(void* hInstance, const std::string& windowName, const UINT& width, const UINT& height,
+	const BOOL& fullscreen)
+{
+	return this->Create((HINSTANCE)hInstance, windowName, width, height, fullscreen);
 }
 
 const BOOL& Window::IsOpen()

@@ -210,7 +210,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			directionalLight->GetCamera()->Update();
 
 		
-			UpdateRenderingManger(renderingManager, deltaTime, *camera);
+			UpdateRenderingManger(renderingManager, deltaTime, nullptr);
 			if (Input::IsKeyPressed('P'))
 				RestartRenderingManager(window, renderingManager, FALSE);
 		}	

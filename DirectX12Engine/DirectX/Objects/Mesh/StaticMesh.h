@@ -2,6 +2,7 @@
 #include "../Template/IObject.h"
 
 
+class RenderingManager;
 struct aiScene;
 
 class StaticMesh : //NOLINT

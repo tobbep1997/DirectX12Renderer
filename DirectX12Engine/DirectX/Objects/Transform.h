@@ -17,8 +17,7 @@ public:
 
 	virtual void Translate(const DirectX::XMFLOAT4 & position);
 	virtual void Translate(const float & x, const float & y, const float & z, const float & w = 1.0f);
-
-
+	
 	virtual void SetRotation(const DirectX::XMFLOAT4 & rotation);
 	virtual void SetRotation(const float & x, const float & y, const float & z, const float & w = 1.0f);
 

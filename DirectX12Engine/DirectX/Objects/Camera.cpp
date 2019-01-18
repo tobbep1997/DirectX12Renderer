@@ -10,6 +10,7 @@ BOOL Camera::Init()
 	this->m_direction	= DirectX::XMFLOAT4(0, 0, 1, 0);
 	this->m_up			= DirectX::XMFLOAT4(0, 1, 0, 0);
 	this->m_focusPoint	= DirectX::XMFLOAT4(0, 0, 0, 1);
+	this->Update();
 	return TRUE;
 }
 
@@ -80,6 +81,18 @@ void Camera::_calcViewProjection()
 
 	XMStoreFloat4x4A(&this->m_viewProjection,
 		XMLoadFloat4x4A(&this->m_projection) * XMLoadFloat4x4A(&this->m_view));
+}
+
+Camera::Camera(const DirectX::XMFLOAT4& position)
+{
+	this->m_fov = DirectX::XM_PI * 0.5f;
+	this->m_aspectRatio = 16.0f / 9.0f;
+	this->m_nearPlane = 1.0f;
+	this->m_farPlane = 100.0f;
+	this->m_usePerspective = TRUE;
+
+	Transform::SetPosition(position);	
+	Camera::Init();
 }
 
 Camera::Camera(const float& fov, const float& aspectRatio, const float& nearPlane, const float& farPlane, const BOOL & perspective)
