@@ -11,7 +11,7 @@ class ParticlePass;
 class Camera;
 
 
-const UINT FRAME_BUFFER_COUNT = 3;
+const unsigned int FRAME_BUFFER_COUNT = 3;
 class RenderingManager
 {
 public:

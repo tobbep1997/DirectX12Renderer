@@ -1,5 +1,5 @@
 #pragma once
-#include "IManagedObject.h"
+#include "../IManagedObject.h"
 #include <Window/Window.h>
 
 namespace ID3D12

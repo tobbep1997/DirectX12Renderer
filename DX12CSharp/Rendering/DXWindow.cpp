@@ -2,7 +2,7 @@
 
 namespace ID3D12
 {
-#include "Converter.h"
+#include "../Converter.h"
 	   
 	DXWindow::DXWindow()
 		: IManagedObject(Window::GetInstance(), false)

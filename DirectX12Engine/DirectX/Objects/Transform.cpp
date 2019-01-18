@@ -30,6 +30,7 @@ void Transform::Update()
 
 void Transform::Release()
 {
+	
 }
 
 void Transform::SetPosition(const DirectX::XMFLOAT4& position)

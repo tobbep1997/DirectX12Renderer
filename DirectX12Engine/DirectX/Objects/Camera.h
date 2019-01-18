@@ -1,4 +1,5 @@
 #pragma once
+#include <DirectXMath.h>
 #include "Transform.h"
 class Camera :
 	public Transform

@@ -1,6 +1,6 @@
 #pragma once
 #include "Template/IObject.h"
-
+#include <DirectXMath.h>
 class Transform : //NOLINT
 	public IObject
 {

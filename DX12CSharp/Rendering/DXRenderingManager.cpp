@@ -1,5 +1,4 @@
 #include "DXRenderingManager.h"
-
 namespace ID3D12
 {
 	DXRenderingManager::DXRenderingManager()
@@ -14,11 +13,11 @@ namespace ID3D12
 		return true;
 	}
 
-	void DXRenderingManager::Flush()
+	void DXRenderingManager::Flush(DXCamera^ camera)
 	{
-		p_instance->Flush(nullptr, 0, TRUE);
+		p_instance->Flush(camera->GetInstance(), 0, TRUE);
 	}
-
+	
 	void DXRenderingManager::Release()
 	{
 		p_instance->Present();

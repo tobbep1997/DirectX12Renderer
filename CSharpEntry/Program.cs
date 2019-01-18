@@ -16,6 +16,7 @@ namespace CSharpEntry
             DXWindow window = new DXWindow();
             DXRenderingManager renderingManager = new DXRenderingManager();
 
+            DXCamera camera = new DXCamera();
 
             unsafe
             {
@@ -30,12 +31,12 @@ namespace CSharpEntry
 
             while (window.IsOpen)
             {
-                if (window.Updating())
+                while (window.Updating())
                 {
-
+                    //Window is updating 
                 }
 
-                renderingManager.Flush();
+                renderingManager.Flush(camera);
             }
             renderingManager.Release();
         }

@@ -270,10 +270,9 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_ssaoPass->KillThread();
 	m_ssaoPass->Release();
 	SAFE_DELETE(m_ssaoPass);
-	ULONG unReleaseObjects;
-	if (unReleaseObjects = m_device->Release())
+
+	if (m_device->Release())
 	{
-		OutputDebugStringW((std::wstring(std::to_wstring(unReleaseObjects)) + std::wstring(L"\n")).c_str());
 		if (m_debugLayerEnabled && reportMemoryLeaks)
 		{
 			ID3D12DebugDevice * dbgDevice = nullptr;
