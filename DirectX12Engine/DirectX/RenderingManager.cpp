@@ -164,7 +164,6 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 
 	m_deferredPass->Update(camera, deltaTime);
 	m_deferredPass->Draw();
-
 	//---------------------------------------------------------------------
 
 	m_commandList->ResourceBarrier(1,

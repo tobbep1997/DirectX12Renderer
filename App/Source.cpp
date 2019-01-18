@@ -45,7 +45,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1600, 
 		900, 
 		FALSE,
-		TRUE,
+		FALSE,
 		FALSE))
 	{
 		Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);
@@ -119,17 +119,18 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
-		const int pointLightSize = 4;
+		const int pointLightSize = 1;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
 			pointLights[i]->Init();
-			pointLights[i]->SetPosition(static_cast<float>(rand() % pointLightSize) - (pointLightSize / 2), 0.0f, static_cast<float>(rand() % pointLightSize) - (pointLightSize / 2)); //NOLINT
-			pointLights[i]->SetIntensity(5.5f);
-			pointLights[i]->SetDropOff(1.0f);
+			pointLights[i]->SetPosition(0,1,0);
+			pointLights[i]->SetIntensity(15.5f);
+			pointLights[i]->SetDropOff(2.0f);
 			pointLights[i]->SetPow(1.5f);
-			pointLights[i]->SetColor(static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f, static_cast<float>(rand() % 1000) / 1000.0f);
+			pointLights[i]->SetRadius(7.5f);
+			pointLights[i]->SetColor(1, 1, 1);
 			pointLights[i]->Update();
 		}
 
@@ -140,7 +141,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->GetCamera()->SetFocusPoint(TRUE);
 		directionalLight->GetCamera()->SetUp(1, 0, 0);
 		directionalLight->GetCamera()->Update();
-		directionalLight->SetIntensity(1.0f);
+		directionalLight->SetIntensity(1.2f);
 				
 		ParticleEmitter * emitter = new ParticleEmitter(
 			renderingManager, 
@@ -211,7 +212,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		
 			UpdateRenderingManger(renderingManager, deltaTime, *camera);
 			if (Input::IsKeyPressed('P'))
-				RestartRenderingManager(window, renderingManager, TRUE);
+				RestartRenderingManager(window, renderingManager, FALSE);
 		}	
 		renderingManager->WaitForFrames();
 		directionalLight->Release();

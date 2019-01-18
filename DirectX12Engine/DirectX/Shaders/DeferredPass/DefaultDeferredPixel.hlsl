@@ -74,5 +74,5 @@ float4 main(VS_OUTPUT input) : SV_Target
     }
     shadowCoeff = pow(shadowCoeff / divider, 2);
 
-    return saturate(((finalColor * float4(ssao, ssao, ssao, 1)) + specular) * shadowCoeff + ambient);
+    return saturate(((finalColor * float4(ssao, ssao, ssao, 1)) + specular) * shadowCoeff + (ambient));
 }

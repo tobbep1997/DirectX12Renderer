@@ -31,6 +31,7 @@ IRender::IRender(RenderingManager* renderingManager,
 
 	m_threadRunning = true;
 	m_threadDone = true;
+	
 	m_thread = std::thread(&IRender::_updateWithThreads, this);
 }
 

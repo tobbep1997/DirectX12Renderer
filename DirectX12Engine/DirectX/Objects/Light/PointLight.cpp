@@ -48,6 +48,16 @@ void PointLight::SetPow(const float& pow)
 	this->m_pow = pow;
 }
 
+void PointLight::SetRadius(const float& radius)
+{
+	this->m_radius = radius;
+}
+
+const float& PointLight::GetRadius() const
+{
+	return this->m_radius;
+}
+
 const float& PointLight::GetDropOff() const
 {
 	return this->m_dropOff;

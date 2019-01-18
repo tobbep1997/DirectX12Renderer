@@ -28,12 +28,15 @@ float4 LightCalculation(
         if (LightType[i].y == 0) //pointlight
         {
             attenuation = LightVector[i].x / (1.0f + LightVector[i].y * pow(distanceToLight, LightVector[i].z));
-            finalColor += max(dot(normal, normalize(posToLight)), 0.0f) * LightColor[i] * albedo * attenuation;
 
             halfWayDir = normalize(posToLight + worldToCamera);
             
             specular += pow(max(dot(normal, halfWayDir), 0.0f), 128.0f) * length(metallic.rgb) * attenuation * LightColor[i];
 
+            if (distanceToLight < LightVector[i].w)
+            {
+                finalColor += max(dot(normal, normalize(posToLight)), 0.0f) * LightColor[i] * albedo * attenuation;
+            }
         }
         else if (LightType[i].y == 1) //Dir
         {

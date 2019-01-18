@@ -69,7 +69,7 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 			m_lightValues.Vector[i] = DirectX::XMFLOAT4A(pl->GetIntensity(),
 				pl->GetDropOff(),
 				pl->GetPow(),
-				0);
+				pl->GetRadius());
 		}
 		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
 		{
