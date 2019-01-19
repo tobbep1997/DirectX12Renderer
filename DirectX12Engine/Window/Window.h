@@ -4,12 +4,16 @@
 
 class Window
 {
+private:
+	static Window * thisWindow;
 public:
 	static HRESULT CreateError(const HRESULT & hr);
 	static HRESULT CreateError(const std::string & errorMsg);
 	static HRESULT CreateError(const std::wstring & errorMsg);
 	static HRESULT CreateError(const LPCWSTR & errorMsg);
 	static Window * GetInstance();
+	static Window * GetPointerInstance();
+	static void DeletePointerInstance();
 	static void CloseWindow();
 
 	HRESULT Create(HINSTANCE hInstance, 

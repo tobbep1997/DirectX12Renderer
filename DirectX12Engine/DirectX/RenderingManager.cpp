@@ -8,6 +8,8 @@
 
 #include "Render/SSAOPass.h"
 
+RenderingManager * RenderingManager::thisRenderingManager = nullptr;
+
 RenderingManager::RenderingManager()
 = default;
 
@@ -18,6 +20,13 @@ RenderingManager* RenderingManager::GetInstance()
 {
 	static RenderingManager renderingManager;
 	return &renderingManager;
+}
+
+RenderingManager* RenderingManager::GetPointerInstance()
+{
+	if (!thisRenderingManager)
+		thisRenderingManager = new RenderingManager();
+	return thisRenderingManager;
 }
 
 HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLayer)

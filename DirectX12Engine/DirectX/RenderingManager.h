@@ -14,11 +14,14 @@ class Camera;
 const unsigned int FRAME_BUFFER_COUNT = 3;
 class RenderingManager
 {
+private:
+	static RenderingManager * thisRenderingManager;
 public:
 	RenderingManager();
 	~RenderingManager();
 
 	static RenderingManager * GetInstance();
+	static RenderingManager * GetPointerInstance();
 
 	HRESULT Init(const Window * window, const BOOL & EnableDebugLayer = FALSE);
 	void Flush(const Camera * camera, const float & deltaTime, const BOOL & present = TRUE);

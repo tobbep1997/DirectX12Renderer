@@ -24,6 +24,8 @@ namespace ID3D12
 	
 		bool Updating();
 
+		void Release();
+
 		property unsigned int Width
 		{
 		public:

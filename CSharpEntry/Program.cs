@@ -25,9 +25,10 @@ namespace CSharpEntry
                     1280, 
                     720, 
                     false);
-
-                renderingManager.Init(window);
             }
+
+            renderingManager.Init(window);
+
 
             while (window.IsOpen)
             {
@@ -40,5 +41,6 @@ namespace CSharpEntry
             }
             renderingManager.Release();
         }
+
     }
 }

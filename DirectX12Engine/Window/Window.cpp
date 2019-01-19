@@ -3,6 +3,7 @@
 
 BOOL Window::m_windowOpen = FALSE;
 
+Window * Window::thisWindow = nullptr;
 
 HRESULT Window::CreateError(const HRESULT& hr)
 {
@@ -33,6 +34,18 @@ Window* Window::GetInstance()
 	m_windowOpen = TRUE;
 	static Window window;
 	return &window;
+}
+
+Window* Window::GetPointerInstance()
+{
+	if (!thisWindow)
+		thisWindow = new Window();
+	return thisWindow;
+}
+
+void Window::DeletePointerInstance()
+{
+	delete thisWindow;
 }
 
 void Window::CloseWindow()

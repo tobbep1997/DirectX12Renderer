@@ -1,16 +1,17 @@
 #include "DXRenderingManager.h"
+#include <iostream>
+
 namespace ID3D12
 {
 	DXRenderingManager::DXRenderingManager()
-		: IManagedObject<RenderingManager>(RenderingManager::GetInstance(), false)
+		: IManagedObject<RenderingManager>(RenderingManager::GetPointerInstance(), true)
 	{
-
 	}
 
 	bool DXRenderingManager::Init(DXWindow^ window)
 	{
-		p_instance->UnsafeInit(window->GetInstance(), false);
-		return true;
+		Window * w = window->GetInstance();
+		return SUCCEEDED(p_instance->Init(window->GetInstance(), false));
 	}
 
 	void DXRenderingManager::Flush(DXCamera^ camera)
