@@ -11,7 +11,7 @@ namespace ID3D12
 	bool DXRenderingManager::Init(DXWindow^ window)
 	{
 		Window * w = window->GetInstance();
-		return SUCCEEDED(p_instance->Init(window->GetInstance(), false));
+		return SUCCEEDED(p_instance->Init(window->GetInstance(), true));
 	}
 
 	void DXRenderingManager::Flush(DXCamera^ camera)
@@ -21,6 +21,6 @@ namespace ID3D12
 	
 	void DXRenderingManager::Release()
 	{
-		p_instance->Present();
+		p_instance->Release();
 	}
 }

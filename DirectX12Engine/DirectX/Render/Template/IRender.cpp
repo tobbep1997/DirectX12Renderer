@@ -170,6 +170,9 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 
 	const size_t instanceGroupSize = p_instanceGroups->size();
 
+	if (instanceGroupSize <= 0)
+		return;
+
 	D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
 	if (!p_updateInstanceBuffer(instanceBufferView))
 		throw "FAILED TO UPDATE INSTANCE BUFFER";

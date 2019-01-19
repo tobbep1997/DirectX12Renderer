@@ -38,6 +38,7 @@ Window* Window::GetInstance()
 
 Window* Window::GetPointerInstance()
 {
+	m_windowOpen = TRUE;
 	if (!thisWindow)
 		thisWindow = new Window();
 	return thisWindow;

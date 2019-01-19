@@ -18,6 +18,7 @@ namespace CSharpEntry
 
             DXCamera camera = new DXCamera();
 
+
             unsafe
             {
                 window.Create(Process.GetCurrentProcess().Handle.ToPointer(),
@@ -27,12 +28,13 @@ namespace CSharpEntry
                     false);
             }
 
+
             renderingManager.Init(window);
 
 
             while (window.IsOpen)
             {
-                while (window.Updating())
+                if (window.Updating())
                 {
                     //Window is updating 
                 }

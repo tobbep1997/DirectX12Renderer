@@ -9,9 +9,11 @@ public:
 	{
 		HRESULT hr;
 
+		std::wstring newPath = L"../" + path;
+		
 		ID3DBlob * errorBlob = nullptr;
 		if (FAILED(hr = D3DCompileFromFile(
-			path.c_str(),
+			newPath.c_str(),
 			nullptr,
 			D3D_COMPILE_STANDARD_FILE_INCLUDE,
 			entryPoint.c_str(),

@@ -115,7 +115,9 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 void RenderingManager::Flush(const Camera * camera, const float & deltaTime, const BOOL & present)
 {
 	HRESULT hr = 0;
-
+	bool createdCamera = true;
+	if (camera)
+		createdCamera = false;
 	const Camera * cam = camera ? camera : new Camera(DirectX::XMFLOAT4(0,0,-5,1));
 	
 	if (FAILED(hr = this->_flush(*cam, deltaTime)))
@@ -123,7 +125,8 @@ void RenderingManager::Flush(const Camera * camera, const float & deltaTime, con
 		Window::CreateError(hr);
 		Window::CloseWindow();
 	}
-	delete cam;
+	if (createdCamera)
+		delete cam;
 	this->Present();
 }
 
