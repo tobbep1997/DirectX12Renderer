@@ -39,6 +39,12 @@
     <ClInclude Include="DirectX\DXDirectX.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\DXDeltaTime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Objects\DXTransform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp">
@@ -54,6 +60,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Objects\DXCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\DXDeltaTime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Objects\DXTransform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -16,7 +16,7 @@ namespace ID3D12
 	public:
 		DXWindow();
 
-		void Create(void* hInstance,
+		void Create(System::Diagnostics::Process^ process,
 			String ^ windowName,
 			unsigned int width,
 			unsigned int height,

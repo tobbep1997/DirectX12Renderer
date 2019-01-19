@@ -16,7 +16,7 @@ namespace ID3D12
 
 	void DXRenderingManager::Flush(DXCamera^ camera)
 	{
-		p_instance->Flush(camera->GetInstance(), 0, TRUE);
+		p_instance->Flush(camera->GetInstance<Camera>(), 0, TRUE);
 	}
 	
 	void DXRenderingManager::Release()
