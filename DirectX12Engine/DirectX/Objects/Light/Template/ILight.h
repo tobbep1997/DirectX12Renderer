@@ -1,9 +1,12 @@
 #pragma once
 #include "../../Transform.h"
 #include <DirectXMath.h>
+#include <d3d12.h>
+#include "Window/Window.h"
 
 class X12DepthStencil;
 class X12RenderTargetView;
+class RenderingManager;
 
 class ILight : public Transform
 {

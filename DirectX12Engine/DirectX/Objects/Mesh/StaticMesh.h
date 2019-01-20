@@ -1,6 +1,10 @@
 #pragma once
+#include "DirectX/Structs.h"
 #include "../Template/IObject.h"
-
+#include <Windows.h>
+#include <string>
+#include <vector>
+#include <d3d12.h>
 
 class RenderingManager;
 struct aiScene;

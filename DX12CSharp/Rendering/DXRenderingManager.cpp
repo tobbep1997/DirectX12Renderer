@@ -9,8 +9,7 @@ namespace ID3D12
 	}
 
 	bool DXRenderingManager::Init(DXWindow^ window)
-	{
-		Window * w = window->GetInstance();
+	{		
 		return SUCCEEDED(p_instance->Init(window->GetInstance(), true));
 	}
 

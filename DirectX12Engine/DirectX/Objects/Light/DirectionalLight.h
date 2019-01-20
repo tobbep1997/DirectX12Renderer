@@ -20,5 +20,5 @@ public:
 	void SetPosition(const float& x, const float& y, const float& z, const float& w = 1.0f) override;
 
 private:
-	Camera * m_camera;
+	Camera * m_camera = nullptr;
 };

@@ -22,6 +22,8 @@ namespace ID3D12
 		DXMath::DXVector^ GetRotation();
 		DXMath::DXVector^ GetScale();
 
+		void Update();
+
 		template <typename T>
 		T* GetInstance()
 		{

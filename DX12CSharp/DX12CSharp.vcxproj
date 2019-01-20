@@ -134,6 +134,11 @@
   <ItemGroup>
     <ClInclude Include="Converter.h" />
     <ClInclude Include="DirectX\DXDirectX.h" />
+    <ClInclude Include="Lights\DXDirectionalLight.h" />
+    <ClInclude Include="Lights\DXILight.h" />
+    <ClInclude Include="DXTexture.h" />
+    <ClInclude Include="Objects\DXDrawable.h" />
+    <ClInclude Include="Objects\DXStaticMesh.h" />
     <ClInclude Include="Objects\DXTransform.h" />
     <ClInclude Include="Utility\DXDeltaTime.h" />
     <ClInclude Include="Objects\DXCamera.h" />
@@ -145,6 +150,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
+    <ClCompile Include="Lights\DXDirectionalLight.cpp" />
+    <ClCompile Include="Lights\DXILight.cpp" />
+    <ClCompile Include="DXTexture.cpp" />
+    <ClCompile Include="Objects\DXDrawable.cpp" />
+    <ClCompile Include="Objects\DXStaticMesh.cpp" />
     <ClCompile Include="Objects\DXTransform.cpp" />
     <ClCompile Include="Utility\DXDeltaTime.cpp" />
     <ClCompile Include="Objects\DXCamera.cpp" />

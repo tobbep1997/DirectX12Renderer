@@ -42,4 +42,9 @@ namespace ID3D12
 	{
 		return gcnew DXMath::DXVector(m_transform->GetScale());
 	}
+
+	void DXTransform::Update()
+	{
+		m_transform->Update();
+	}
 }

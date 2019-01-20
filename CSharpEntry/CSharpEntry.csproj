@@ -73,12 +73,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DX12CSharp\DX12CSharp.vcxproj">
-      <Project>{23e079d2-2da5-4da4-bb0f-1e982652636b}</Project>
-      <Name>DX12CSharp</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
       <Visible>False</Visible>
       <ProductName>Microsoft .NET Framework 4.6.1 %28x86 and x64%29</ProductName>
@@ -89,6 +83,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DX12CSharp\DX12CSharp.vcxproj">
+      <Project>{23e079d2-2da5-4da4-bb0f-1e982652636b}</Project>
+      <Name>DX12CSharp</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
