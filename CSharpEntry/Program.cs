@@ -6,15 +6,15 @@ namespace CSharpEntry
 {
     class Program //NOLINT
     {
-
-        
         static void Main(string[] args)
         {
             DXWindow window = new DXWindow();
             DXRenderingManager renderingManager = new DXRenderingManager();
 
             DXCamera camera = new DXCamera();
-            
+
+            DXDeltaTime deltaTimer = new DXDeltaTime();
+
             window.Create(Process.GetCurrentProcess(),
                 "Test", 
                 1280, 
@@ -68,14 +68,22 @@ namespace CSharpEntry
             camera.SetDirection(new DXVector(0, 0, -1, 0));
             camera.Update();
 
+            deltaTimer.Init();
             while (window.IsOpen && loadSucceeded)
             {
+                float deltaTime = deltaTimer.GetDeltaTime();
                 if (window.Updating())
                 {
                     //Window is updating 
                 }
 
-                directionalLight.Queue();
+                MoveCamera(ref camera, deltaTime);
+
+                if (DXInput.IsKeyPressed('Q'))
+                {
+                    directionalLight.Queue();
+                }
+
                 drawable.Draw(renderingManager);
                 renderingManager.Flush(camera);
             }
@@ -89,6 +97,37 @@ namespace CSharpEntry
             
 
             renderingManager.Release();
+        }
+
+        static void MoveCamera(ref DXCamera camera, float deltaTime)
+        {
+            float sprintMod = 0.5f;
+            if (DXInput.IsKeyPressed(16))
+                sprintMod = 4.0f;
+            float moveSpeed = 2.0f * sprintMod;
+            float rotSpeed = 2.0f;
+
+            if (DXInput.IsKeyPressed('A'))
+                camera.Translate(new DXVector(-moveSpeed * deltaTime, 0, 0, 1));
+            else if (DXInput.IsKeyPressed('D'))
+                camera.Translate(new DXVector(moveSpeed * deltaTime, 0, 0, 1));
+
+            if (DXInput.IsKeyPressed('W'))
+                camera.Translate(new DXVector(0, 0, moveSpeed * deltaTime, 1));
+            else if (DXInput.IsKeyPressed('S'))
+                camera.Translate(new DXVector(0, 0, -moveSpeed * deltaTime, 1));
+
+            if (DXInput.IsKeyPressed(37))
+                camera.Rotate(new DXVector(0, -rotSpeed * deltaTime, 0, 0));
+            else if (DXInput.IsKeyPressed(39))
+                camera.Rotate(new DXVector(0, rotSpeed * deltaTime, 0, 0));
+
+            if (DXInput.IsKeyPressed(38))
+                camera.Rotate(new DXVector(-rotSpeed * deltaTime, 0, 0, 0));
+            else if (DXInput.IsKeyPressed(40))
+                camera.Rotate(new DXVector(rotSpeed * deltaTime, 0, 0, 0));
+            camera.Update();
+            
         }
 
     }

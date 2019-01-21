@@ -134,6 +134,7 @@
   <ItemGroup>
     <ClInclude Include="Converter.h" />
     <ClInclude Include="DirectX\DXDirectX.h" />
+    <ClInclude Include="Input\DXInput.h" />
     <ClInclude Include="Lights\DXDirectionalLight.h" />
     <ClInclude Include="Lights\DXILight.h" />
     <ClInclude Include="DXTexture.h" />
@@ -150,6 +151,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
+    <ClCompile Include="Input\DXInput.cpp" />
     <ClCompile Include="Lights\DXDirectionalLight.cpp" />
     <ClCompile Include="Lights\DXILight.cpp" />
     <ClCompile Include="DXTexture.cpp" />

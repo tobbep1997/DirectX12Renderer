@@ -180,10 +180,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				cubes[i]->Draw(renderingManager);
 			}
 
-			directionalLight->Queue();
+
+			if (Input::IsKeyPressed('Q'))
+				directionalLight->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
-				pointLights[i]->Queue();
+				//pointLights[i]->Queue();
 			}
 			//directionalLight2->Queue();
 
@@ -210,7 +212,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			directionalLight->GetCamera()->Update();
 
 		
-			UpdateRenderingManger(renderingManager, deltaTime, nullptr);
+			UpdateRenderingManger(renderingManager, deltaTime, camera);
 			if (Input::IsKeyPressed('P'))
 				RestartRenderingManager(window, renderingManager, FALSE);
 		}	
