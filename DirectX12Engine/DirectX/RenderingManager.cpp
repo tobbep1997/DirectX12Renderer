@@ -1,14 +1,14 @@
 #include "DirectX12EnginePCH.h"
 #include "RenderingManager.h"
-#include <functional>
 
 #include "Render/GeometryPass.h"
 #include "Render/ShadowPass.h"
 #include "Render/DeferredRender.h"
 #include "Render/ParticlePass.h"
 
-#include <thread>
 #include "Render/SSAOPass.h"
+
+RenderingManager * RenderingManager::thisRenderingManager = nullptr;
 
 RenderingManager::RenderingManager()
 = default;
@@ -22,7 +22,14 @@ RenderingManager* RenderingManager::GetInstance()
 	return &renderingManager;
 }
 
-HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLayer)
+RenderingManager* RenderingManager::GetPointerInstance()
+{
+	if (!thisRenderingManager)
+		thisRenderingManager = new RenderingManager();
+	return thisRenderingManager;
+}
+
+HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLayer)
 {
 	HRESULT hr;
 	IDXGIAdapter1 * adapter = nullptr;
@@ -53,7 +60,7 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 			{
 				if (SUCCEEDED(hr = _createCommandQueue()))
 				{
-					if (SUCCEEDED(hr = _createSwapChain(window, dxgiFactory)))
+					if (SUCCEEDED(hr = _createSwapChain(*window, dxgiFactory)))
 					{
 						if (SUCCEEDED(hr = _createRenderTargetDescriptorHeap()))
 						{
@@ -63,19 +70,19 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 								{
 									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
 									{		
-										SAFE_NEW(m_geometryPass, new GeometryPass(this, window));
+										SAFE_NEW(m_geometryPass, new GeometryPass(this, *window));
 										if (SUCCEEDED(hr = m_geometryPass->Init()))
 										{
-											SAFE_NEW(m_shadowPass, new ShadowPass(this, window));
+											SAFE_NEW(m_shadowPass, new ShadowPass(this, *window));
 											if (SUCCEEDED(hr = m_shadowPass->Init()))
 											{
-												SAFE_NEW(m_deferredPass, new DeferredRender(this, window));
+												SAFE_NEW(m_deferredPass, new DeferredRender(this, *window));
 												if (SUCCEEDED(hr = m_deferredPass->Init()))
 												{
-													SAFE_NEW(m_particlePass, new ParticlePass(this, window));
+													SAFE_NEW(m_particlePass, new ParticlePass(this, *window));
 													if (SUCCEEDED(hr = m_particlePass->Init()))
 													{
-														SAFE_NEW(m_ssaoPass, new SSAOPass(this, window));
+														SAFE_NEW(m_ssaoPass, new SSAOPass(this, *window));
 														if (SUCCEEDED(hr = m_ssaoPass->Init()))
 														{
 															
@@ -105,14 +112,21 @@ HRESULT RenderingManager::Init(const Window & window, const BOOL & EnableDebugLa
 	return hr;
 }
 
-void RenderingManager::Flush(const Camera & camera, const float & deltaTime, const BOOL & present)
+void RenderingManager::Flush(const Camera * camera, const float & deltaTime, const BOOL & present)
 {
 	HRESULT hr = 0;
-	if (FAILED(hr = this->_flush(camera, deltaTime)))
+	bool createdCamera = true;
+	if (camera)
+		createdCamera = false;
+	const Camera * cam = camera ? camera : new Camera(DirectX::XMFLOAT4(0,0,-5,1));
+	
+	if (FAILED(hr = this->_flush(*cam, deltaTime)))
 	{
 		Window::CreateError(hr);
 		Window::CloseWindow();
 	}
+	if (createdCamera)
+		delete cam;
 	this->Present();
 }
 
@@ -268,10 +282,9 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_ssaoPass->KillThread();
 	m_ssaoPass->Release();
 	SAFE_DELETE(m_ssaoPass);
-	ULONG unReleaseObjects;
-	if (unReleaseObjects = m_device->Release())
+
+	if (m_device->Release())
 	{
-		OutputDebugStringW((std::wstring(std::to_wstring(unReleaseObjects)) + std::wstring(L"\n")).c_str());
 		if (m_debugLayerEnabled && reportMemoryLeaks)
 		{
 			ID3D12DebugDevice * dbgDevice = nullptr;
@@ -291,6 +304,11 @@ void RenderingManager::WaitForFrames()
 		m_frameIndex = i;
 		_waitForPreviousFrame(FALSE);
 	}
+}
+
+void RenderingManager::UnsafeInit(const Window* window, const bool& enableDebugTools)
+{
+	this->Init(window, enableDebugTools);
 }
 
 ID3D12Device* RenderingManager::GetDevice() const

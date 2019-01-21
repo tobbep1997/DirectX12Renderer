@@ -43,6 +43,7 @@ inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)
 
 namespace DEBUG
 {
+
 	inline void Print(const std::wstring & w_string)
 	{
 		OutputDebugStringW(w_string.c_str());

@@ -1,4 +1,5 @@
 #pragma once
+#include <DirectXMath.h>
 #include "Transform.h"
 class Camera :
 	public Transform
@@ -28,7 +29,14 @@ private:
 	void _calcViewProjection();
 
 public:
-	explicit Camera(const float & fov = DirectX::XM_PI * 0.5f, const float & aspectRatio = 16.0f / 9.0f, const float & nearPlane = 1.0f, const float & farPlane = 20.0f, const BOOL & perspective = TRUE);
+	explicit Camera(
+		const DirectX::XMFLOAT4 & position);
+	explicit Camera(
+		const float & fov = DirectX::XM_PI * 0.5f,
+		const float & aspectRatio = 16.0f / 9.0f, 
+		const float & nearPlane = 1.0f,
+		const float & farPlane = 100.0f, 
+		const BOOL & perspective = TRUE);
 	~Camera();
 
 	void SetDirection(const DirectX::XMFLOAT4 & direction);

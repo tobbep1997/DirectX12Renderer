@@ -8,10 +8,16 @@ public:
 	static HRESULT CreateShader(const std::wstring & path, ID3DBlob *& blob, const std::string & target, const std::string & entryPoint = "main")
 	{
 		HRESULT hr;
-
+		std::wstring newPath;
+#ifdef DXPATH
+		newPath = L"../" + path;
+#else
+		newPath = path;
+#endif
+		
 		ID3DBlob * errorBlob = nullptr;
 		if (FAILED(hr = D3DCompileFromFile(
-			path.c_str(),
+			newPath.c_str(),
 			nullptr,
 			D3D_COMPILE_STANDARD_FILE_INCLUDE,
 			entryPoint.c_str(),

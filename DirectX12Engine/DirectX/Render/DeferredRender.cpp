@@ -48,6 +48,7 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 		camera.GetPosition().w);
 
 	const UINT lightQueueSize = static_cast<const UINT>(p_lightQueue->size());
+	m_lightValues.Type[0].x = lightQueueSize;
 	for (UINT i = 0; i < lightQueueSize && i < 256; i++)
 	{
 		m_lightValues.Type[i] = DirectX::XMUINT4(lightQueueSize,

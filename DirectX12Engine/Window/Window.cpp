@@ -3,6 +3,7 @@
 
 BOOL Window::m_windowOpen = FALSE;
 
+Window * Window::thisWindow = nullptr;
 
 HRESULT Window::CreateError(const HRESULT& hr)
 {
@@ -35,6 +36,19 @@ Window* Window::GetInstance()
 	return &window;
 }
 
+Window* Window::GetPointerInstance()
+{
+	m_windowOpen = TRUE;
+	if (!thisWindow)
+		thisWindow = new Window();
+	return thisWindow;
+}
+
+void Window::DeletePointerInstance()
+{
+	delete thisWindow;
+}
+
 void Window::CloseWindow()
 {
 	m_windowOpen = FALSE;
@@ -62,6 +76,8 @@ HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const
 	this->m_windowTitle = LPCTSTR(windowName.c_str());
 	this->m_fullscreen = fullscreen;
 	WNDCLASSEX wc;
+
+	m_windowName = "WNDCLASS";
 
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 	wc.cbSize = sizeof(WNDCLASSEX);
@@ -112,6 +128,12 @@ HRESULT Window::Create(HINSTANCE hInstance, const std::string& windowName, const
 		return CreateError(std::wstring(L"Error registering class"));
 	}
 	return S_OK;
+}
+
+HRESULT Window::Create(void* hInstance, const std::string& windowName, const UINT& width, const UINT& height,
+	const BOOL& fullscreen)
+{
+	return this->Create((HINSTANCE)hInstance, windowName, width, height, fullscreen);
 }
 
 const BOOL& Window::IsOpen()

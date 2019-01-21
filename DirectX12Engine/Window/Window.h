@@ -1,15 +1,19 @@
 #pragma once
-#include "DirectX12EnginePCH.h"
+#include <Windows.h>
 #include <string>
 
 class Window
 {
+private:
+	static Window * thisWindow;
 public:
 	static HRESULT CreateError(const HRESULT & hr);
 	static HRESULT CreateError(const std::string & errorMsg);
 	static HRESULT CreateError(const std::wstring & errorMsg);
 	static HRESULT CreateError(const LPCWSTR & errorMsg);
 	static Window * GetInstance();
+	static Window * GetPointerInstance();
+	static void DeletePointerInstance();
 	static void CloseWindow();
 
 	HRESULT Create(HINSTANCE hInstance, 
@@ -17,6 +21,13 @@ public:
 				const UINT & width, 
 				const UINT & height,
 				const BOOL & fullscreen = FALSE);
+
+	HRESULT Create(void* hInstance,
+		const std::string & windowName,
+		const UINT & width,
+		const UINT & height,
+		const BOOL & fullscreen = FALSE);
+
 	static const BOOL & IsOpen();
 	static BOOL Updating();
 
@@ -28,8 +39,8 @@ public:
 private:
 	HWND m_hwnd = nullptr;
 
-	LPCTSTR m_windowTitle = "";
-	LPCTSTR m_windowName = "WNDCLASS";
+	LPCTSTR m_windowTitle;
+	LPCTSTR m_windowName;
 
 	UINT m_width = 0;
 	UINT m_height = 0;

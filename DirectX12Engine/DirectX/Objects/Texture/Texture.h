@@ -1,6 +1,10 @@
 #pragma once
 #include "../Template/IObject.h"
 #include <wincodec.h>
+#include <string>
+#include <d3d12.h>
+
+class RenderingManager;
 
 class Texture :
 	public IObject
