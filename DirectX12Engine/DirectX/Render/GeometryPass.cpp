@@ -46,34 +46,36 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 		camera.GetPosition().w);
 	m_cameraValues.ViewProjection = camera.GetViewProjectionMatrix();
 
-	m_depthStencil->SwitchToDSV();
-	m_depthStencil->ClearDepthStencil();
+	m_depthStencil->SwitchToDSV(p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_depthStencil->ClearDepthStencil(p_commandList[*p_renderingManager->GetFrameIndex()]);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+
+	
 
 	D3D12_CPU_DESCRIPTOR_HANDLE d12CpuDescriptorHandle[RENDER_TARGETS];
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
-		m_renderTarget[i]->SwitchToRTV();
+		m_renderTarget[i]->SwitchToRTV(p_commandList[*p_renderingManager->GetFrameIndex()]);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 			m_renderTarget[i]->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 			*p_renderingManager->GetFrameIndex(),
 			m_renderTarget[i]->GetDescriptorSize());
 
-		m_renderTarget[i]->Clear(rtvHandle);
+		m_renderTarget[i]->Clear(rtvHandle, p_commandList[*p_renderingManager->GetFrameIndex()]);
 		d12CpuDescriptorHandle[i] = rtvHandle;
 	}
 
-	p_commandList->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
 
-	p_commandList->SetPipelineState(m_pipelineState);
-	p_commandList->SetGraphicsRootSignature(m_rootSignature);
-	p_commandList->RSSetViewports(1, &m_viewport);
-	p_commandList->RSSetScissorRects(1, &m_rect);
-	p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->SetPipelineState(m_pipelineState);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootSignature(m_rootSignature);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetViewports(1, &m_viewport);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetScissorRects(1, &m_rect);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 	m_cameraBuffer->Copy(&m_cameraValues, sizeof(m_cameraValues));
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(0);
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(1);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(0, p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(1, p_commandList[*p_renderingManager->GetFrameIndex()]);
 }
 
 void GeometryPass::Draw()
@@ -83,26 +85,26 @@ void GeometryPass::Draw()
 
 	if (emitterSize)
 	{
-		p_commandList->SetPipelineState(m_particlePipelineState);
-		p_commandList->SetGraphicsRootSignature(m_particleRootSignature);
-		p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_cameraBuffer->SetGraphicsRootConstantBufferView(0);
+		p_commandList[*p_renderingManager->GetFrameIndex()]->SetPipelineState(m_particlePipelineState);
+		p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootSignature(m_particleRootSignature);
+		p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_cameraBuffer->SetGraphicsRootConstantBufferView(0, p_commandList[*p_renderingManager->GetFrameIndex()]);
 		
 		ParticleEmitter * emitter = nullptr;
 		for (size_t i = 0; i < emitterSize; i++)
 		{
 			emitter = m_emitters->at(i);
-			emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, p_commandList);
-			p_commandList->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
+			emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, p_commandList[*p_renderingManager->GetFrameIndex()]);
+			p_commandList[*p_renderingManager->GetFrameIndex()]->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
 
-			p_commandList->DrawInstanced(
+			p_commandList[*p_renderingManager->GetFrameIndex()]->DrawInstanced(
 				emitter->GetVertexSize(),
 				1, 0, 0);
 		}
 
 	}
 
-	m_depthStencil->SwitchToSRV();
+	m_depthStencil->SwitchToSRV(p_commandList[*p_renderingManager->GetFrameIndex()]);
 
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
 	p_renderingManager->GetSSAOPass()->SetWorldPos(m_renderTarget[0]);
@@ -165,13 +167,13 @@ HRESULT GeometryPass::_preInit()
 					{
 						if (SUCCEEDED(hr = _createViewport()))
 						{
-							SAFE_NEW(m_depthStencil, new X12DepthStencil(p_renderingManager, *p_window, p_commandList));
+							SAFE_NEW(m_depthStencil, new X12DepthStencil(p_renderingManager, *p_window, nullptr));
 							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
 								0, 0,
 								1, TRUE)))
 							{								
 								for (UINT i = 0; i < RENDER_TARGETS; i++)									
-									SAFE_NEW(m_renderTarget[i], new X12RenderTargetView(p_renderingManager, *p_window, p_commandList));
+									SAFE_NEW(m_renderTarget[i], new X12RenderTargetView(p_renderingManager, *p_window, nullptr));
 								for (UINT i = 0; i < RENDER_TARGETS; i++)
 								{
 									if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
@@ -185,7 +187,7 @@ HRESULT GeometryPass::_preInit()
 								}
 								if (SUCCEEDED(hr = p_createInstanceBuffer(L"Geometry")))
 								{
-									SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList));
+									SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, nullptr));
 
 									if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(
 										L"Geometry camera",
@@ -211,7 +213,7 @@ HRESULT GeometryPass::_signalGPU() const
 {
 	HRESULT hr;
 
-	if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList)))
+	if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
 	{	}
 
 	return hr;

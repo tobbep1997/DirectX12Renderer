@@ -111,7 +111,6 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 			m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 		
-			SwitchToDSV();
 		}
 	}
 

@@ -45,7 +45,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1600, 
 		900, 
 		FALSE,
-		FALSE,
+		TRUE,
 		FALSE))
 	{
 		Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);
@@ -181,8 +181,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 
 
-			if (Input::IsKeyPressed('Q'))
-				directionalLight->Queue();
+			directionalLight->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
 				//pointLights[i]->Queue();

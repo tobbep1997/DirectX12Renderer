@@ -44,7 +44,7 @@ IRender::~IRender()
 
 void IRender::ThreadUpdate(const Camera & camera, const float & deltaTime)
 {
-	if (p_commandList == nullptr)
+	if (p_commandList[*p_renderingManager->GetFrameIndex()] == nullptr)
 		throw "Missing command list";
 	if (m_threadDone && m_threadRunning)
 	{
@@ -88,28 +88,30 @@ HRESULT IRender::p_createCommandList(const std::wstring & name)
 			D3D12_COMMAND_LIST_TYPE_DIRECT, 
 			IID_PPV_ARGS(&p_commandAllocator[i]))))
 		{
-			SET_NAME(p_commandAllocator[i], name + L" Command allocator");
 			return hr;
 		}
-	}
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommandList(
-		0, 
-		D3D12_COMMAND_LIST_TYPE_DIRECT, 
-		p_commandAllocator[0], 
-		nullptr, 
-		IID_PPV_ARGS(&p_commandList))))
-	{		
-		SET_NAME(p_commandList, name + L" Command list");
-		p_commandList->Close();
+
+		SET_NAME(p_commandAllocator[i], name + L" Command allocator");
+
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommandList(
+			0, 
+			D3D12_COMMAND_LIST_TYPE_DIRECT, 
+			p_commandAllocator[i], 
+			nullptr, 
+			IID_PPV_ARGS(&p_commandList[i]))))
+		{		
+			SET_NAME(p_commandList[i], name + L" Command list");
+			p_commandList[i]->Close();
+		}
 	}
 	return hr;
 }
 
 void IRender::p_releaseCommandList()
 {
-	SAFE_RELEASE(p_commandList);
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
+		SAFE_RELEASE(p_commandList[i]);
 		SAFE_RELEASE(p_commandAllocator[i]);
 	}
 }
@@ -146,7 +148,7 @@ UINT64 IRender::p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferVi
 {
 	UINT64 bufferSize = 0;
 
-	bufferSize = Instancing::UpdateInstanceGroup(p_commandList,
+	bufferSize = Instancing::UpdateInstanceGroup(p_commandList[*p_renderingManager->GetFrameIndex()],
 		vertexBufferView,
 		p_instanceBuffer,
 		p_intermediateInstanceBuffer,
@@ -166,7 +168,7 @@ UINT64 IRender::p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferVi
 
 void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapTextures) const
 {
-	ID3D12GraphicsCommandList * gcl = p_commandList ? p_commandList : p_renderingManager->GetCommandList();
+	ID3D12GraphicsCommandList * gcl = p_commandList[*p_renderingManager->GetFrameIndex()] ? p_commandList[*p_renderingManager->GetFrameIndex()] : p_renderingManager->GetCommandList();
 
 	const size_t instanceGroupSize = p_instanceGroups->size();
 
@@ -181,7 +183,7 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 	{		
 
 		if (mapTextures)
-			p_instanceGroups->at(i).MapTextures(textureStartIndex, p_commandList);
+			p_instanceGroups->at(i).MapTextures(textureStartIndex, p_commandList[*p_renderingManager->GetFrameIndex()]);
 
 		D3D12_VERTEX_BUFFER_VIEW bufferArr[2] = 
 			{ 
@@ -213,7 +215,7 @@ HRESULT IRender::OpenCommandList()
 	const UINT frameIndex = *p_renderingManager->GetFrameIndex();
 	if (SUCCEEDED(hr = this->p_commandAllocator[frameIndex]->Reset()))
 	{
-		if (SUCCEEDED(hr = this->p_commandList->Reset(this->p_commandAllocator[frameIndex], nullptr)))
+		if (SUCCEEDED(hr = this->p_commandList[frameIndex]->Reset(this->p_commandAllocator[frameIndex], nullptr)))
 		{
 
 		}
@@ -224,9 +226,9 @@ HRESULT IRender::OpenCommandList()
 HRESULT IRender::ExecuteCommandList() const
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = p_commandList->Close()))
+	if (SUCCEEDED(hr = p_commandList[*p_renderingManager->GetFrameIndex()]->Close()))
 	{
-		ID3D12CommandList* ppCommandLists[] = { p_commandList };
+		ID3D12CommandList* ppCommandLists[] = { p_commandList[*p_renderingManager->GetFrameIndex()] };
 		p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 	return hr;

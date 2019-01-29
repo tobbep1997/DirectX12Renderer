@@ -16,11 +16,9 @@ public:
 	void Release() override;
 
 	ID3D12Resource*const* GetResource() const;
-	ID3D12DescriptorHeap*const* GetDescriptorHeap() const;
 
 private:
 	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
-	ID3D12DescriptorHeap	* m_constantBufferDescriptorHeap[FRAME_BUFFER_COUNT] = { nullptr };
 
 	UINT8* m_constantBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
 };

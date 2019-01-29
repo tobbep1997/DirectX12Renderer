@@ -124,7 +124,7 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 	m_shaderResourceView->EndCopy();
 
 
-	m_shadowValues.values.x = index;
+	m_shadowValues.Values.x = index;
 	
 	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
 	m_shadowBuffer->SetGraphicsRootConstantBufferView(5);

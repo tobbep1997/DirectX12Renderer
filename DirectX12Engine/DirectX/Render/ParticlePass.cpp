@@ -40,7 +40,7 @@ HRESULT ParticlePass::Init()
 	}
 	if (SUCCEEDED(hr))
 	{
-		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList)))
+		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
 		{
 			
 		}		

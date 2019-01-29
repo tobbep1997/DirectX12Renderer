@@ -3,6 +3,8 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 
+#define MAX_DESCRIPTOR_SIZE 1000
+
 class SSAOPass;
 class DeferredRender;
 class ShadowPass;
@@ -55,6 +57,11 @@ public:
 	HRESULT SignalGPU();
 	HRESULT SignalGPU(ID3D12GraphicsCommandList * commandList);
 
+	void IterateCbvSrvUavDescriptorHeapIndex();
+	const SIZE_T & GetCbvSrvUavCurrentIndex() const;
+	const SIZE_T & GetCbvSrvUavIncrementalSize() const;
+	ID3D12DescriptorHeap * GetCbvSrvUavDescriptorHeap() const;
+
 private:
 
 	ID3D12Device *				m_device = nullptr;
@@ -68,7 +75,6 @@ private:
 	ID3D12Resource *			m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr };
 	ID3D12Fence *				m_fence[FRAME_BUFFER_COUNT]{ nullptr };
 	UINT64						m_fenceValue[FRAME_BUFFER_COUNT]{ 0,0,0 };
-
 
 	UINT m_frameIndex = 0;
 	UINT m_rtvDescriptorSize = 0;
@@ -93,6 +99,12 @@ private:
 	DeferredRender * m_deferredPass = nullptr;
 	ParticlePass * m_particlePass = nullptr;
 	SSAOPass * m_ssaoPass = nullptr;
+
+	SIZE_T m_cbv_srv_uav_currentIndex = 0;
+	SIZE_T m_cbv_srv_uav_incrementalSize = 0;
+	ID3D12DescriptorHeap * m_cbv_srv_uav_descriptorHeap = nullptr;
+
+	HRESULT _createCbvSrvUavDescriptorHeap();
 
 private:
 	//DEBUG LAYER

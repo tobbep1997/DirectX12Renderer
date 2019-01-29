@@ -30,7 +30,7 @@ HRESULT SSAOPass::Init()
 	{
 		if (SUCCEEDED(hr = _preInit()))
 		{
-			if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList)))
+			if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
 			{
 				m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 				m_vertexBufferView.StrideInBytes = sizeof(Vertex);
@@ -65,26 +65,26 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 
 	m_renderTarget->Clear(rtvHandle);
 
-	p_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
-	p_commandList->SetPipelineState(m_pipelineState);
-	p_commandList->SetGraphicsRootSignature(m_rootSignature);
-	p_commandList->RSSetViewports(1, &m_viewport);
-	p_commandList->RSSetScissorRects(1, &m_rect);
-	p_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->SetPipelineState(m_pipelineState);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootSignature(m_rootSignature);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetViewports(1, &m_viewport);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetScissorRects(1, &m_rect);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	ID3D12DescriptorHeap* worldDescriptorHeaps[] = { m_worldPos->GetTextureDescriptorHeap() };
-	p_commandList->SetDescriptorHeaps(_countof(worldDescriptorHeaps), worldDescriptorHeaps);
-	p_commandList->SetGraphicsRootDescriptorTable(0, m_worldPos->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+	p_commandList[*p_renderingManager->GetFrameIndex()]->SetDescriptorHeaps(_countof(worldDescriptorHeaps), worldDescriptorHeaps);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootDescriptorTable(0, m_worldPos->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
 	ID3D12DescriptorHeap* depthDescriptorHeaps[] = { m_depthStencils->GetTextureDescriptorHeap() };
-	p_commandList->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
-	p_commandList->SetGraphicsRootDescriptorTable(1, m_depthStencils->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+	p_commandList[*p_renderingManager->GetFrameIndex()]->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootDescriptorTable(1, m_depthStencils->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(2);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, p_commandList[*p_renderingManager->GetFrameIndex()]);
 
-	p_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	p_commandList->DrawInstanced(4, 1, 0, 0);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+	p_commandList[*p_renderingManager->GetFrameIndex()]->DrawInstanced(4, 1, 0, 0);
 
 	ExecuteCommandList();
 }
@@ -180,7 +180,7 @@ HRESULT SSAOPass::_preInit()
 				{			
 					if (SUCCEEDED(hr = _createQuadBuffer()))
 					{
-						SAFE_NEW(m_renderTarget, new X12RenderTargetView(p_renderingManager, *p_window, p_commandList))
+						SAFE_NEW(m_renderTarget, new X12RenderTargetView(p_renderingManager, *p_window, nullptr))
 						if (SUCCEEDED(hr = m_renderTarget->CreateRenderTarget(
 							0,
 							0,
@@ -188,7 +188,7 @@ HRESULT SSAOPass::_preInit()
 							TRUE,
 							RENDER_TARGET_FORMAT)))
 						{
-							SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, p_commandList));
+							SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, nullptr));
 							if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(L"SSAO camera", &m_cameraValues, sizeof(CameraBuffer))))
 							{
 
@@ -580,9 +580,9 @@ HRESULT SSAOPass::_createQuadBuffer()
 			vertexData.RowPitch = m_vertexBufferSize;
 			vertexData.SlicePitch = m_vertexBufferSize;
 
-			UpdateSubresources(p_commandList, m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
+			UpdateSubresources(p_commandList[*p_renderingManager->GetFrameIndex()], m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
 
-			p_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+			p_commandList[*p_renderingManager->GetFrameIndex()]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 		}
 	}
 	return hr;

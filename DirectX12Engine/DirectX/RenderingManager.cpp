@@ -50,7 +50,6 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 			
 			
 		}
-		
 		if (SUCCEEDED(hr))
 		{
 			if (SUCCEEDED(hr = D3D12CreateDevice(
@@ -58,34 +57,37 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 				D3D_FEATURE_LEVEL_12_0,
 				IID_PPV_ARGS(&m_device))))
 			{
-				if (SUCCEEDED(hr = _createCommandQueue()))
+				if (SUCCEEDED(hr = _createCbvSrvUavDescriptorHeap()))
 				{
-					if (SUCCEEDED(hr = _createSwapChain(*window, dxgiFactory)))
+					if (SUCCEEDED(hr = _createCommandQueue()))
 					{
-						if (SUCCEEDED(hr = _createRenderTargetDescriptorHeap()))
+						if (SUCCEEDED(hr = _createSwapChain(*window, dxgiFactory)))
 						{
-							if (SUCCEEDED(hr = _createCommandAllocators()))
+							if (SUCCEEDED(hr = _createRenderTargetDescriptorHeap()))
 							{
-								if (SUCCEEDED(hr = _createCommandList()))
+								if (SUCCEEDED(hr = _createCommandAllocators()))
 								{
-									if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
-									{		
-										SAFE_NEW(m_geometryPass, new GeometryPass(this, *window));
-										if (SUCCEEDED(hr = m_geometryPass->Init()))
+									if (SUCCEEDED(hr = _createCommandList()))
+									{
+										if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
 										{
-											SAFE_NEW(m_shadowPass, new ShadowPass(this, *window));
-											if (SUCCEEDED(hr = m_shadowPass->Init()))
+											SAFE_NEW(m_geometryPass, new GeometryPass(this, *window));
+											if (SUCCEEDED(hr = m_geometryPass->Init()))
 											{
-												SAFE_NEW(m_deferredPass, new DeferredRender(this, *window));
-												if (SUCCEEDED(hr = m_deferredPass->Init()))
+												SAFE_NEW(m_shadowPass, new ShadowPass(this, *window));
+												if (SUCCEEDED(hr = m_shadowPass->Init()))
 												{
-													SAFE_NEW(m_particlePass, new ParticlePass(this, *window));
-													if (SUCCEEDED(hr = m_particlePass->Init()))
+													SAFE_NEW(m_deferredPass, new DeferredRender(this, *window));
+													if (SUCCEEDED(hr = m_deferredPass->Init()))
 													{
-														SAFE_NEW(m_ssaoPass, new SSAOPass(this, *window));
-														if (SUCCEEDED(hr = m_ssaoPass->Init()))
+														SAFE_NEW(m_particlePass, new ParticlePass(this, *window));
+														if (SUCCEEDED(hr = m_particlePass->Init()))
 														{
-															
+															SAFE_NEW(m_ssaoPass, new SSAOPass(this, *window));
+															if (SUCCEEDED(hr = m_ssaoPass->Init()))
+															{
+
+															}
 														}
 													}
 												}
@@ -101,13 +103,15 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 		}
 	}
 
+
 	SAFE_RELEASE(adapter);
 	SAFE_RELEASE(dxgiFactory);
-
+	
 	if (FAILED(hr))
 	{
 		return Window::CreateError(hr);
-	}	
+	}
+
 
 	return hr;
 }
@@ -199,9 +203,7 @@ HRESULT RenderingManager::_flush(const Camera & camera, const float & deltaTime)
 	}
 
 	ID3D12CommandList* ppCommandLists[] = { m_commandList };
-
 	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
 	if (FAILED(hr = m_commandQueue->Signal(m_fence[m_frameIndex], m_fenceValue[m_frameIndex])))
 	{
 		return hr;
@@ -259,6 +261,7 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 		m_fenceValue[i] = 0;
 	};
 	SAFE_RELEASE(m_debugLayer);
+	SAFE_RELEASE(m_cbv_srv_uav_descriptorHeap);
 
 	m_frameIndex = 0;
 	m_rtvDescriptorSize = 0;
@@ -295,6 +298,7 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 			}
 		}
 	}
+
 }
 
 void RenderingManager::WaitForFrames()
@@ -426,6 +430,26 @@ HRESULT RenderingManager::SignalGPU(ID3D12GraphicsCommandList* commandList)
 
 	}
 	return hr;
+}
+
+void RenderingManager::IterateCbvSrvUavDescriptorHeapIndex()
+{
+	m_cbv_srv_uav_currentIndex++;
+}
+
+const SIZE_T & RenderingManager::GetCbvSrvUavCurrentIndex() const
+{
+	return m_cbv_srv_uav_currentIndex;
+}
+
+const SIZE_T & RenderingManager::GetCbvSrvUavIncrementalSize() const
+{
+	return m_cbv_srv_uav_incrementalSize;
+}
+
+ID3D12DescriptorHeap* RenderingManager::GetCbvSrvUavDescriptorHeap() const
+{
+	return this->m_cbv_srv_uav_descriptorHeap;
 }
 
 UINT64 * RenderingManager::GetFenceValues()
@@ -624,6 +648,28 @@ HRESULT RenderingManager::_createFenceAndFenceEvent()
 	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (nullptr == m_fenceEvent)
 		return E_FAIL;
+
+	return hr;
+}
+
+HRESULT RenderingManager::_createCbvSrvUavDescriptorHeap()
+{
+	HRESULT hr = 0;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeap{};
+
+	descriptorHeap.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	descriptorHeap.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	descriptorHeap.NumDescriptors = MAX_DESCRIPTOR_SIZE;
+	   
+	if (FAILED(hr = m_device->CreateDescriptorHeap(
+		&descriptorHeap, 
+		IID_PPV_ARGS(&m_cbv_srv_uav_descriptorHeap))))
+	{
+		return hr;
+	}
+
+	m_cbv_srv_uav_incrementalSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 
 	return hr;
 }

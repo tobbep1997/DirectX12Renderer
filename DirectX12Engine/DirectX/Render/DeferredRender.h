@@ -22,7 +22,7 @@ private:
 
 	struct ShadowLightBuffer
 	{
-		DirectX::XMINT4 values;
+		DirectX::XMINT4 Values;
 		DirectX::XMFLOAT4X4A ViewProjection[MAX_SHADOWS];
 	};
 
