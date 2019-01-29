@@ -23,7 +23,6 @@ public:
 	BOOL LoadDDSTexture(const std::string & path, const BOOL & generateMips = TRUE, RenderingManager * renderingManager = nullptr);
 
 	ID3D12Resource * GetResource() const;
-	ID3D12DescriptorHeap * GetId3D12DescriptorHeap() const;
 
 	void MapTexture(RenderingManager * renderingManager, const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr) const;
 
@@ -32,10 +31,10 @@ private:
 
 	BYTE* m_imageData;
 	ID3D12Resource * m_textureBuffer = nullptr;
-	ID3D12Resource * m_textureUploadHeap = nullptr;
-	ID3D12DescriptorHeap * m_textureDescriptorHeap = nullptr;
 
 	HRESULT _uploadTexture();
+
+	SIZE_T m_descriptorHeapOffset = 0;
 };
 
 

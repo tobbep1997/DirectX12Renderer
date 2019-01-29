@@ -21,7 +21,6 @@ public:
 	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
 
 	ID3D12Resource * GetResource() const;
-	ID3D12DescriptorHeap * GetDescriptorHeap() const;
 
 	void Release() override;
 private:
@@ -29,6 +28,7 @@ private:
 	UINT m_height = 0;
 	UINT m_arraySize = 1;
 	ID3D12Resource * m_resource = nullptr;
-	ID3D12DescriptorHeap * m_descriptorHeap = nullptr;
+
+	SIZE_T m_descriptorHeapOffset = 0;
 };
 

@@ -48,9 +48,7 @@ namespace Instancing
 			
 			for (UINT i = 0; i < 5; i++)
 			{	
-				ID3D12DescriptorHeap* descriptorHeaps[] = { arr[i]->GetId3D12DescriptorHeap() };
-				commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-				commandList->SetGraphicsRootDescriptorTable(rootParameterIndex + i, arr[i]->GetId3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+				arr[i]->MapTexture(nullptr, rootParameterIndex + i, commandList);
 			}
 		}
 		void Add(const DirectX::XMFLOAT4X4 & worldMatrix)

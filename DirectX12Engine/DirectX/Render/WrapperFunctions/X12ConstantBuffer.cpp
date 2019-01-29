@@ -17,24 +17,9 @@ X12ConstantBuffer::~X12ConstantBuffer()
 HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* data, const UINT& sizeOf)
 {
 	HRESULT hr = 0;
-		
-	ID3D12DescriptorHeap * heap = p_renderingManager->GetCbvSrvUavDescriptorHeap();
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		//D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		//heapDesc.NumDescriptors = 1;
-		//heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		//heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		//if (FAILED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-		//	&heapDesc,
-		//	IID_PPV_ARGS(&m_constantBufferDescriptorHeap[i]))))
-		//{
-		//	return hr;
-		//}
-		//SET_NAME(m_constantBufferDescriptorHeap[i], name + L" DescriptorHeap : " + std::to_wstring(i));
-
-
 		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -50,11 +35,9 @@ HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* d
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
-
-		const SIZE_T ptr = heap->GetCPUDescriptorHandleForHeapStart().ptr;
-
+		m_descriptorHeapOffset = p_renderingManager->GetCbvSrvUavCurrentIndex() * p_renderingManager->GetCbvSrvUavIncrementalSize();
 		const D3D12_CPU_DESCRIPTOR_HANDLE handle = 
-			{ heap->GetCPUDescriptorHandleForHeapStart().ptr + p_renderingManager->GetCbvSrvUavCurrentIndex() * p_renderingManager->GetCbvSrvUavIncrementalSize() };
+			{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
 		
 		p_renderingManager->GetDevice()->CreateConstantBufferView(
 			&cbvDesc,

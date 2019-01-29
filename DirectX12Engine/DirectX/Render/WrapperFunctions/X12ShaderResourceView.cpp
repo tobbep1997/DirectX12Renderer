@@ -26,51 +26,50 @@ HRESULT X12ShaderResourceView::CreateShaderResourceView(const UINT& width, const
 		m_height = p_window->GetHeight();
 	}
 
-	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-	heapDesc.NumDescriptors = 1;	
-	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&heapDesc,
-		IID_PPV_ARGS(&m_descriptorHeap))))
+	D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+		format,
+		m_width, m_height,
+		arraySize, 1, 1, 0,
+		D3D12_RESOURCE_FLAG_NONE);
+	
+	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		nullptr,
+		IID_PPV_ARGS(&m_resource))))
 	{
-		D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-			format,
-			m_width, m_height,
-			arraySize, 1, 1, 0,
-			D3D12_RESOURCE_FLAG_NONE);
-		
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			nullptr,
-			IID_PPV_ARGS(&m_resource))))
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = format;
+		srvDesc.ViewDimension = arraySize ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		if (srvDesc.ViewDimension == D3D12_SRV_DIMENSION_TEXTURE2D)
 		{
-			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-			srvDesc.Format = format;
-			srvDesc.ViewDimension = arraySize ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
-			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-			if (srvDesc.ViewDimension == D3D12_SRV_DIMENSION_TEXTURE2D)
-			{
-				srvDesc.Texture2D.MipLevels = 1;
-			}
-			else
-			{
-				srvDesc.Texture2DArray.ArraySize = arraySize;
-				srvDesc.Texture2DArray.FirstArraySlice = 0;
-				srvDesc.Texture2DArray.MipLevels = 1;
-				srvDesc.Texture2DArray.MostDetailedMip = 0;
-			}
-
-			p_renderingManager->GetDevice()->CreateShaderResourceView(
-				m_resource,
-				&srvDesc,
-				m_descriptorHeap->GetCPUDescriptorHandleForHeapStart());
+			srvDesc.Texture2D.MipLevels = 1;
 		}
+		else
+		{
+			srvDesc.Texture2DArray.ArraySize = arraySize;
+			srvDesc.Texture2DArray.FirstArraySlice = 0;
+			srvDesc.Texture2DArray.MipLevels = 1;
+			srvDesc.Texture2DArray.MostDetailedMip = 0;
+		}
+
+		m_descriptorHeapOffset = p_renderingManager->GetCbvSrvUavCurrentIndex() * p_renderingManager->GetCbvSrvUavIncrementalSize();
+		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
+		{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
+
+		p_renderingManager->GetDevice()->CreateShaderResourceView(
+			m_resource,
+			&srvDesc,
+			handle);
+
+		p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+
 	}
+	
 
 	return hr;
 }
@@ -125,9 +124,12 @@ void X12ShaderResourceView::SetGraphicsRootDescriptorTable(const UINT& rootParam
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { m_descriptorHeap };
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += m_descriptorHeapOffset;
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { p_renderingManager->GetCbvSrvUavDescriptorHeap() };
 	gcl->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, handle);
 }
 
 
@@ -136,13 +138,7 @@ ID3D12Resource* X12ShaderResourceView::GetResource() const
 	return m_resource;
 }
 
-ID3D12DescriptorHeap* X12ShaderResourceView::GetDescriptorHeap() const
-{
-	return m_descriptorHeap;
-}
-
 void X12ShaderResourceView::Release()
 {
 	SAFE_RELEASE(m_resource);
-	SAFE_RELEASE(m_descriptorHeap);
 }

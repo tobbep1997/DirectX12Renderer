@@ -21,5 +21,6 @@ private:
 	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
 
 	UINT8* m_constantBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
+	SIZE_T m_descriptorHeapOffset = 0;
 };
 

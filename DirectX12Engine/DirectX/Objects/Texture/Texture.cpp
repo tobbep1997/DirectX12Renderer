@@ -27,8 +27,6 @@ void Texture::Release()
 {	
 	SAFE_DELETE_ARRAY(m_imageData);
 	SAFE_RELEASE(m_textureBuffer);
-	SAFE_RELEASE(m_textureUploadHeap);
-	SAFE_RELEASE(m_textureDescriptorHeap);	
 }
 
 void Texture::SetRenderingManager(RenderingManager* renderingManager)
@@ -77,25 +75,25 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&heapDesc,
-		IID_PPV_ARGS(&m_textureDescriptorHeap))))
-	{
-		SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
+	const D3D12_CPU_DESCRIPTOR_HANDLE handle =
+	{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize() };
 
-		const D3D12_RESOURCE_DESC resourceDesc = m_textureBuffer->GetDesc();
+	SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = resourceDesc.Format;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+	const D3D12_RESOURCE_DESC resourceDesc = m_textureBuffer->GetDesc();
 
-		m_renderingManager->GetDevice()->CreateShaderResourceView(
-			m_textureBuffer,
-			&srvDesc,
-			m_textureDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-	}
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = resourceDesc.Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+
+	m_renderingManager->GetDevice()->CreateShaderResourceView(
+		m_textureBuffer,
+		&srvDesc,
+		handle);
+	m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+	
 	return TRUE;	
 }
 
@@ -141,25 +139,27 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&heapDesc,
-		IID_PPV_ARGS(&m_textureDescriptorHeap))))
-	{
-		SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
+	m_descriptorHeapOffset = +m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize();
 
-		const D3D12_RESOURCE_DESC resourceDesc = m_textureBuffer->GetDesc();
+	const D3D12_CPU_DESCRIPTOR_HANDLE handle =
+	{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset  };
+	
+	SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = resourceDesc.Format;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+	const D3D12_RESOURCE_DESC resourceDesc = m_textureBuffer->GetDesc();
 
-		m_renderingManager->GetDevice()->CreateShaderResourceView(
-			m_textureBuffer,
-			&srvDesc,
-			m_textureDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-	}
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = resourceDesc.Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+
+	m_renderingManager->GetDevice()->CreateShaderResourceView(
+		m_textureBuffer,
+		&srvDesc,
+		handle);
+	m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+	
 	return TRUE;
 }
 
@@ -168,18 +168,16 @@ ID3D12Resource* Texture::GetResource() const
 	return this->m_textureBuffer;
 }
 
-ID3D12DescriptorHeap* Texture::GetId3D12DescriptorHeap() const
-{
-	return m_textureDescriptorHeap;
-}
-
 void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootParameterIndex, ID3D12GraphicsCommandList * commandList) const
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : renderingManager->GetCommandList();
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { m_textureDescriptorHeap };
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += m_descriptorHeapOffset;
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { m_renderingManager->GetCbvSrvUavDescriptorHeap() };
 	gcl->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);	
-	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_textureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, handle);
 }
 
 HRESULT Texture::_uploadTexture()
