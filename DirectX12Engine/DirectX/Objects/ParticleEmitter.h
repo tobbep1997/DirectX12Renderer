@@ -56,13 +56,9 @@ public:
 	void UpdateData();
 
 	ID3D12Resource * GetVertexResource() const;
-	ID3D12DescriptorHeap * GetVertexDescriptorHeap() const;
-
 	ID3D12Resource * GetCalcResource() const;
-	ID3D12DescriptorHeap * GetCalcDescriptorHeap() const;
 
 	ID3D12GraphicsCommandList * GetCommandList() const;
-
 	const std::vector<Particle> & GetPositions() const;
 
 	HRESULT OpenCommandList();
@@ -92,10 +88,10 @@ private:
 
 	D3D12_RESOURCE_STATES m_currentState {};
 	ID3D12Resource * m_vertexOutputResource = nullptr;
-	ID3D12DescriptorHeap * m_vertexOutputDescriptorHeap = nullptr;
+	SIZE_T m_vertexOutputOffset = 0;
 
 	ID3D12Resource * m_calculationsOutputResource = nullptr;
-	ID3D12DescriptorHeap * m_calculationsOutputDescriptorHeap = nullptr;
+	SIZE_T m_calculationsOutputOffset = 0;
 
 	ID3D12GraphicsCommandList * m_commandList = nullptr;
 	ID3D12CommandAllocator * m_commandAllocator[FRAME_BUFFER_COUNT] {nullptr};

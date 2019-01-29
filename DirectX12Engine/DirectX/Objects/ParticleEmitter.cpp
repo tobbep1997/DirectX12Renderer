@@ -74,10 +74,8 @@ BOOL ParticleEmitter::Init()
 void ParticleEmitter::Release()
 {
 	SAFE_RELEASE(m_vertexOutputResource);
-	SAFE_RELEASE(m_vertexOutputDescriptorHeap);
 
 	SAFE_RELEASE(m_calculationsOutputResource);
-	SAFE_RELEASE(m_calculationsOutputDescriptorHeap);
 
 	SAFE_RELEASE(m_commandList);
 
@@ -104,19 +102,9 @@ ID3D12Resource* ParticleEmitter::GetVertexResource() const
 	return this->m_vertexOutputResource;
 }
 
-ID3D12DescriptorHeap* ParticleEmitter::GetVertexDescriptorHeap() const
-{
-	return this->m_vertexOutputDescriptorHeap;
-}
-
 ID3D12Resource* ParticleEmitter::GetCalcResource() const
 {
 	return this->m_calculationsOutputResource;
-}
-
-ID3D12DescriptorHeap* ParticleEmitter::GetCalcDescriptorHeap() const
-{
-	return this->m_calculationsOutputDescriptorHeap;
 }
 
 ID3D12GraphicsCommandList* ParticleEmitter::GetCommandList() const
@@ -227,92 +215,88 @@ HRESULT ParticleEmitter::_createBuffer()
 	descriptorHeapDesc.NumDescriptors = 1;
 	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		
 
-	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&descriptorHeapDesc,
-		IID_PPV_ARGS(&m_vertexOutputDescriptorHeap))))
+	D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(4096 * 4096);
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+	D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_CUSTOM);
+	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+
+	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		nullptr,
+		IID_PPV_ARGS(&m_vertexOutputResource))))
 	{
-		D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(4096 * 4096);
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		SET_NAME(m_vertexOutputResource, L"Particle UAV output");
 
-		D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_CUSTOM);
-		heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-		heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+		D3D12_BUFFER_UAV uav{};
+		uav.NumElements = 256;
+		uav.FirstElement = 0;
+		uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
+		uav.CounterOffsetInBytes = 0;
+		uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
-		if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
+		unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		unorderedAccessViewDesc.Buffer = uav;
+
+		m_vertexOutputOffset = m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize();
+		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
+		{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
+
+		m_renderingManager->GetDevice()->CreateUnorderedAccessView(
+			m_vertexOutputResource,
 			nullptr,
-			IID_PPV_ARGS(&m_vertexOutputResource))))
-		{
-			m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-			SET_NAME(m_vertexOutputResource, L"Particle UAV output");
-
-			D3D12_BUFFER_UAV uav{};
-			uav.NumElements = 256;
-			uav.FirstElement = 0;
-			uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
-			uav.CounterOffsetInBytes = 0;
-			uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
-			unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
-			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-			unorderedAccessViewDesc.Buffer = uav;
-
-			m_renderingManager->GetDevice()->CreateUnorderedAccessView(
-				m_vertexOutputResource,
-				nullptr,
-				&unorderedAccessViewDesc,
-				m_vertexOutputDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-		}
+			&unorderedAccessViewDesc,
+			handle);
+		m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
 	}
+	
 	if (FAILED(hr))
 		return hr;
 
-	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateDescriptorHeap(
-		&descriptorHeapDesc,
-		IID_PPV_ARGS(&m_calculationsOutputDescriptorHeap))))
+	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		nullptr,
+		IID_PPV_ARGS(&m_calculationsOutputResource))))
 	{
-		D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(4096 * 4096);
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		SET_NAME(m_calculationsOutputResource, L"Particle UAV output");
 
-		D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_CUSTOM);
-		heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-		heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+		D3D12_BUFFER_UAV uav{};
+		uav.NumElements = 256;
+		uav.FirstElement = 0;
+		uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
+		uav.CounterOffsetInBytes = 0;
+		uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
-		if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
+		unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		unorderedAccessViewDesc.Buffer = uav;
+
+		m_calculationsOutputOffset = m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize();
+		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
+		{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
+
+		m_renderingManager->GetDevice()->CreateUnorderedAccessView(
+			m_calculationsOutputResource,
 			nullptr,
-			IID_PPV_ARGS(&m_calculationsOutputResource))))
-		{
-			m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-			SET_NAME(m_calculationsOutputResource, L"Particle UAV output");
-
-			D3D12_BUFFER_UAV uav{};
-			uav.NumElements = 256;
-			uav.FirstElement = 0;
-			uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
-			uav.CounterOffsetInBytes = 0;
-			uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
-			unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
-			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-			unorderedAccessViewDesc.Buffer = uav;
-
-			m_renderingManager->GetDevice()->CreateUnorderedAccessView(
-				m_calculationsOutputResource,
-				nullptr,
-				&unorderedAccessViewDesc,
-				m_calculationsOutputDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-		}
+			&unorderedAccessViewDesc,
+			handle);
+		m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
 	}
+	
 	return hr;
 }
 
