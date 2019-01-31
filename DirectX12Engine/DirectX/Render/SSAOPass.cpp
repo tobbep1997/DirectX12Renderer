@@ -77,9 +77,11 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	p_commandList[*p_renderingManager->GetFrameIndex()]->SetDescriptorHeaps(_countof(worldDescriptorHeaps), worldDescriptorHeaps);
 	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootDescriptorTable(0, m_worldPos->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
-	ID3D12DescriptorHeap* depthDescriptorHeaps[] = { m_depthStencils->GetTextureDescriptorHeap() };
-	p_commandList[*p_renderingManager->GetFrameIndex()]->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootDescriptorTable(1, m_depthStencils->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+	//ID3D12DescriptorHeap* depthDescriptorHeaps[] = { m_depthStencils->GetTextureDescriptorHeap() };
+	//p_commandList[*p_renderingManager->GetFrameIndex()]->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
+	//p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootDescriptorTable(1, m_depthStencils->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+
+	m_depthStencils->SetGraphicsRootDescriptorTable(1, p_commandList[*p_renderingManager->GetFrameIndex()]);
 
 	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, p_commandList[*p_renderingManager->GetFrameIndex()]);
 

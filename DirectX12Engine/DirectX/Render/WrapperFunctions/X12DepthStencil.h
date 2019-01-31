@@ -14,12 +14,13 @@ public:
 
 	ID3D12Resource * GetResource() const;
 	ID3D12DescriptorHeap * GetDescriptorHeap() const;
-	ID3D12DescriptorHeap * GetTextureDescriptorHeap() const;
 
 	void ClearDepthStencil(ID3D12GraphicsCommandList * commandList = nullptr) const;
 
 	void SwitchToDSV(ID3D12GraphicsCommandList * commandList = nullptr);
 	void SwitchToSRV(ID3D12GraphicsCommandList * commandList = nullptr);
+
+	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
 
 private:
 	UINT m_width = 0;
@@ -29,8 +30,7 @@ private:
 	ID3D12Resource		* m_depthStencilBuffer = nullptr;
 	ID3D12DescriptorHeap* m_depthStencilDescriptorHeap = nullptr;
 	
-	ID3D12DescriptorHeap* m_depthStencilTextureDescriptorHeap = nullptr;
-
+	SIZE_T m_descriptorHeapOffset = 0;
 	D3D12_RESOURCE_STATES m_currentState;
 };
 

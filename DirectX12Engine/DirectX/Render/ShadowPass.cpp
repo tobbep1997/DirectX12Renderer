@@ -99,7 +99,6 @@ void ShadowPass::Draw()
 
 			p_renderingManager->GetDeferredRender()->AddShadowMap(
 				directionalLight->GetDepthStencil()->GetResource(),
-				directionalLight->GetDepthStencil()->GetTextureDescriptorHeap(),
 				arr);
 		}
 		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
@@ -114,7 +113,6 @@ void ShadowPass::Draw()
 
 			p_renderingManager->GetDeferredRender()->AddShadowMap(
 				pointLight->GetDepthStencil()->GetResource(),
-				pointLight->GetDepthStencil()->GetTextureDescriptorHeap(),
 				arr);			
 		}
 	}

@@ -41,7 +41,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 		SET_NAME(m_depthStencilDescriptorHeap, name + L" DepthStencil DescriptorHeap");
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
 		depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-		depthStencilDesc.ViewDimension = arraySize ? D3D12_DSV_DIMENSION_TEXTURE2DARRAY : D3D12_DSV_DIMENSION_TEXTURE2D;
+		depthStencilDesc.ViewDimension = arraySize - 1 ? D3D12_DSV_DIMENSION_TEXTURE2DARRAY : D3D12_DSV_DIMENSION_TEXTURE2D;
 		depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 		if (D3D12_DSV_DIMENSION_TEXTURE2DARRAY == depthStencilDesc.ViewDimension)
 		{
@@ -71,37 +71,34 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 		{
 			if (createTextureHeap)
 			{
-				
-				D3D12_DESCRIPTOR_HEAP_DESC textureHeapDesc = {};
-				textureHeapDesc.NumDescriptors = 1;
-				textureHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-				textureHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-					&textureHeapDesc, IID_PPV_ARGS(&m_depthStencilTextureDescriptorHeap))))
+				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+				srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+				srvDesc.ViewDimension = arraySize - 1 ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
+				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+				if (srvDesc.ViewDimension == D3D12_SRV_DIMENSION_TEXTURE2D)
 				{
-					D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-					srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-					srvDesc.ViewDimension = arraySize ? D3D12_SRV_DIMENSION_TEXTURE2DARRAY : D3D12_SRV_DIMENSION_TEXTURE2D;
-					srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-					if (srvDesc.ViewDimension == D3D12_SRV_DIMENSION_TEXTURE2D)
-					{
-						srvDesc.Texture2D.MipLevels = 1;
-					}
-					else
-					{
-						srvDesc.Texture2DArray.ArraySize = arraySize;
-						srvDesc.Texture2DArray.FirstArraySlice = 0;
-						srvDesc.Texture2DArray.MipLevels = 1;
-						srvDesc.Texture2DArray.MostDetailedMip = 0;
-					}
-					
-					p_renderingManager->GetDevice()->CreateShaderResourceView(
-						m_depthStencilBuffer,
-						&srvDesc,
-						m_depthStencilTextureDescriptorHeap->GetCPUDescriptorHandleForHeapStart()
-					);
+					srvDesc.Texture2D.MipLevels = 1;
 				}
+				else
+				{
+					srvDesc.Texture2DArray.ArraySize = arraySize;
+					srvDesc.Texture2DArray.FirstArraySlice = 0;
+					srvDesc.Texture2DArray.MipLevels = 1;
+					srvDesc.Texture2DArray.MostDetailedMip = 0;
+				}
+				
+				m_descriptorHeapOffset = p_renderingManager->GetCbvSrvUavCurrentIndex() * p_renderingManager->GetCbvSrvUavIncrementalSize();
+				const D3D12_CPU_DESCRIPTOR_HANDLE handle{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
+				
+				p_renderingManager->GetDevice()->CreateShaderResourceView(
+					m_depthStencilBuffer,
+					&srvDesc,
+					handle
+				);
+
+				p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+
+				
 			}
 
 			SET_NAME(m_depthStencilBuffer, name + L" DepthStencil Resource");
@@ -125,11 +122,6 @@ ID3D12Resource* X12DepthStencil::GetResource() const
 ID3D12DescriptorHeap* X12DepthStencil::GetDescriptorHeap() const
 {
 	return this->m_depthStencilDescriptorHeap;
-}
-
-ID3D12DescriptorHeap* X12DepthStencil::GetTextureDescriptorHeap() const
-{
-	return this->m_depthStencilTextureDescriptorHeap;
 }
 
 void X12DepthStencil::ClearDepthStencil(ID3D12GraphicsCommandList * commandList) const
@@ -161,10 +153,19 @@ void X12DepthStencil::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 
 }
 
+void X12DepthStencil::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex,
+	ID3D12GraphicsCommandList* commandList)
+{
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+	ID3D12DescriptorHeap* depthDescriptorHeaps[] = { p_renderingManager->GetCbvSrvUavDescriptorHeap() };
+	commandList->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
+	commandList->SetGraphicsRootDescriptorTable(1, 
+		{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset });
+}
+
 
 void X12DepthStencil::Release()
 {
 	SAFE_RELEASE(m_depthStencilBuffer);
 	SAFE_RELEASE(m_depthStencilDescriptorHeap);
-	SAFE_RELEASE(m_depthStencilTextureDescriptorHeap);
 }

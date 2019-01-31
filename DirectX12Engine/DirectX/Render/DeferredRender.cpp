@@ -119,7 +119,7 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 			m_shadowValues.ViewProjection[pos] = m_shadowMaps->at(i)->ViewProjection[currentMatrix++];
 		}
 		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource);
-		index += m_shadowMaps->at(i)->Resource->GetDesc().DepthOrArraySize;
+		index += m_shadowMaps->at(i)->Resource->GetDesc().DepthOrArraySize;		
 	}
 	m_shaderResourceView->EndCopy();
 
@@ -183,13 +183,11 @@ void DeferredRender::SetRenderTarget(X12RenderTargetView** renderTarget, const U
 
 void DeferredRender::AddShadowMap(
 	ID3D12Resource* resource,
-	ID3D12DescriptorHeap* map, 
 	DirectX::XMFLOAT4X4A const* ViewProjection) const
 {
 	ShadowMap * sm = nullptr;
 	SAFE_NEW(sm, new ShadowMap());
 	sm->Resource = resource;
-	sm->Map = map;
 	for (UINT i = 0; i < resource->GetDesc().DepthOrArraySize; i++)
 	{
 		sm->ViewProjection[i] = ViewProjection[i];

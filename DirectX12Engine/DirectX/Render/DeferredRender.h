@@ -29,7 +29,6 @@ private:
 	struct ShadowMap
 	{
 		ID3D12Resource * Resource;
-		ID3D12DescriptorHeap * Map;
 		DirectX::XMFLOAT4X4A ViewProjection[6];
 	};
 
@@ -45,7 +44,7 @@ public:
 	void Release() override;
 
 	void SetRenderTarget(X12RenderTargetView ** renderTarget, const UINT & size);
-	void AddShadowMap(ID3D12Resource * resource, ID3D12DescriptorHeap * map, DirectX::XMFLOAT4X4A const* ViewProjection) const;
+	void AddShadowMap(ID3D12Resource * resource, DirectX::XMFLOAT4X4A const* ViewProjection) const;
 
 	void SetSSAO(X12RenderTargetView * renderTarget);
 
