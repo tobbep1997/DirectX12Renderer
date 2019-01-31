@@ -57,6 +57,7 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	m_cameraBuffer->Copy(&m_cameraValues, sizeof(m_cameraValues));
 
 	OpenCommandList();
+	p_renderingManager->SetCbvSrvUavDescriptorHeap(p_commandList[*p_renderingManager->GetFrameIndex()]);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -73,14 +74,7 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetScissorRects(1, &m_rect);
 	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	ID3D12DescriptorHeap* worldDescriptorHeaps[] = { m_worldPos->GetTextureDescriptorHeap() };
-	p_commandList[*p_renderingManager->GetFrameIndex()]->SetDescriptorHeaps(_countof(worldDescriptorHeaps), worldDescriptorHeaps);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootDescriptorTable(0, m_worldPos->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-
-	//ID3D12DescriptorHeap* depthDescriptorHeaps[] = { m_depthStencils->GetTextureDescriptorHeap() };
-	//p_commandList[*p_renderingManager->GetFrameIndex()]->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
-	//p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootDescriptorTable(1, m_depthStencils->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-
+	m_worldPos->SetGraphicsRootDescriptorTable(0, p_commandList[*p_renderingManager->GetFrameIndex()]);	   
 	m_depthStencils->SetGraphicsRootDescriptorTable(1, p_commandList[*p_renderingManager->GetFrameIndex()]);
 
 	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, p_commandList[*p_renderingManager->GetFrameIndex()]);
@@ -94,7 +88,7 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 void SSAOPass::Draw()
 {
 	_openCommandList();
-
+	p_renderingManager->SetCbvSrvUavDescriptorHeap(m_blurCommandList);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_blurRenderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 		*p_renderingManager->GetFrameIndex(),
@@ -111,9 +105,7 @@ void SSAOPass::Draw()
 	m_blurCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	{
-		ID3D12DescriptorHeap* worldDescriptorHeaps[] = { m_renderTarget->GetTextureDescriptorHeap() };
-		m_blurCommandList->SetDescriptorHeaps(_countof(worldDescriptorHeaps), worldDescriptorHeaps);
-		m_blurCommandList->SetGraphicsRootDescriptorTable(0, m_renderTarget->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+		m_renderTarget->SetGraphicsRootDescriptorTable(0, m_blurCommandList);
 	}
 	
 	m_blurCommandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);

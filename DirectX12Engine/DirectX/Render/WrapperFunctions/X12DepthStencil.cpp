@@ -157,9 +157,8 @@ void X12DepthStencil::SetGraphicsRootDescriptorTable(const UINT& rootParameterIn
 	ID3D12GraphicsCommandList* commandList)
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	ID3D12DescriptorHeap* depthDescriptorHeaps[] = { p_renderingManager->GetCbvSrvUavDescriptorHeap() };
-	commandList->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
-	commandList->SetGraphicsRootDescriptorTable(1, 
+
+	gcl->SetGraphicsRootDescriptorTable(1, 
 		{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset });
 }
 

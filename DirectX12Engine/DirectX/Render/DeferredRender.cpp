@@ -103,9 +103,7 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 
 	for (UINT i = 0; i < this->m_renderTargetSize; i++)
 	{
-		ID3D12DescriptorHeap* descriptorHeaps[] = { m_geometryRenderTargetView[i]->GetTextureDescriptorHeap() };
-		p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(i, m_geometryRenderTargetView[i]->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i, p_renderingManager->GetCommandList());
 	}
 
 	UINT index = 0;
@@ -131,9 +129,7 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 	
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { this->m_ssao->GetTextureDescriptorHeap() };
-	p_renderingManager->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	p_renderingManager->GetCommandList()->SetGraphicsRootDescriptorTable(7, this->m_ssao->GetTextureDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+	m_ssao->SetGraphicsRootDescriptorTable(7, p_renderingManager->GetCommandList());
 }
 
 void DeferredRender::Draw()

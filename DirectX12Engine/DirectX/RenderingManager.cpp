@@ -157,6 +157,9 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 	//---------------------------------------------------------------------
+
+	SetCbvSrvUavDescriptorHeap(m_commandList);
+
 	m_particlePass->ThreadUpdate(camera, deltaTime);
 	m_shadowPass->ThreadUpdate(camera, deltaTime);
 
@@ -450,6 +453,12 @@ const SIZE_T & RenderingManager::GetCbvSrvUavIncrementalSize() const
 ID3D12DescriptorHeap* RenderingManager::GetCbvSrvUavDescriptorHeap() const
 {
 	return this->m_cbv_srv_uav_descriptorHeap;
+}
+
+void RenderingManager::SetCbvSrvUavDescriptorHeap(ID3D12GraphicsCommandList* commandList) const
+{
+	ID3D12DescriptorHeap* depthDescriptorHeaps[] = { m_cbv_srv_uav_descriptorHeap };
+	commandList->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
 }
 
 UINT64 * RenderingManager::GetFenceValues()

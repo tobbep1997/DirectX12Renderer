@@ -32,6 +32,7 @@ HRESULT ShadowPass::Init()
 void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 {
 	OpenCommandList();
+	p_renderingManager->SetCbvSrvUavDescriptorHeap(p_commandList[*p_renderingManager->GetFrameIndex()]);
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)

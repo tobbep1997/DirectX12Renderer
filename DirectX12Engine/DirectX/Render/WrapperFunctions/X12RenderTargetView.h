@@ -15,11 +15,13 @@ public:
 
 	ID3D12Resource *const* GetResource() const;
 	ID3D12DescriptorHeap * GetDescriptorHeap() const;
-	ID3D12DescriptorHeap * GetTextureDescriptorHeap() const;
+
 	const UINT & GetDescriptorSize() const;
 
 	void SwitchToRTV(ID3D12GraphicsCommandList * commandList = nullptr);
 	void SwitchToSRV(ID3D12GraphicsCommandList * commandList = nullptr);
+
+	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList);
 
 	void Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList = nullptr) const;
 	void Release() override;
@@ -36,7 +38,8 @@ private:
 	UINT m_rtvDescriptorSize = 0;
 	ID3D12Resource *		m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr };
 	ID3D12DescriptorHeap *	m_rtvDescriptorHeap = nullptr;
-	ID3D12DescriptorHeap *	m_rtvTextureDescriptorHeap = nullptr;
+	SIZE_T m_descriptorHeapOffset = 0;
+	//ID3D12DescriptorHeap *	m_rtvTextureDescriptorHeap = nullptr;
 
 };
 

@@ -77,21 +77,7 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 		{
 			m_rtvDescriptorSize = p_renderingManager->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-			if (createTexture)
-			{
-				D3D12_DESCRIPTOR_HEAP_DESC textureHeapDesc = {};
-				textureHeapDesc.NumDescriptors = arraySize;
-				textureHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-				textureHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-				if (FAILED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
-					&textureHeapDesc, IID_PPV_ARGS(&m_rtvTextureDescriptorHeap))))
-				{
-					return hr;
-				}
-			}
-
+					   
 			for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 			{
 				if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreatePlacedResource(
@@ -149,11 +135,16 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 							srvDesc.Texture2DArray.MostDetailedMip = 0;							
 						}
 
+						m_descriptorHeapOffset = p_renderingManager->GetCbvSrvUavCurrentIndex() * p_renderingManager->GetCbvSrvUavIncrementalSize();
+						const D3D12_CPU_DESCRIPTOR_HANDLE handle = { p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
+
 						p_renderingManager->GetDevice()->CreateShaderResourceView(
 							m_renderTargets[i],
 							&srvDesc,
-							m_rtvTextureDescriptorHeap->GetCPUDescriptorHandleForHeapStart()
+							handle
 						);
+
+						p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
 					}
 
 				}
@@ -173,11 +164,6 @@ ID3D12Resource* const* X12RenderTargetView::GetResource() const
 ID3D12DescriptorHeap* X12RenderTargetView::GetDescriptorHeap() const
 {
 	return this->m_rtvDescriptorHeap;
-}
-
-ID3D12DescriptorHeap* X12RenderTargetView::GetTextureDescriptorHeap() const
-{
-	return this->m_rtvTextureDescriptorHeap;
 }
 
 const UINT& X12RenderTargetView::GetDescriptorSize() const
@@ -208,6 +194,15 @@ void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
+void X12RenderTargetView::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex,
+	ID3D12GraphicsCommandList* commandList)
+{
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+	
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex,
+		{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset });
+}
+
 void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList) const
 {	
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
@@ -216,8 +211,7 @@ void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle,
 
 void X12RenderTargetView::Release()
 {
-	SAFE_RELEASE(m_rtvDescriptorHeap);
-	SAFE_RELEASE(m_rtvTextureDescriptorHeap);
+	SAFE_RELEASE(m_rtvDescriptorHeap);	
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
 		SAFE_RELEASE(m_renderTargets[i]);

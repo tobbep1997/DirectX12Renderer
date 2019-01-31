@@ -40,6 +40,8 @@ HRESULT GeometryPass::Init()
 void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 {	
 	OpenCommandList();
+	p_renderingManager->SetCbvSrvUavDescriptorHeap(p_commandList[*p_renderingManager->GetFrameIndex()]);
+
 	m_cameraValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
 		camera.GetPosition().z,

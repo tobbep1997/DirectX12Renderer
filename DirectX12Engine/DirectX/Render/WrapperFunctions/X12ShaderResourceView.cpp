@@ -127,8 +127,6 @@ void X12ShaderResourceView::SetGraphicsRootDescriptorTable(const UINT& rootParam
 	D3D12_GPU_DESCRIPTOR_HANDLE handle = p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
 	handle.ptr += m_descriptorHeapOffset;
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { p_renderingManager->GetCbvSrvUavDescriptorHeap() };
-	gcl->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, handle);
 }
 

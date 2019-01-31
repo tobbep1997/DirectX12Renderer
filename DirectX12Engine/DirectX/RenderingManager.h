@@ -62,6 +62,8 @@ public:
 	const SIZE_T & GetCbvSrvUavIncrementalSize() const;
 	ID3D12DescriptorHeap * GetCbvSrvUavDescriptorHeap() const;
 
+	void SetCbvSrvUavDescriptorHeap(ID3D12GraphicsCommandList * commandList) const;
+
 private:
 
 	ID3D12Device *				m_device = nullptr;
