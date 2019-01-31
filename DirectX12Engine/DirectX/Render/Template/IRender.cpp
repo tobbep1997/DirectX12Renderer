@@ -52,6 +52,15 @@ void IRender::ThreadUpdate(const Camera & camera, const float & deltaTime)
 		this->m_deltaTime = deltaTime;
 		m_threadDone = false;
 	}
+	if (!m_threadRunning)
+	{
+		if (m_thread.get_id() == std::thread::id())
+			m_thread = std::thread(&IRender::_updateWithThreads, this);
+		this->m_camera = camera;
+		this->m_deltaTime = deltaTime;
+		m_threadDone = false;
+		m_threadRunning = true;
+	}
 }
 
 #pragma optimize( "", off )
