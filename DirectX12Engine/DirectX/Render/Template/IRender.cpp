@@ -46,20 +46,24 @@ void IRender::ThreadUpdate(const Camera & camera, const float & deltaTime)
 {
 	if (p_commandList[*p_renderingManager->GetFrameIndex()] == nullptr)
 		throw "Missing command list";
-	if (m_threadDone && m_threadRunning)
+
+	if (m_threadDone && m_threadRunning && m_thread.get_id() != std::thread::id())
 	{
 		this->m_camera = camera;
 		this->m_deltaTime = deltaTime;
 		m_threadDone = false;
 	}
-	if (!m_threadRunning)
+	else 
 	{
 		if (m_thread.get_id() == std::thread::id())
+		{
+			m_threadRunning = true;
 			m_thread = std::thread(&IRender::_updateWithThreads, this);
+		}
+		
 		this->m_camera = camera;
 		this->m_deltaTime = deltaTime;
 		m_threadDone = false;
-		m_threadRunning = true;
 	}
 }
 

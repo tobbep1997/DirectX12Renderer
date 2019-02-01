@@ -202,6 +202,7 @@ HRESULT ParticleEmitter::_createCommandList()
 		nullptr,
 		IID_PPV_ARGS(&m_commandList))))
 	{
+		SET_NAME(m_commandList, L"Particle Commandlist");
 		m_commandList->Close();
 	}
 	return hr;
