@@ -76,8 +76,8 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 	m_cameraBuffer->Copy(&m_cameraValues, sizeof(m_cameraValues));
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(0, p_commandList[*p_renderingManager->GetFrameIndex()]);
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(1, p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(0,0, p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(1, 0, p_commandList[*p_renderingManager->GetFrameIndex()]);
 }
 
 void GeometryPass::Draw()
@@ -90,7 +90,7 @@ void GeometryPass::Draw()
 		p_commandList[*p_renderingManager->GetFrameIndex()]->SetPipelineState(m_particlePipelineState);
 		p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootSignature(m_particleRootSignature);
 		p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_cameraBuffer->SetGraphicsRootConstantBufferView(0, p_commandList[*p_renderingManager->GetFrameIndex()]);
+		m_cameraBuffer->SetGraphicsRootConstantBufferView(0, 0, p_commandList[*p_renderingManager->GetFrameIndex()]);
 		
 		ParticleEmitter * emitter = nullptr;
 		for (size_t i = 0; i < emitterSize; i++)

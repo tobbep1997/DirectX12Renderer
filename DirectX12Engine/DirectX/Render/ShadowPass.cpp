@@ -4,6 +4,7 @@
 #include "WrapperFunctions/X12RenderTargetView.h"
 #include "GeometryPass.h"
 #include "DeferredRender.h"
+#include "WrapperFunctions/X12ConstantBuffer.h"
 
 
 ShadowPass::ShadowPass(RenderingManager* renderingManager, const Window& window)
@@ -42,8 +43,6 @@ void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));
 			m_lightValues.LightType.x = directionalLight->GetType();
 			m_lightValues.LightViewProjection[0] = directionalLight->GetCamera()->GetViewProjectionMatrix();
-
-			memcpy(m_constantLightBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + counter++ * m_constantLightBufferPerObjectAlignedSize, &m_lightValues, sizeof(m_lightValues));
 		}
 		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
 		{
@@ -53,8 +52,8 @@ void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 			{
 				m_lightValues.LightViewProjection[j] = directionalLight->GetCameras()[j]->GetViewProjectionMatrix();
 			}
-			memcpy(m_constantLightBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + counter++ * m_constantLightBufferPerObjectAlignedSize, &m_lightValues, sizeof(m_lightValues));
 		}
+		m_constantLightBuffer->Copy(&m_lightValues, sizeof(m_lightValues), m_constantLightBufferPerObjectAlignedSize * counter++);
 	}
 	   
 	p_commandList[*p_renderingManager->GetFrameIndex()]->SetPipelineState(m_pipelineState);
@@ -83,9 +82,9 @@ void ShadowPass::Draw()
 		p_lightQueue->at(i)->GetRenderTargetView()->Clear(rtvHandle, p_commandList[*p_renderingManager->GetFrameIndex()]);
 		
 		p_commandList[*p_renderingManager->GetFrameIndex()]->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
-		
-		p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootConstantBufferView(0, m_constantLightBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + counter * m_constantLightBufferPerObjectAlignedSize);
-		
+
+		m_constantLightBuffer->SetGraphicsRootConstantBufferView(0, counter * m_constantLightBufferPerObjectAlignedSize, p_commandList[*p_renderingManager->GetFrameIndex()]);
+
 		p_drawInstance();
 
 		counter++;
@@ -132,10 +131,8 @@ void ShadowPass::Release()
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
 	   
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
-	{
-		SAFE_RELEASE(m_constantLightBuffer[i]);
-	}
+	m_constantLightBuffer->Release();
+	SAFE_DELETE(m_constantLightBuffer);
 	p_releaseInstanceBuffer();
 	p_releaseCommandList();
 }
@@ -314,28 +311,10 @@ HRESULT ShadowPass::_createConstantBuffer()
 {
 	HRESULT hr = 0;
 	   
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	SAFE_NEW(m_constantLightBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+	if (FAILED(hr = m_constantLightBuffer->CreateBuffer(L"Shadow matrix", &m_lightValues, sizeof(LightBuffer))))
 	{
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_constantLightBuffer[i]))))
-		{
-			SET_NAME(m_constantLightBuffer[i], L"Shadow ConstantLightBuffer Upload Resource Heap");
-		}
-		else
-			return hr;
-
-		CD3DX12_RANGE readRange(0, 0);
-		if (SUCCEEDED(hr = m_constantLightBuffer[i]->Map(
-			0, &readRange,
-			reinterpret_cast<void**>(&m_constantLightBufferGPUAddress[i]))))
-		{
-			memcpy(m_constantLightBufferGPUAddress[i], &m_lightValues, sizeof(LightBuffer));
-		}
+		return hr;
 	}
 	return hr;
 }

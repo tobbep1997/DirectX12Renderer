@@ -54,10 +54,9 @@ private:
 	ID3D12PipelineState *	m_pipelineState = nullptr;
 	D3D12_VIEWPORT	m_viewport{};
 	D3D12_RECT		m_rect{};
-	   
-	ID3D12Resource *		m_constantLightBuffer[FRAME_BUFFER_COUNT]{ nullptr };
+
+	X12ConstantBuffer *	m_constantLightBuffer = nullptr;
 	int m_constantLightBufferPerObjectAlignedSize = (sizeof(LightBuffer) + 255) & ~255;
-	UINT8* m_constantLightBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
 
 	LightBuffer		m_lightValues{};
 };

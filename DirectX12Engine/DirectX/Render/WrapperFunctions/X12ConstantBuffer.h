@@ -8,11 +8,11 @@ public:
 	X12ConstantBuffer(RenderingManager * renderingManager, const Window & window, ID3D12GraphicsCommandList * commandList = nullptr);
 	~X12ConstantBuffer();
 
-	HRESULT CreateBuffer(const std::wstring & name, void const* data, const UINT & sizeOf);
+	HRESULT CreateBuffer(const std::wstring & name, void const* data, const UINT & sizeOf, const UINT & preAllocData = 0);
 
-	void SetComputeRootConstantBufferView(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
-	void SetGraphicsRootConstantBufferView(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
-	void Copy(void const* data, const UINT & sizeOf);
+	void SetComputeRootConstantBufferView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
+	void SetGraphicsRootConstantBufferView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
+	void Copy(void const* data, const UINT & sizeOf, const UINT & offset = 0);
 	void Release() override;
 
 	ID3D12Resource*const* GetResource() const;

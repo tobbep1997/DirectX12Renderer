@@ -95,10 +95,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 					&srvDesc,
 					handle
 				);
-
-				p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
-
-				
+				p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();				
 			}
 
 			SET_NAME(m_depthStencilBuffer, name + L" DepthStencil Resource");

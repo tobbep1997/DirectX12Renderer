@@ -77,7 +77,7 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	m_worldPos->SetGraphicsRootDescriptorTable(0, p_commandList[*p_renderingManager->GetFrameIndex()]);	   
 	m_depthStencils->SetGraphicsRootDescriptorTable(1, p_commandList[*p_renderingManager->GetFrameIndex()]);
 
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, 0, p_commandList[*p_renderingManager->GetFrameIndex()]);
 
 	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	p_commandList[*p_renderingManager->GetFrameIndex()]->DrawInstanced(4, 1, 0, 0);
