@@ -100,6 +100,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 		ID3D12GraphicsCommandList * commandList = emitter->GetCommandList();
 		emitter->OpenCommandList();
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
 
 		emitter->SwitchToUAVState(commandList);
 
@@ -113,6 +114,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		commandList->Dispatch(static_cast<UINT>(m_emitters->at(i)->GetPositions().size()), 1, 1);
 
 		emitter->SwitchToVertexState(commandList);
+
 
 		emitter->ExecuteCommandList();
 		emitter->UpdateData();

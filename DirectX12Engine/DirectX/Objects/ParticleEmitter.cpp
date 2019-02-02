@@ -383,11 +383,10 @@ void ParticleEmitter::UpdateData()
 			const XMVECTOR dist = XMVector4Length(XMVectorSubtract(XMLoadFloat4(&m_particles->at(i).Position), XMLoadFloat4(&outputArray[i].Position)));
 			const float distance = XMVectorGetX(dist);
 
-			if (distance < 1.0f)
-			{
-				m_particles->at(i).Position = outputArray[i].Position;
-				m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;
-			}
+
+			m_particles->at(i).Position = outputArray[i].Position;
+			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;
+	
 		}
 		m_calculationsOutputResource->Unmap(0, &readRange);
 	}
