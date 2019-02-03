@@ -259,6 +259,8 @@
     <FxCompile Include="DirectX\Shaders\SSAOPass\DefaultSSAOPixel.hlsl" />
     <FxCompile Include="DirectX\Shaders\SSAOPass\DefaultSSAOBlurVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\SSAOPass\DefaultSSAOBlurPixel.hlsl" />
+    <FxCompile Include="DirectX\Shaders\ReflectionPass\DefaultReflectionVertex.hlsl" />
+    <FxCompile Include="DirectX\Shaders\ReflectionPass\DefaultReflectionPixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectX\Shaders\ShaderIncludes\LightCalculations.hlsli" />

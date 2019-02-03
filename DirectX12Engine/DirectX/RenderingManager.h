@@ -10,8 +10,8 @@ class DeferredRender;
 class ShadowPass;
 class GeometryPass;
 class ParticlePass;
+class ReflectionPass;
 class Camera;
-
 
 const unsigned int FRAME_BUFFER_COUNT = 3;
 class RenderingManager
@@ -52,6 +52,8 @@ public:
 	DeferredRender * GetDeferredRender() const;
 	ParticlePass * GetParticlePass() const;
 	SSAOPass * GetSSAOPass() const;
+	ReflectionPass * GetReflectionPass() const;
+
 
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
@@ -101,6 +103,7 @@ private:
 	DeferredRender * m_deferredPass = nullptr;
 	ParticlePass * m_particlePass = nullptr;
 	SSAOPass * m_ssaoPass = nullptr;
+	ReflectionPass * m_reflectionPass = nullptr;
 
 	SIZE_T m_cbv_srv_uav_currentIndex = 0;
 	SIZE_T m_cbv_srv_uav_incrementalSize = 0;

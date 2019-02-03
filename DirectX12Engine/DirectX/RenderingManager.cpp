@@ -7,6 +7,7 @@
 #include "Render/ParticlePass.h"
 
 #include "Render/SSAOPass.h"
+#include "Render/ReflectionPass.h"
 
 RenderingManager * RenderingManager::thisRenderingManager = nullptr;
 
@@ -86,7 +87,11 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 															SAFE_NEW(m_ssaoPass, new SSAOPass(this, *window));
 															if (SUCCEEDED(hr = m_ssaoPass->Init()))
 															{
-
+																SAFE_NEW(m_reflectionPass, new ReflectionPass(this, *window));
+																if (SUCCEEDED(hr = m_reflectionPass->Init()))
+																{
+																	
+																}
 															}
 														}
 													}
@@ -168,10 +173,13 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 	m_geometryPass->ThreadUpdate(camera, deltaTime);
 	m_geometryPass->ThreadJoin();
 
+	m_reflectionPass->ThreadUpdate(camera, deltaTime);
+
 	m_ssaoPass->ThreadUpdate(camera, deltaTime);
 
 	m_shadowPass->ThreadJoin();
 	m_ssaoPass->ThreadJoin();
+	m_reflectionPass->ThreadJoin();
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
@@ -229,6 +237,7 @@ void RenderingManager::_clear() const
 	m_deferredPass->Clear();
 	m_particlePass->Clear();
 	m_ssaoPass->Clear();
+	m_reflectionPass->Clear();
 }
 
 void RenderingManager::Present() const
@@ -276,6 +285,10 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_deferredPass->KillThread();
 	m_deferredPass->Release();
 	SAFE_DELETE(m_deferredPass);
+
+	m_reflectionPass->KillThread();
+	m_reflectionPass->Release();
+	SAFE_DELETE(m_reflectionPass);
 
 	m_shadowPass->KillThread();
 	m_shadowPass->Release();
@@ -386,6 +399,11 @@ ParticlePass* RenderingManager::GetParticlePass() const
 SSAOPass* RenderingManager::GetSSAOPass() const
 {
 	return this->m_ssaoPass;
+}
+
+ReflectionPass* RenderingManager::GetReflectionPass() const
+{
+	return this->m_reflectionPass;
 }
 
 HRESULT RenderingManager::OpenCommandList()

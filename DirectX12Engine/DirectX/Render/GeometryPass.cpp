@@ -68,7 +68,6 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 
 	p_commandList[*p_renderingManager->GetFrameIndex()]->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
 
-	//p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootSignature(m_rootSignature);
 	p_commandList[*p_renderingManager->GetFrameIndex()]->ExecuteBundle(m_bundleCommandList[*p_renderingManager->GetFrameIndex()]);
 	
 	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetViewports(1, &m_viewport);
@@ -108,6 +107,11 @@ void GeometryPass::Draw()
 	}
 
 	m_depthStencil->SwitchToSRV(p_commandList[*p_renderingManager->GetFrameIndex()]);
+
+	for (UINT i = 0; i < RENDER_TARGETS; i++)
+	{
+		m_renderTarget[i]->SwitchToSRV(p_commandList[*p_renderingManager->GetFrameIndex()]);
+	}
 
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
 	p_renderingManager->GetSSAOPass()->SetWorldPos(m_renderTarget[0]);
