@@ -99,8 +99,9 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		emitter = m_emitters->at(i);
 
 		ID3D12GraphicsCommandList * commandList = emitter->GetCommandList();
+		emitter->UpdateData();
 		emitter->OpenCommandList();
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
+
 
 		emitter->SwitchToUAVState(commandList);
 
@@ -116,8 +117,9 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		emitter->SwitchToVertexState(commandList);
 
 
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
 		emitter->ExecuteCommandList();
-		emitter->UpdateData();
+
 
 		if (!emitter->GetPositions().empty())
 			m_geometryPass->AddEmitter(emitter);

@@ -212,12 +212,6 @@ HRESULT ParticleEmitter::_createBuffer()
 {
 	HRESULT hr = 0;
 
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-	descriptorHeapDesc.NumDescriptors = 1;
-	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		
-
 	D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(4096 * 4096);
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
@@ -374,19 +368,14 @@ void ParticleEmitter::UpdateData()
 		DirectX::XMFLOAT4 ParticleInfo;
 	};
 
-	OutputCalculations *outputArray = nullptr;
+	OutputCalculations * outputArray = nullptr;
 	CD3DX12_RANGE readRange(0, sizeof(OutputCalculations) * m_particles->size());
 	if (SUCCEEDED(m_calculationsOutputResource->Map(0, &readRange, reinterpret_cast<void**>(&outputArray))))
 	{
 		for (size_t i = 0; i < m_particles->size(); i++)
 		{
-			const XMVECTOR dist = XMVector4Length(XMVectorSubtract(XMLoadFloat4(&m_particles->at(i).Position), XMLoadFloat4(&outputArray[i].Position)));
-			const float distance = XMVectorGetX(dist);
-
-
 			m_particles->at(i).Position = outputArray[i].Position;
-			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;
-	
+			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;	
 		}
 		m_calculationsOutputResource->Unmap(0, &readRange);
 	}

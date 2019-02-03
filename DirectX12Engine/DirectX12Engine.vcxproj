@@ -244,6 +244,7 @@
     <ClInclude Include="DirectX\Render\ParticlePass.h" />
     <ClInclude Include="DirectX\Objects\ParticleEmitter.h" />
     <ClInclude Include="DirectX\Render\SSAOPass.h" />
+    <ClInclude Include="DirectX\Render\ReflectionPass.h" />
     <ClInclude Include="Submodule\DirectXTK\Inc\DDSTextureLoader.h" />
     <ClInclude Include="Submodule\DirectXTK\Inc\GraphicsMemory.h" />
     <ClInclude Include="Submodule\DirectXTK\Inc\ResourceUploadBatch.h" />
@@ -268,6 +269,7 @@
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12RenderTargetView.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12ShaderResourceView.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12StructuredBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectX\Render\DeferredRender.cpp" />
@@ -283,6 +285,7 @@
     <ClCompile Include="DirectX\Render\ParticlePass.cpp" />
     <ClCompile Include="DirectX\Objects\ParticleEmitter.cpp" />
     <ClCompile Include="DirectX\Render\SSAOPass.cpp" />
+    <ClCompile Include="DirectX\Render\ReflectionPass.cpp" />
     <ClCompile Include="Submodule\DirectXTK\Src\DDSTextureLoader.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='DxExportDebug|Win32'">pch.h</PrecompiledHeaderFile>
@@ -398,6 +401,7 @@
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12ConstantBuffer.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12RenderTargetView.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12ShaderResourceView.cpp" />
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12StructuredBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredPixel.hlsl">

@@ -108,6 +108,12 @@
     <ClCompile Include="DirectX\Render\SSAOPass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\ReflectionPass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12StructuredBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -228,6 +234,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DirectX\Render\SSAOPass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX\Render\ReflectionPass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12StructuredBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -222,13 +222,13 @@ void IRender::p_releaseInstanceBuffer()
 	SAFE_RELEASE(p_intermediateInstanceBuffer);
 }
 
-HRESULT IRender::OpenCommandList()
+HRESULT IRender::OpenCommandList(ID3D12PipelineState * pipelineState)
 {
 	HRESULT hr = 0;
 	const UINT frameIndex = *p_renderingManager->GetFrameIndex();
 	if (SUCCEEDED(hr = this->p_commandAllocator[frameIndex]->Reset()))
 	{
-		if (SUCCEEDED(hr = this->p_commandList[frameIndex]->Reset(this->p_commandAllocator[frameIndex], nullptr)))
+		if (SUCCEEDED(hr = this->p_commandList[frameIndex]->Reset(this->p_commandAllocator[frameIndex], pipelineState)))
 		{
 
 		}
