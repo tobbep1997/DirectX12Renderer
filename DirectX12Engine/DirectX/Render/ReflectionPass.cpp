@@ -37,9 +37,10 @@ HRESULT ReflectionPass::Init()
 void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 {
 	OpenCommandList(m_pipelineState);
-	m_cameraBuffer->Copy(&camera.GetPosition(), sizeof(DirectX::XMFLOAT4));
-
 	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
+
+	m_cameraBuffer->Copy(&camera.GetPosition(), sizeof(DirectX::XMFLOAT4));
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTargetView->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -51,6 +52,11 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 	commandList->RSSetViewports(1, &m_viewport);
 	commandList->RSSetScissorRects(1, &m_rect);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	for (UINT i = 0; i < m_renderTargetSize; i++)
+	{
+		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i + 1, commandList);
+	}
 
 }
 
@@ -85,6 +91,12 @@ void ReflectionPass::Release()
 
 
 	p_releaseCommandList();
+}
+
+void ReflectionPass::SetRenderTarget(X12RenderTargetView** renderTarget, const UINT& size)
+{
+	this->m_renderTargetSize = size;
+	this->m_geometryRenderTargetView = renderTarget;
 }
 
 HRESULT ReflectionPass::_preInit()
@@ -141,6 +153,22 @@ HRESULT ReflectionPass::_preInit()
 
 HRESULT ReflectionPass::_initRootSignature()
 {
+	D3D12_DESCRIPTOR_RANGE worldPosRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE worldPosTable;
+	RenderingHelpClass::CreateRootDescriptorTable(worldPosRangeTable, worldPosTable, 0);
+
+	D3D12_DESCRIPTOR_RANGE albedoRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE albedoTable1;
+	RenderingHelpClass::CreateRootDescriptorTable(albedoRangeTable, albedoTable1, 1);
+
+	D3D12_DESCRIPTOR_RANGE normalRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE normalTable;
+	RenderingHelpClass::CreateRootDescriptorTable(normalRangeTable, normalTable, 2);
+
+	D3D12_DESCRIPTOR_RANGE metallicRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
+	RenderingHelpClass::CreateRootDescriptorTable(metallicRangeTable, metallicTable, 3);
+
 	D3D12_ROOT_DESCRIPTOR camera;
 	camera.RegisterSpace = 0;
 	camera.ShaderRegister = 0;
@@ -149,15 +177,42 @@ HRESULT ReflectionPass::_initRootSignature()
 	m_rootParameters[0].Descriptor = camera;
 	m_rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+	m_rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[1].DescriptorTable = albedoTable1;
+	m_rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[2].DescriptorTable = worldPosTable;
+	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[3].DescriptorTable = normalTable;
+	m_rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[4].DescriptorTable = metallicTable;
+	m_rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	D3D12_STATIC_SAMPLER_DESC depthSampler{};
+	RenderingHelpClass::CreateSampler(depthSampler, 1, 0, D3D12_SHADER_VISIBILITY_PIXEL,
+		D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT,
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+		0, 0,
+		D3D12_COMPARISON_FUNC_LESS_EQUAL);
+
+	D3D12_STATIC_SAMPLER_DESC samplers[]{ sampler, depthSampler };
 
 	HRESULT hr = 0;
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(m_rootParameters),
 		m_rootParameters,
-		1,
-		&sampler,
+		_countof(samplers),
+		samplers,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |

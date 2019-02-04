@@ -7,6 +7,7 @@
 #include "DeferredRender.h"
 #include "WrapperFunctions/X12ShaderResourceView.h"
 #include "SSAOPass.h"
+#include "ReflectionPass.h"
 
 GeometryPass::GeometryPass(RenderingManager * renderingManager, 
 	const Window & window) :
@@ -114,6 +115,7 @@ void GeometryPass::Draw()
 	}
 
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
+	p_renderingManager->GetReflectionPass()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
 	p_renderingManager->GetSSAOPass()->SetWorldPos(m_renderTarget[0]);
 	p_renderingManager->GetSSAOPass()->SetDepthStencil(m_depthStencil);
 	

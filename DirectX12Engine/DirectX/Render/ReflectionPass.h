@@ -6,7 +6,7 @@ class ReflectionPass :
 	public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 1;
+	static const UINT ROOT_PARAMETERS = 5;
 	
 public:
 	ReflectionPass(RenderingManager * renderingManager, const Window & window);
@@ -18,6 +18,8 @@ public:
 	void Draw() override;
 	void Clear() override;
 	void Release() override;
+
+	void SetRenderTarget(X12RenderTargetView ** renderTarget, const UINT & size);
 
 private:
 	HRESULT _preInit();
@@ -45,6 +47,9 @@ private:
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc{};
 
 	X12RenderTargetView * m_renderTargetView = nullptr;
+
+	UINT m_renderTargetSize = 0;
+	X12RenderTargetView ** m_geometryRenderTargetView = nullptr;
 
 	struct Vertex
 	{
