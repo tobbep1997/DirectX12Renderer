@@ -130,6 +130,8 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);
 
 	m_ssao->SetGraphicsRootDescriptorTable(7, p_renderingManager->GetCommandList());
+
+	m_reflection->SetGraphicsRootDescriptorTable(8, p_renderingManager->GetCommandList());
 }
 
 void DeferredRender::Draw()
@@ -175,6 +177,11 @@ void DeferredRender::SetRenderTarget(X12RenderTargetView** renderTarget, const U
 {
 	this->m_geometryRenderTargetView = renderTarget;
 	this->m_renderTargetSize = size;
+}
+
+void DeferredRender::SetReflection(X12RenderTargetView* renderTarget)
+{
+	this->m_reflection = renderTarget;
 }
 
 void DeferredRender::AddShadowMap(
@@ -254,6 +261,10 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
 	RenderingHelpClass::CreateRootDescriptorTable(metallicRangeTable, metallicTable, 3);
 
+	D3D12_DESCRIPTOR_RANGE reflectionRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE reflectionTable;
+	RenderingHelpClass::CreateRootDescriptorTable(reflectionRangeTable, reflectionTable, 6);
+
 	D3D12_DESCRIPTOR_RANGE shadowRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE shadowTable;
 	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 0, 1);
@@ -301,6 +312,10 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	m_rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[7].DescriptorTable = ssaoTable;
 	m_rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[8].DescriptorTable = reflectionTable;
+	m_rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);

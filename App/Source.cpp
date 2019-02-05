@@ -188,7 +188,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 			//directionalLight2->Queue();
 
-			emitter->Draw();
+			//emitter->Draw();
 
 			if (Input::IsKeyPressed(97))
 				directionalLight->SetPosition(5, 5, 5);

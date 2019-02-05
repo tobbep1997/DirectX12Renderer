@@ -155,10 +155,9 @@ void X12DepthStencil::SetGraphicsRootDescriptorTable(const UINT& rootParameterIn
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 
-	gcl->SetGraphicsRootDescriptorTable(1, 
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex,
 		{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset });
 }
-
 
 void X12DepthStencil::Release()
 {

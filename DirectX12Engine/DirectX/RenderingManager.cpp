@@ -47,9 +47,7 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 			if (SUCCEEDED(hr = D3D12GetDebugInterface(IID_PPV_ARGS(&m_debugLayer))))
 			{
 				m_debugLayer->EnableDebugLayer();
-			}
-			
-			
+			}			
 		}
 		if (SUCCEEDED(hr))
 		{
@@ -174,9 +172,8 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 	m_geometryPass->ThreadJoin();
 
 	m_reflectionPass->ThreadUpdate(camera, deltaTime);
-
 	m_ssaoPass->ThreadUpdate(camera, deltaTime);
-
+	
 	m_shadowPass->ThreadJoin();
 	m_ssaoPass->ThreadJoin();
 	m_reflectionPass->ThreadJoin();

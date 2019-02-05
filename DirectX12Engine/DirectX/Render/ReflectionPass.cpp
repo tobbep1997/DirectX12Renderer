@@ -2,6 +2,8 @@
 #include "ReflectionPass.h"
 #include "WrapperFunctions/RenderingHelpClass.h"
 #include "WrapperFunctions/X12RenderTargetView.h"
+#include "WrapperFunctions/X12DepthStencil.h"
+#include "DeferredRender.h"
 
 
 ReflectionPass::ReflectionPass(RenderingManager * renderingManager, const Window & window) : IRender(renderingManager, window)
@@ -40,7 +42,12 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
 	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
 
-	m_cameraBuffer->Copy(&camera.GetPosition(), sizeof(DirectX::XMFLOAT4));
+	m_cameraValues.Position = camera.GetPosition();
+	m_cameraValues.ViewProjection = camera.GetViewProjectionMatrix();
+
+	m_cameraBuffer->Copy(&m_cameraValues, sizeof(m_cameraValues));
+
+	m_renderTargetView->SwitchToRTV(commandList);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTargetView->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -53,10 +60,14 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 	commandList->RSSetScissorRects(1, &m_rect);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(0, 0, commandList);
+
 	for (UINT i = 0; i < m_renderTargetSize; i++)
 	{
 		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i + 1, commandList);
 	}
+	m_depthStencil->SetGraphicsRootDescriptorTable(5, commandList);
+	
 
 }
 
@@ -68,7 +79,11 @@ void ReflectionPass::Draw()
 
 	commandList->DrawInstanced(4, 1, 0, 0);
 
+	m_renderTargetView->SwitchToSRV(commandList);
+
 	ExecuteCommandList();
+
+	p_renderingManager->GetDeferredRender()->SetReflection(m_renderTargetView);
 }
 
 void ReflectionPass::Clear()
@@ -77,10 +92,12 @@ void ReflectionPass::Clear()
 
 void ReflectionPass::Release()
 {
-	m_cameraBuffer->Release();
+	if (m_cameraBuffer)
+		m_cameraBuffer->Release();
 	SAFE_DELETE(m_cameraBuffer);
 
-	m_renderTargetView->Release();
+	if (m_renderTargetView)
+		m_renderTargetView->Release();
 	SAFE_DELETE(m_renderTargetView);
 
 	SAFE_RELEASE(m_vertexBuffer);
@@ -97,6 +114,11 @@ void ReflectionPass::SetRenderTarget(X12RenderTargetView** renderTarget, const U
 {
 	this->m_renderTargetSize = size;
 	this->m_geometryRenderTargetView = renderTarget;
+}
+
+void ReflectionPass::SetDepth(X12DepthStencil* depthStencil)
+{
+	this->m_depthStencil = depthStencil;
 }
 
 HRESULT ReflectionPass::_preInit()
@@ -133,7 +155,7 @@ HRESULT ReflectionPass::_preInit()
 
 	_createViewPort();
 	SAFE_NEW(m_renderTargetView, new X12RenderTargetView(p_renderingManager, *p_window));
-	if (FAILED(hr = m_renderTargetView->CreateRenderTarget(0, 0, 1, FALSE, DXGI_FORMAT_R32G32B32A32_FLOAT)))
+	if (FAILED(hr = m_renderTargetView->CreateRenderTarget(0, 0, 1, TRUE, DXGI_FORMAT_R32G32B32A32_FLOAT)))
 	{
 		return hr;
 	}
@@ -142,8 +164,7 @@ HRESULT ReflectionPass::_preInit()
 	if (FAILED(hr = m_cameraBuffer->CreateBuffer(
 		L"Reflection Camera", 
 		nullptr, 
-		sizeof(DirectX::XMFLOAT4), 
-		1024 * 64)))
+		sizeof(CameraValues))))
 	{
 		return hr;
 	}
@@ -169,6 +190,10 @@ HRESULT ReflectionPass::_initRootSignature()
 	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
 	RenderingHelpClass::CreateRootDescriptorTable(metallicRangeTable, metallicTable, 3);
 
+	D3D12_DESCRIPTOR_RANGE depthRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE depthTable;
+	RenderingHelpClass::CreateRootDescriptorTable(depthRangeTable, depthTable, 4);
+
 	D3D12_ROOT_DESCRIPTOR camera;
 	camera.RegisterSpace = 0;
 	camera.ShaderRegister = 0;
@@ -178,11 +203,11 @@ HRESULT ReflectionPass::_initRootSignature()
 	m_rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[1].DescriptorTable = albedoTable1;
+	m_rootParameters[1].DescriptorTable = worldPosTable;
 	m_rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[2].DescriptorTable = worldPosTable;
+	m_rootParameters[2].DescriptorTable = albedoTable1;
 	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	m_rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -192,6 +217,11 @@ HRESULT ReflectionPass::_initRootSignature()
 	m_rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[4].DescriptorTable = metallicTable;
 	m_rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[5].DescriptorTable = depthTable;
+	m_rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);

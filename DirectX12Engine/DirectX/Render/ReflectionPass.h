@@ -6,7 +6,9 @@ class ReflectionPass :
 	public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 5;
+	static const UINT ROOT_PARAMETERS = 6;
+
+
 	
 public:
 	ReflectionPass(RenderingManager * renderingManager, const Window & window);
@@ -20,6 +22,7 @@ public:
 	void Release() override;
 
 	void SetRenderTarget(X12RenderTargetView ** renderTarget, const UINT & size);
+	void SetDepth(X12DepthStencil * depthStencil);
 
 private:
 	HRESULT _preInit();
@@ -28,7 +31,13 @@ private:
 	HRESULT _initPipelineState();
 	void _createViewPort();
 	HRESULT _createQuadBuffer();
-	
+
+	struct CameraValues
+	{
+		DirectX::XMFLOAT4 Position;
+		DirectX::XMFLOAT4X4 ViewProjection;
+	} m_cameraValues {};
+
 	X12ConstantBuffer * m_cameraBuffer = nullptr;
 
 	D3D12_VERTEX_BUFFER_VIEW		m_vertexBufferView{};
@@ -50,7 +59,7 @@ private:
 
 	UINT m_renderTargetSize = 0;
 	X12RenderTargetView ** m_geometryRenderTargetView = nullptr;
-
+	X12DepthStencil * m_depthStencil;
 	struct Vertex
 	{
 		Vertex()

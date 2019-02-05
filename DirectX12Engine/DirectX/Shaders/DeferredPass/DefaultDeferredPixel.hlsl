@@ -29,17 +29,20 @@ Texture2D albdeoTexture     : register(t1);
 Texture2D normalTexture     : register(t2);
 Texture2D metallicTexture   : register(t3);
 Texture2D ssaoTexture : register(t4);
+Texture2D reflectionTexture : register(t6);
 
 Texture2DArray shadowMap : register(t0, space1);
 
 
 float4 main(VS_OUTPUT input) : SV_Target
 {
-    float4 worldPos     = positionTexture.Sample(defaultSampler, input.uv.xy);
-    float4 albedo       = albdeoTexture.Sample  (defaultSampler, input.uv.xy);
-    float4 normal       = normalTexture.Sample  (defaultSampler, input.uv.xy);
-    float4 metallic     = metallicTexture.Sample(defaultSampler, input.uv.xy);
-    float ssao         = ssaoTexture.Sample    (defaultSampler, input.uv.xy).r;
+    float4 worldPos     = positionTexture.Sample	(defaultSampler, input.uv.xy);
+    float4 albedo       = albdeoTexture.Sample		(defaultSampler, input.uv.xy);
+    float4 normal       = normalTexture.Sample		(defaultSampler, input.uv.xy);
+    float4 metallic     = metallicTexture.Sample	(defaultSampler, input.uv.xy);
+	float4 reflection	= reflectionTexture.Sample	(defaultSampler, input.uv.xy);
+	float ssao			= ssaoTexture.Sample		(defaultSampler, input.uv.xy).r;
+
 
     float4 ambient = float4(0.15f, 0.15f, 0.15f, 1.0f) * albedo;
     ambient.w = 1;
@@ -73,5 +76,5 @@ float4 main(VS_OUTPUT input) : SV_Target
     }
     shadowCoeff = pow(shadowCoeff / divider, 2);
 
-    return saturate(((finalColor * float4(ssao, ssao, ssao, 1)) + specular) * shadowCoeff + (ambient));
+    return saturate(((finalColor * float4(ssao, ssao, ssao, 1)) + specular) * shadowCoeff + (ambient)+reflection);
 }

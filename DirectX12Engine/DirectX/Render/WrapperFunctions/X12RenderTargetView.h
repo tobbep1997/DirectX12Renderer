@@ -40,7 +40,7 @@ private:
 	UINT m_rtvDescriptorSize = 0;
 	ID3D12Resource *		m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr };
 	ID3D12DescriptorHeap *	m_rtvDescriptorHeap = nullptr;
-	SIZE_T m_descriptorHeapOffset = 0;
+	SIZE_T m_descriptorHeapOffset[FRAME_BUFFER_COUNT] = { 0 };
 
 };
 

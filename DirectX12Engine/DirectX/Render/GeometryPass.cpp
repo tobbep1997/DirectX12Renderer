@@ -115,7 +115,10 @@ void GeometryPass::Draw()
 	}
 
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
+
 	p_renderingManager->GetReflectionPass()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
+	p_renderingManager->GetReflectionPass()->SetDepth(m_depthStencil);
+
 	p_renderingManager->GetSSAOPass()->SetWorldPos(m_renderTarget[0]);
 	p_renderingManager->GetSSAOPass()->SetDepthStencil(m_depthStencil);
 	
