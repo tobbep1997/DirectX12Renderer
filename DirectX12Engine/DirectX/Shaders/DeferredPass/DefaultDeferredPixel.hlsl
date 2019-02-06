@@ -43,6 +43,7 @@ float4 main(VS_OUTPUT input) : SV_Target
 	float4 reflection	= reflectionTexture.Sample	(defaultSampler, input.uv.xy);
 	float ssao			= ssaoTexture.Sample		(defaultSampler, input.uv.xy).r;
 
+	//return reflection;
 
     float4 ambient = float4(0.15f, 0.15f, 0.15f, 1.0f) * albedo;
     ambient.w = 1;
@@ -76,5 +77,5 @@ float4 main(VS_OUTPUT input) : SV_Target
     }
     shadowCoeff = pow(shadowCoeff / divider, 2);
 
-    return saturate(((finalColor * float4(ssao, ssao, ssao, 1)) + specular) * shadowCoeff + (ambient)+reflection);
+    return saturate(((finalColor * reflection * float4(ssao, ssao, ssao, 1)) + specular) * shadowCoeff + ambient);
 }

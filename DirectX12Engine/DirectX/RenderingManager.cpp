@@ -256,7 +256,7 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_swapChain->GetFullscreenState(&fullscreen, nullptr);
 	if (fullscreen)
 		m_swapChain->SetFullscreenState(FALSE, nullptr);
-
+	   
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_commandQueue);
 	SAFE_RELEASE(m_rtvDescriptorHeap);

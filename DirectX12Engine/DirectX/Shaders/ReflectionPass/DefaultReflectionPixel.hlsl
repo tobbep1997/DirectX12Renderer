@@ -27,35 +27,37 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
 	uint MAX_ITERATION = 100;
 	float ITERATION_DISTANCE = 0.01f;
+	float METALLIC_CUTOFF = .4f;
 
 	float4 worldPos = positionTexture.Sample(defualtSampler, input.uv.xy);
 	float4 normal = normalTexture.Sample(defualtSampler, input.uv.xy);
 	float4 metallic = metallicTexture.Sample(defualtSampler, input.uv.xy);
 
-	float4 InitialRayDirection = worldPos - CameraPosition;
-	float4 RayDirection = normal * (InitialRayDirection * normal);
+	float4 InitialRayDirection = normalize(worldPos - CameraPosition);
+	float4 RayDirection = normalize(InitialRayDirection - (2 * (normal * (dot(InitialRayDirection, normal)))));
 
 	float4 color = float4(0,0,0,0);
-	if (length(metallic) < .5f)
-		return color;
+	if (length(metallic) / 4.0f < METALLIC_CUTOFF)
+		return float4(0,0,0,0);
 
 	
 	float4 pos;
-	for (uint i = 0; i < MAX_ITERATION; i++)
+	float2 uv;
+	for (uint i = 1; i < MAX_ITERATION; i++)
 	{
 		float4 ray = RayDirection * i * ITERATION_DISTANCE;
 		pos = mul(worldPos + ray, ViewProjection);
-
-		pos /= pos.w;
+		pos.xyz /= pos.w;
+	
 		float depth = FragmentLightDepth(pos);
-		float2 uv = FragmentLightUV(pos);
-
-		if (depthTexture.Sample(defualtSampler, uv).r < depth)
+		uv = FragmentLightUV(pos);
+		uv.y = 1.0f - uv.y;
+		if (depthTexture.Sample(defualtSampler, uv).r - 0.1f < depth)
 		{
 			color = albdeoTexture.Sample(defualtSampler, uv);
 			break;
 		}
 	}
+	return color;
 
-    return color * metallic;
 }

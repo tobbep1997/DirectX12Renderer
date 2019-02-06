@@ -111,7 +111,7 @@ void GeometryPass::Draw()
 
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
-		m_renderTarget[i]->SwitchToSRV(p_commandList[*p_renderingManager->GetFrameIndex()]);
+		//m_renderTarget[i]->SwitchToSRV(p_commandList[*p_renderingManager->GetFrameIndex()]);
 	}
 
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);
