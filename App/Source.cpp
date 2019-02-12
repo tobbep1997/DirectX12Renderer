@@ -164,7 +164,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			if (Window::Updating())
 			{
 			}
-
+			
 			CameraMovement(camera, deltaTime);
 			camera->Update();
 

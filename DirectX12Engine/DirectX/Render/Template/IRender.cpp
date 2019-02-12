@@ -9,7 +9,7 @@ void IRender::_updateWithThreads()
 		PRINT("FAILED TO SET PRIORITY LEVEL OF THREAD \n");
 	}
 	while (m_threadRunning)
-	{
+	{	
 		if (!m_threadDone)
 		{
 			this->Update(this->m_camera, this->m_deltaTime);
@@ -104,7 +104,7 @@ HRESULT IRender::p_createCommandList(const std::wstring & name)
 			return hr;
 		}
 
-		SET_NAME(p_commandAllocator[i], name + L" Command allocator");
+		SET_NAME(p_commandAllocator[i], name + L" Command allocator " + std::to_wstring(i));
 
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommandList(
 			0, 
@@ -113,7 +113,7 @@ HRESULT IRender::p_createCommandList(const std::wstring & name)
 			nullptr, 
 			IID_PPV_ARGS(&p_commandList[i]))))
 		{		
-			SET_NAME(p_commandList[i], name + L" Command list");
+			SET_NAME(p_commandList[i], name + L" Command list " + std::to_wstring(i));
 			p_commandList[i]->Close();
 		}
 	}

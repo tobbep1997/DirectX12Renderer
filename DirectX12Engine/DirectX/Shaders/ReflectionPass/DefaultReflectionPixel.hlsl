@@ -40,6 +40,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 	if (length(metallic) / 4.0f < METALLIC_CUTOFF)
 		return float4(0,0,0,0);
 
+	return color;
 	
 	float4 pos;
 	float2 uv;

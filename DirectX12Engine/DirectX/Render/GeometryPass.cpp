@@ -154,6 +154,10 @@ void GeometryPass::Release()
 	{
 		m_renderTarget[i]->Release();
 		SAFE_DELETE(m_renderTarget[i]);
+	}
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		
 		SAFE_RELEASE(m_bundleCommandList[i]);
 	}
 

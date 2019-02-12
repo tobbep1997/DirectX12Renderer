@@ -198,9 +198,6 @@ LRESULT Window::_wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) cons
 	{
 
 	case WM_KEYDOWN:
-		if (wParam == VK_ESCAPE) {
-			DestroyWindow(this->m_hwnd);
-		}
 		Input::PressKey(static_cast<UINT>(wParam));		
 		return 0;
 	case WM_KEYUP:

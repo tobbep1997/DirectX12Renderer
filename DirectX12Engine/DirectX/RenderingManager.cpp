@@ -47,7 +47,7 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 			if (SUCCEEDED(hr = D3D12GetDebugInterface(IID_PPV_ARGS(&m_debugLayer))))
 			{
 				m_debugLayer->EnableDebugLayer();
-			}			
+			}
 		}
 		if (SUCCEEDED(hr))
 		{
@@ -56,57 +56,67 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 				D3D_FEATURE_LEVEL_12_0,
 				IID_PPV_ARGS(&m_device))))
 			{
-				if (SUCCEEDED(hr = _createCbvSrvUavDescriptorHeap()))
+				if (FAILED(hr = _createCbvSrvUavDescriptorHeap()))
 				{
-					if (SUCCEEDED(hr = _createCommandQueue()))
-					{
-						if (SUCCEEDED(hr = _createSwapChain(*window, dxgiFactory)))
-						{
-							if (SUCCEEDED(hr = _createRenderTargetDescriptorHeap()))
-							{
-								if (SUCCEEDED(hr = _createCommandAllocators()))
-								{
-									if (SUCCEEDED(hr = _createCommandList()))
-									{
-										if (SUCCEEDED(hr = _createFenceAndFenceEvent()))
-										{
-											SAFE_NEW(m_geometryPass, new GeometryPass(this, *window));
-											if (SUCCEEDED(hr = m_geometryPass->Init()))
-											{
-												SAFE_NEW(m_shadowPass, new ShadowPass(this, *window));
-												if (SUCCEEDED(hr = m_shadowPass->Init()))
-												{
-													SAFE_NEW(m_deferredPass, new DeferredRender(this, *window));
-													if (SUCCEEDED(hr = m_deferredPass->Init()))
-													{
-														SAFE_NEW(m_particlePass, new ParticlePass(this, *window));
-														if (SUCCEEDED(hr = m_particlePass->Init()))
-														{
-															SAFE_NEW(m_ssaoPass, new SSAOPass(this, *window));
-															if (SUCCEEDED(hr = m_ssaoPass->Init()))
-															{
-																SAFE_NEW(m_reflectionPass, new ReflectionPass(this, *window));
-																if (SUCCEEDED(hr = m_reflectionPass->Init()))
-																{
-																	
-																}
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
+					return Window::CreateError(hr);
+				}
+				if (FAILED(hr = _createCommandQueue()))
+				{
+					return Window::CreateError(hr);
+				}
+				if (FAILED(hr = _createSwapChain(*window, dxgiFactory)))
+				{
+					return Window::CreateError(hr);
+				}
+				if (FAILED(hr = _createRenderTargetDescriptorHeap()))
+				{
+					return Window::CreateError(hr);
+				}
+				if (FAILED(hr = _createCommandAllocators()))
+				{
+					return Window::CreateError(hr);
+				}
+				if (FAILED(hr = _createCommandList()))
+				{
+					return Window::CreateError(hr);
+				}
+				if (FAILED(hr = _createFenceAndFenceEvent()))
+				{
+					return Window::CreateError(hr);
+				}
+				SAFE_NEW(m_geometryPass, new GeometryPass(this, *window));
+				if (FAILED(hr = m_geometryPass->Init()))
+				{
+					return Window::CreateError(hr);
+				}
+				SAFE_NEW(m_shadowPass, new ShadowPass(this, *window));
+				if (FAILED(hr = m_shadowPass->Init()))
+				{
+					return Window::CreateError(hr);
+				}
+				SAFE_NEW(m_deferredPass, new DeferredRender(this, *window));
+				if (FAILED(hr = m_deferredPass->Init()))
+				{
+					return Window::CreateError(hr);
+				}
+				SAFE_NEW(m_particlePass, new ParticlePass(this, *window));
+				if (FAILED(hr = m_particlePass->Init()))
+				{
+					return Window::CreateError(hr);
+				}
+				SAFE_NEW(m_ssaoPass, new SSAOPass(this, *window));
+				if (FAILED(hr = m_ssaoPass->Init()))
+				{
+					return Window::CreateError(hr);
+				}
+				SAFE_NEW(m_reflectionPass, new ReflectionPass(this, *window));
+				if (FAILED(hr = m_reflectionPass->Init()))
+				{
+					return Window::CreateError(hr);
 				}
 			}
 		}
 	}
-
-
 	SAFE_RELEASE(adapter);
 	SAFE_RELEASE(dxgiFactory);
 	
@@ -140,64 +150,65 @@ void RenderingManager::Flush(const Camera * camera, const float & deltaTime, con
 HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & deltaTime)
 {
 	HRESULT hr = S_OK;
+
 	if (FAILED(hr = _waitForPreviousFrame()))
 	{
 		return hr;
 	}
-
 	if (FAILED(hr = m_commandAllocator[m_frameIndex]->Reset()))
 	{
 		return hr;
 	}
-	if (FAILED(hr = m_commandList->Reset(m_commandAllocator[m_frameIndex], nullptr)))
+	if (FAILED(hr = m_commandList[m_frameIndex]->Reset(m_commandAllocator[m_frameIndex], nullptr)))
 	{
 		return hr;
 	}
 		
-	m_commandList->ResourceBarrier(1, 
+	m_commandList[m_frameIndex]->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			m_renderTargets[m_frameIndex],
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 	//---------------------------------------------------------------------
 
-	SetCbvSrvUavDescriptorHeap(m_commandList);
+	SetCbvSrvUavDescriptorHeap(m_commandList[m_frameIndex]);
 
 	m_particlePass->ThreadUpdate(camera, deltaTime);
 	m_shadowPass->ThreadUpdate(camera, deltaTime);
-
+	
 	m_particlePass->ThreadJoin();
-
+	
 	m_geometryPass->ThreadUpdate(camera, deltaTime);
 	m_geometryPass->ThreadJoin();
-
+	
 	m_reflectionPass->ThreadUpdate(camera, deltaTime);
 	m_ssaoPass->ThreadUpdate(camera, deltaTime);
 	
 	m_shadowPass->ThreadJoin();
 	m_ssaoPass->ThreadJoin();
 	m_reflectionPass->ThreadJoin();
-
+	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_frameIndex,
 		m_rtvDescriptorSize);
 
-	m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	m_commandList[m_frameIndex]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
 	const float clearColor[] = { 1.0f, 0.0f, 1.0f, 1.0f };
-	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	m_commandList[m_frameIndex]->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 	m_deferredPass->Update(camera, deltaTime);
 	m_deferredPass->Draw();
 	//---------------------------------------------------------------------
 
-	m_commandList->ResourceBarrier(1,
+	m_commandList[m_frameIndex]->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			m_renderTargets[m_frameIndex],
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
-	m_commandList->Close();
+	m_commandList[m_frameIndex]->Close();
+
 	return hr;
 }
 
@@ -210,12 +221,14 @@ HRESULT RenderingManager::_flush(const Camera & camera, const float & deltaTime)
 		return hr;
 	}
 
-	ID3D12CommandList* ppCommandLists[] = { m_commandList };
+	ID3D12CommandList* ppCommandLists[] = { m_commandList[m_frameIndex] };
 	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	if (FAILED(hr = m_commandQueue->Signal(m_fence[m_frameIndex], m_fenceValue[m_frameIndex])))
 	{
 		return hr;
 	}
+
+
 	_clear();
 	return hr;
 }
@@ -223,7 +236,8 @@ HRESULT RenderingManager::_flush(const Camera & camera, const float & deltaTime)
 HRESULT RenderingManager::_present() const
 {
 	HRESULT hr = 0;
-	hr = m_swapChain->Present(0, 0);
+	DXGI_PRESENT_PARAMETERS pp{};
+	hr = m_swapChain->Present1(1, 0, &pp);
 	return hr;
 }
 
@@ -260,10 +274,10 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_commandQueue);
 	SAFE_RELEASE(m_rtvDescriptorHeap);
-	SAFE_RELEASE(m_commandList);
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
 	{
+		SAFE_RELEASE(m_commandList[i]);
 		SAFE_RELEASE(m_renderTargets[i]);
 		SAFE_RELEASE(m_commandAllocator[i]);
 		SAFE_RELEASE(m_fence[i]);
@@ -278,23 +292,23 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_geometryPass->KillThread();
 	m_geometryPass->Release();
 	SAFE_DELETE(m_geometryPass);
-
+	
 	m_deferredPass->KillThread();
 	m_deferredPass->Release();
 	SAFE_DELETE(m_deferredPass);
-
+	
 	m_reflectionPass->KillThread();
 	m_reflectionPass->Release();
 	SAFE_DELETE(m_reflectionPass);
-
+	
 	m_shadowPass->KillThread();
 	m_shadowPass->Release();
 	SAFE_DELETE(m_shadowPass);
-
+	
 	m_particlePass->KillThread();
 	m_particlePass->Release();
 	SAFE_DELETE(m_particlePass);
-
+	
 	m_ssaoPass->KillThread();
 	m_ssaoPass->Release();
 	SAFE_DELETE(m_ssaoPass);
@@ -333,14 +347,14 @@ ID3D12Device* RenderingManager::GetDevice() const
 	return this->m_device;
 }
 
-IDXGISwapChain3* RenderingManager::GetSwapChain() const
+IDXGISwapChain4* RenderingManager::GetSwapChain() const
 {
 	return this->m_swapChain;
 }
 
 ID3D12GraphicsCommandList* RenderingManager::GetCommandList() const
 {
-	return this->m_commandList;
+	return this->m_commandList[m_frameIndex];
 }
 
 ID3D12DescriptorHeap* RenderingManager::GetRTVDescriptorHeap() const
@@ -408,7 +422,7 @@ HRESULT RenderingManager::OpenCommandList()
 	HRESULT hr = 0;
 	if (SUCCEEDED(hr = this->m_commandAllocator[m_frameIndex]->Reset()))
 	{
-		if (SUCCEEDED(hr = this->m_commandList->Reset(this->m_commandAllocator[m_frameIndex], nullptr)))
+		if (SUCCEEDED(hr = this->m_commandList[m_frameIndex]->Reset(this->m_commandAllocator[m_frameIndex], nullptr)))
 		{
 
 		}
@@ -419,8 +433,8 @@ HRESULT RenderingManager::OpenCommandList()
 HRESULT RenderingManager::SignalGPU()
 {
 	HRESULT hr = 0;
-	this->m_commandList->Close();
-	ID3D12CommandList* ppCommandLists[] = { this->m_commandList };
+	this->m_commandList[m_frameIndex]->Close();
+	ID3D12CommandList* ppCommandLists[] = { this->m_commandList[m_frameIndex] };
 	this->m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	
 	this->m_fenceValue[this->m_frameIndex]++;
@@ -493,16 +507,19 @@ HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
 	if (updateFrame)
 		m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
+
 	if (m_fence[m_frameIndex]->GetCompletedValue() < m_fenceValue[m_frameIndex])
 	{
 		if (FAILED(hr = m_fence[m_frameIndex]->SetEventOnCompletion(m_fenceValue[m_frameIndex], m_fenceEvent)))
 		{
 			return hr;
 		}
-		WaitForSingleObject(m_fenceEvent, INFINITE);
+		if (!updateFrame)
+			WaitForSingleObject(m_fenceEvent, INFINITE);
 	}
-
 	m_fenceValue[m_frameIndex]++;
+	
+
 
 	return hr;
 }
@@ -559,6 +576,7 @@ HRESULT RenderingManager::_createCommandQueue()
 	{
 		SAFE_RELEASE(this->m_commandQueue);
 	}
+	SET_NAME(m_commandQueue, L"Default commandQueue");
 	return hr;
 }
 
@@ -642,6 +660,8 @@ HRESULT RenderingManager::_createCommandAllocators()
 		{
 			break;
 		}
+		SET_NAME(m_commandAllocator[i], L"Default commandAllocator " + std::to_wstring(i));
+
 	}
 	
 	return hr;
@@ -651,8 +671,13 @@ HRESULT RenderingManager::_createCommandList()
 {
 	HRESULT hr = 0;
 
-	hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList));
-	m_commandList->Close();
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList[i]));
+		m_commandList[i]->Close();
+		SET_NAME(m_commandList[i], L"Default commandList " + std::to_wstring(i));
+
+	}
 	return hr;
 }
 
