@@ -41,7 +41,8 @@ HRESULT GeometryPass::Init()
 void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 {	
 	OpenCommandList(m_pipelineState);
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(p_commandList[*p_renderingManager->GetFrameIndex()]);
+	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
 
 	m_cameraValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
@@ -49,69 +50,71 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 		camera.GetPosition().w);
 	m_cameraValues.ViewProjection = camera.GetViewProjectionMatrix();
 
-	m_depthStencil->SwitchToDSV(p_commandList[*p_renderingManager->GetFrameIndex()]);
-	m_depthStencil->ClearDepthStencil(p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_depthStencil->SwitchToDSV(commandList);
+	m_depthStencil->ClearDepthStencil(commandList);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_depthStencil->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 	
 
 	D3D12_CPU_DESCRIPTOR_HANDLE d12CpuDescriptorHandle[RENDER_TARGETS];
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
-		m_renderTarget[i]->SwitchToRTV(p_commandList[*p_renderingManager->GetFrameIndex()]);
+		m_renderTarget[i]->SwitchToRTV(commandList);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 			m_renderTarget[i]->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 			*p_renderingManager->GetFrameIndex(),
 			m_renderTarget[i]->GetDescriptorSize());
 
-		m_renderTarget[i]->Clear(rtvHandle, p_commandList[*p_renderingManager->GetFrameIndex()]);
+		m_renderTarget[i]->Clear(rtvHandle, commandList);
 		d12CpuDescriptorHandle[i] = rtvHandle;
 	}
 
-	p_commandList[*p_renderingManager->GetFrameIndex()]->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
+	commandList->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
 
-	p_commandList[*p_renderingManager->GetFrameIndex()]->ExecuteBundle(m_bundleCommandList[*p_renderingManager->GetFrameIndex()]);
+	commandList->ExecuteBundle(m_bundleCommandList[*p_renderingManager->GetFrameIndex()]);
 	
-	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetViewports(1, &m_viewport);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetScissorRects(1, &m_rect);
+	commandList->RSSetViewports(1, &m_viewport);
+	commandList->RSSetScissorRects(1, &m_rect);
 	
-	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 	m_cameraBuffer->Copy(&m_cameraValues, sizeof(m_cameraValues));
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(0,0, p_commandList[*p_renderingManager->GetFrameIndex()]);
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(1, 0, p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(0,0, commandList);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(1, 0, commandList);
 }
 
 void GeometryPass::Draw()
 {	
+	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+
 	p_drawInstance(2, TRUE);
 	const size_t emitterSize = m_emitters->size();
 
 	if (emitterSize)
 	{
-		p_commandList[*p_renderingManager->GetFrameIndex()]->SetPipelineState(m_particlePipelineState);
-		p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootSignature(m_particleRootSignature);
-		p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_cameraBuffer->SetGraphicsRootConstantBufferView(0, 0, p_commandList[*p_renderingManager->GetFrameIndex()]);
+		commandList->SetPipelineState(m_particlePipelineState);
+		commandList->SetGraphicsRootSignature(m_particleRootSignature);
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_cameraBuffer->SetGraphicsRootConstantBufferView(0, 0, commandList);
 		
 		ParticleEmitter * emitter = nullptr;
 		for (size_t i = 0; i < emitterSize; i++)
 		{
 			emitter = m_emitters->at(i);
-			emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, p_commandList[*p_renderingManager->GetFrameIndex()]);
-			p_commandList[*p_renderingManager->GetFrameIndex()]->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
+			emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, commandList);
+			commandList->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
 
-			p_commandList[*p_renderingManager->GetFrameIndex()]->DrawInstanced(
+			commandList->DrawInstanced(
 				emitter->GetVertexSize(),
 				1, 0, 0);
 		}
 
 	}
 
-	m_depthStencil->SwitchToSRV(p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_depthStencil->SwitchToSRV(commandList);
 
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
-		//m_renderTarget[i]->SwitchToSRV(p_commandList[*p_renderingManager->GetFrameIndex()]);
+		m_renderTarget[i]->SwitchToSRV(commandList);
 	}
 
 	p_renderingManager->GetDeferredRender()->SetRenderTarget(m_renderTarget, RENDER_TARGETS);

@@ -37,11 +37,10 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 	float4 RayDirection = normalize(InitialRayDirection - (2 * (normal * (dot(InitialRayDirection, normal)))));
 
 	float4 color = float4(0,0,0,0);
+	return color;
 	if (length(metallic) / 4.0f < METALLIC_CUTOFF)
 		return float4(0,0,0,0);
 
-	return color;
-	
 	float4 pos;
 	float2 uv;
 	for (uint i = 1; i < MAX_ITERATION; i++)

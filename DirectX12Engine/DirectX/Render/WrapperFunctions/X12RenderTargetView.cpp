@@ -178,7 +178,7 @@ void X12RenderTargetView::SwitchToRTV(ID3D12GraphicsCommandList * commandList)
 	const UINT frameIndex = *p_renderingManager->GetFrameIndex();;
 
 	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState[frameIndex])
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], m_currentState[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET));
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	
 }
@@ -190,7 +190,7 @@ void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 	const UINT frameIndex = *p_renderingManager->GetFrameIndex();;
 
 	if (D3D12_RESOURCE_STATE_RENDER_TARGET == m_currentState[frameIndex])
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], m_currentState[frameIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
