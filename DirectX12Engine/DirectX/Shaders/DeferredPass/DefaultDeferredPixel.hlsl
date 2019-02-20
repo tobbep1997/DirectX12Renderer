@@ -5,14 +5,13 @@ struct VS_OUTPUT
     float4 uv : TEXCORD;
 };
 
-cbuffer LIGHT_BUFFER : register(b0)
+cbuffer LIGHT_BUFFER : register(b0, space2)
 {
     float4 CameraPosition;
-    uint4 LightType[256];
-    float4 LightPosition[256];
-    float4 LightColor[256];
-    float4 LightVector[256];
-};
+    uint4 NumberOfLights;
+}
+
+StructuredBuffer<LIGHT_STRUCT> LIGHT_STRUCT_BUFFER : register(t0, space2);
 
 cbuffer SHADOW_BUFFER : register(b0, space1)
 {
@@ -36,12 +35,12 @@ Texture2DArray shadowMap : register(t0, space1);
 
 float4 main(VS_OUTPUT input) : SV_Target
 {
-    float4 worldPos     = positionTexture.Sample	(defaultSampler, input.uv.xy);
-    float4 albedo       = albdeoTexture.Sample		(defaultSampler, input.uv.xy);
-    float4 normal       = normalTexture.Sample		(defaultSampler, input.uv.xy);
-    float4 metallic     = metallicTexture.Sample	(defaultSampler, input.uv.xy);
-	float4 reflection	= reflectionTexture.Sample	(defaultSampler, input.uv.xy);
-	float ssao			= ssaoTexture.Sample		(defaultSampler, input.uv.xy).r;
+    float4 worldPos = positionTexture.Sample(defaultSampler, input.uv.xy);
+    float4 albedo = albdeoTexture.Sample(defaultSampler, input.uv.xy);
+    float4 normal = normalTexture.Sample(defaultSampler, input.uv.xy);
+    float4 metallic = metallicTexture.Sample(defaultSampler, input.uv.xy);
+    float4 reflection = reflectionTexture.Sample(defaultSampler, input.uv.xy);
+    float ssao = ssaoTexture.Sample(defaultSampler, input.uv.xy).r;
 
 	//return reflection;
 
@@ -52,17 +51,19 @@ float4 main(VS_OUTPUT input) : SV_Target
     
     if (length(normal) < .1f)
         return albedo;
+       
+    float4 finalColor = float4(0, 0, 0, 1);
+    for (uint i = 0; i < NumberOfLights.x; i++)
+    {
+        finalColor += SingelLightCalculations(LIGHT_STRUCT_BUFFER[i], 
+                                        CameraPosition,
+                                        worldPos, 
+                                        albedo, 
+                                        normal, 
+                                        metallic, 
+                                        specular);
+    }
 
-    float4 finalColor = LightCalculation(LightType, 
-                                    LightPosition, 
-                                    LightColor, 
-                                    LightVector, 
-                                    CameraPosition, 
-                                    worldPos, 
-                                    albedo, 
-                                    normal, 
-                                    metallic, 
-                                    specular);
     int divider = 1;
     for (int i = 0; i < values.x; i++)
     {
