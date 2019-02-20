@@ -108,6 +108,12 @@
     <ClCompile Include="DirectX\Render\SSAOPass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\ReflectionPass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12StructuredBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -230,6 +236,12 @@
     <ClInclude Include="DirectX\Render\SSAOPass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DirectX\Render\ReflectionPass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12StructuredBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\GeometryPass\DefaultGeometryVertex.hlsl" />
@@ -247,6 +259,8 @@
     <FxCompile Include="DirectX\Shaders\SSAOPass\DefaultSSAOPixel.hlsl" />
     <FxCompile Include="DirectX\Shaders\SSAOPass\DefaultSSAOBlurVertex.hlsl" />
     <FxCompile Include="DirectX\Shaders\SSAOPass\DefaultSSAOBlurPixel.hlsl" />
+    <FxCompile Include="DirectX\Shaders\ReflectionPass\DefaultReflectionVertex.hlsl" />
+    <FxCompile Include="DirectX\Shaders\ReflectionPass\DefaultReflectionPixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectX\Shaders\ShaderIncludes\LightCalculations.hlsli" />

@@ -84,30 +84,30 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 		}
 	}
 
-
+	ID3D12GraphicsCommandList * commandList = p_renderingManager->GetCommandList();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		p_renderingManager->GetRTVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 		*p_renderingManager->GetFrameIndex(),
 		*p_renderingManager->GetRTVDescriptorSize());
 
-	p_renderingManager->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
-	p_renderingManager->GetCommandList()->SetPipelineState(m_pipelineState);
-	p_renderingManager->GetCommandList()->SetGraphicsRootSignature(m_rootSignature);
-	p_renderingManager->GetCommandList()->RSSetViewports(1, &m_viewport);
-	p_renderingManager->GetCommandList()->RSSetScissorRects(1, &m_rect);
-	p_renderingManager->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	commandList->SetPipelineState(m_pipelineState);
+	commandList->SetGraphicsRootSignature(m_rootSignature);
+	commandList->RSSetViewports(1, &m_viewport);
+	commandList->RSSetScissorRects(1, &m_rect);
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	m_lightBuffer->Copy(&m_lightValues, sizeof(m_lightValues));
-	m_lightBuffer->SetGraphicsRootConstantBufferView(4);
+	m_lightBuffer->SetGraphicsRootConstantBufferView(4, 0, commandList);
 
 	for (UINT i = 0; i < this->m_renderTargetSize; i++)
 	{
-		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i, p_renderingManager->GetCommandList());
+		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i, commandList);
 	}
 
 	UINT index = 0;
-	m_shaderResourceView->BeginCopy();
+	m_shaderResourceView->BeginCopy(commandList);
 	for (UINT i = 0; i < m_shadowMaps->size() && i < MAX_SHADOWS && index < MAX_SHADOWS; i++)
 	{
 		const D3D12_RESOURCE_DESC desc = m_shadowMaps->at(i)->Resource->GetDesc();
@@ -116,27 +116,31 @@ void DeferredRender::Update(const Camera& camera, const float & deltaTime)
 		{
 			m_shadowValues.ViewProjection[pos] = m_shadowMaps->at(i)->ViewProjection[currentMatrix++];
 		}
-		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource);
+		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource, commandList);
 		index += m_shadowMaps->at(i)->Resource->GetDesc().DepthOrArraySize;		
 	}
-	m_shaderResourceView->EndCopy();
+	m_shaderResourceView->EndCopy(commandList);
 
 
 	m_shadowValues.Values.x = index;
 	
 	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
-	m_shadowBuffer->SetGraphicsRootConstantBufferView(5);
+	m_shadowBuffer->SetGraphicsRootConstantBufferView(5,0, commandList);
 	
-	m_shaderResourceView->SetGraphicsRootDescriptorTable(6);
+	m_shaderResourceView->SetGraphicsRootDescriptorTable(6, commandList);
 
-	m_ssao->SetGraphicsRootDescriptorTable(7, p_renderingManager->GetCommandList());
+	m_ssao->SetGraphicsRootDescriptorTable(7, commandList);
+
+	m_reflection->SetGraphicsRootDescriptorTable(8, commandList);
 }
 
 void DeferredRender::Draw()
 {
-	p_renderingManager->GetCommandList()->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+	ID3D12GraphicsCommandList * commandList = p_renderingManager->GetCommandList();
 
-	p_renderingManager->GetCommandList()->DrawInstanced(4, 1, 0, 0);
+	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+
+	commandList->DrawInstanced(4, 1, 0, 0);
 }
 
 void DeferredRender::Clear()
@@ -175,6 +179,11 @@ void DeferredRender::SetRenderTarget(X12RenderTargetView** renderTarget, const U
 {
 	this->m_geometryRenderTargetView = renderTarget;
 	this->m_renderTargetSize = size;
+}
+
+void DeferredRender::SetReflection(X12RenderTargetView* renderTarget)
+{
+	this->m_reflection = renderTarget;
 }
 
 void DeferredRender::AddShadowMap(
@@ -254,6 +263,10 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
 	RenderingHelpClass::CreateRootDescriptorTable(metallicRangeTable, metallicTable, 3);
 
+	D3D12_DESCRIPTOR_RANGE reflectionRangeTable;
+	D3D12_ROOT_DESCRIPTOR_TABLE reflectionTable;
+	RenderingHelpClass::CreateRootDescriptorTable(reflectionRangeTable, reflectionTable, 6);
+
 	D3D12_DESCRIPTOR_RANGE shadowRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE shadowTable;
 	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 0, 1);
@@ -301,6 +314,10 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	m_rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[7].DescriptorTable = ssaoTable;
 	m_rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	m_rootParameters[8].DescriptorTable = reflectionTable;
+	m_rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);

@@ -47,10 +47,18 @@ const StaticMesh * Drawable::GetMesh() const
 void Drawable::Draw(RenderingManager * renderingManager)
 {
 	if (this->m_isVisible)
-		reinterpret_cast<IRender*>(renderingManager->GetGeometryPass())->Queue(this);
+	{
+		IRender * pass = reinterpret_cast<IRender*>(renderingManager->GetGeometryPass());
+		if (pass)
+			pass->Queue(this);
+	}
 
 	if (this->m_castShadows)
-		reinterpret_cast<IRender*>(renderingManager->GetShadowPass())->Queue(this);
+	{
+		IRender * pass = reinterpret_cast<IRender*>(renderingManager->GetShadowPass());
+		if (pass)
+			pass->Queue(this);
+	}
 }
 
 void Drawable::SetIsVisible(const BOOL& visible)

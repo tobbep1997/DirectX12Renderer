@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <d3d12.h>
-#include <dxgi1_4.h>
+#include <dxgi1_5.h>
 
 #define MAX_DESCRIPTOR_SIZE 100
 
@@ -10,10 +10,10 @@ class DeferredRender;
 class ShadowPass;
 class GeometryPass;
 class ParticlePass;
+class ReflectionPass;
 class Camera;
 
-
-const unsigned int FRAME_BUFFER_COUNT = 3;
+const unsigned int FRAME_BUFFER_COUNT = 5;
 class RenderingManager
 {
 private:
@@ -34,7 +34,7 @@ public:
 	void UnsafeInit(const Window * window, const bool & enableDebugTools);
 
 	ID3D12Device * GetDevice() const;
-	IDXGISwapChain3 * GetSwapChain() const;
+	IDXGISwapChain4 * GetSwapChain() const;
 	ID3D12GraphicsCommandList * GetCommandList() const;
 	ID3D12CommandQueue * GetCommandQueue() const;
 	ID3D12DescriptorHeap * GetRTVDescriptorHeap() const;
@@ -52,6 +52,8 @@ public:
 	DeferredRender * GetDeferredRender() const;
 	ParticlePass * GetParticlePass() const;
 	SSAOPass * GetSSAOPass() const;
+	ReflectionPass * GetReflectionPass() const;
+
 
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
@@ -67,12 +69,13 @@ public:
 private:
 
 	ID3D12Device *				m_device = nullptr;
-	IDXGISwapChain3 *			m_swapChain = nullptr;
-	ID3D12GraphicsCommandList * m_commandList = nullptr;
+	IDXGISwapChain4 *			m_swapChain = nullptr;
+	
 	ID3D12CommandQueue *		m_commandQueue = nullptr;
 	ID3D12DescriptorHeap *		m_rtvDescriptorHeap = nullptr;
 
 	HANDLE						m_fenceEvent;
+	ID3D12GraphicsCommandList * m_commandList[FRAME_BUFFER_COUNT] = { nullptr };
 	ID3D12CommandAllocator *	m_commandAllocator[FRAME_BUFFER_COUNT]{ nullptr };
 	ID3D12Resource *			m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr };
 	ID3D12Fence *				m_fence[FRAME_BUFFER_COUNT]{ nullptr };
@@ -101,6 +104,7 @@ private:
 	DeferredRender * m_deferredPass = nullptr;
 	ParticlePass * m_particlePass = nullptr;
 	SSAOPass * m_ssaoPass = nullptr;
+	ReflectionPass * m_reflectionPass = nullptr;
 
 	SIZE_T m_cbv_srv_uav_currentIndex = 0;
 	SIZE_T m_cbv_srv_uav_incrementalSize = 0;

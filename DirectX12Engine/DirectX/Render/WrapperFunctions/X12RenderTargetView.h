@@ -26,6 +26,8 @@ public:
 	void Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList = nullptr) const;
 	void Release() override;
 
+	
+
 private:
 
 	const float m_clearColor[4] = { 0.0f,0.0f,0.0f,0.0f };
@@ -38,8 +40,7 @@ private:
 	UINT m_rtvDescriptorSize = 0;
 	ID3D12Resource *		m_renderTargets[FRAME_BUFFER_COUNT]{ nullptr };
 	ID3D12DescriptorHeap *	m_rtvDescriptorHeap = nullptr;
-	SIZE_T m_descriptorHeapOffset = 0;
-	//ID3D12DescriptorHeap *	m_rtvTextureDescriptorHeap = nullptr;
+	SIZE_T m_descriptorHeapOffset[FRAME_BUFFER_COUNT] = { 0 };
 
 };
 

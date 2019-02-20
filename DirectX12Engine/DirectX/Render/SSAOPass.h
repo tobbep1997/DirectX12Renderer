@@ -63,7 +63,7 @@ private:
 	D3D12_INPUT_LAYOUT_DESC  m_inputLayoutDesc{};
 
 	ID3D12CommandAllocator * m_blurCommandAllocator[FRAME_BUFFER_COUNT] {nullptr};
-	ID3D12GraphicsCommandList * m_blurCommandList = nullptr;
+	ID3D12GraphicsCommandList * m_blurCommandList[FRAME_BUFFER_COUNT] = { nullptr };
 
 	ID3D12RootSignature * m_blurRootSignature = nullptr;
 	ID3D12PipelineState * m_blurPipelineState = nullptr;

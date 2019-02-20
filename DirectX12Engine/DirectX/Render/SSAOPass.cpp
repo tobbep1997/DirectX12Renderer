@@ -41,7 +41,7 @@ HRESULT SSAOPass::Init()
 
 	if (SUCCEEDED(hr = _initBlurPass()))
 	{
-		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(m_blurCommandList)))
+		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(m_blurCommandList[*p_renderingManager->GetFrameIndex()])))
 		{
 			
 		}
@@ -57,30 +57,33 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	m_cameraBuffer->Copy(&m_cameraValues, sizeof(m_cameraValues));
 
 	OpenCommandList();
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(p_commandList[*p_renderingManager->GetFrameIndex()]);
+
+	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+
+	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 		*p_renderingManager->GetFrameIndex(),
 		m_renderTarget->GetDescriptorSize());
 
-	m_renderTarget->Clear(rtvHandle);
+	m_renderTarget->Clear(rtvHandle, commandList);
 
-	p_commandList[*p_renderingManager->GetFrameIndex()]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
-	p_commandList[*p_renderingManager->GetFrameIndex()]->SetPipelineState(m_pipelineState);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootSignature(m_rootSignature);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetViewports(1, &m_viewport);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetScissorRects(1, &m_rect);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	commandList->SetPipelineState(m_pipelineState);
+	commandList->SetGraphicsRootSignature(m_rootSignature);
+	commandList->RSSetViewports(1, &m_viewport);
+	commandList->RSSetScissorRects(1, &m_rect);
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	m_worldPos->SetGraphicsRootDescriptorTable(0, p_commandList[*p_renderingManager->GetFrameIndex()]);	   
-	m_depthStencils->SetGraphicsRootDescriptorTable(1, p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_worldPos->SetGraphicsRootDescriptorTable(0, commandList);	   
+	m_depthStencils->SetGraphicsRootDescriptorTable(1, commandList);
 
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, 0, p_commandList[*p_renderingManager->GetFrameIndex()]);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, 0, commandList);
 
-	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->DrawInstanced(4, 1, 0, 0);
+	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+	commandList->DrawInstanced(4, 1, 0, 0);
 
 	ExecuteCommandList();
 }
@@ -88,28 +91,30 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 void SSAOPass::Draw()
 {
 	_openCommandList();
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(m_blurCommandList);
+
+	ID3D12GraphicsCommandList * commandList = m_blurCommandList[*p_renderingManager->GetFrameIndex()];
+
+	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_blurRenderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 		*p_renderingManager->GetFrameIndex(),
 		m_blurRenderTarget->GetDescriptorSize());
 
-	m_blurRenderTarget->Clear(rtvHandle);
+	m_blurRenderTarget->Clear(rtvHandle, commandList);
 
-	m_blurCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-	
-	m_blurCommandList->SetPipelineState(m_blurPipelineState);
-	m_blurCommandList->SetGraphicsRootSignature(m_blurRootSignature);
-	m_blurCommandList->RSSetViewports(1, &m_viewport);
-	m_blurCommandList->RSSetScissorRects(1, &m_rect);
-	m_blurCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);	
+	commandList->SetPipelineState(m_blurPipelineState);
+	commandList->SetGraphicsRootSignature(m_blurRootSignature);
+	commandList->RSSetViewports(1, &m_viewport);
+	commandList->RSSetScissorRects(1, &m_rect);
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	{
-		m_renderTarget->SetGraphicsRootDescriptorTable(0, m_blurCommandList);
+		m_renderTarget->SetGraphicsRootDescriptorTable(0, commandList);
 	}
 	
-	m_blurCommandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	m_blurCommandList->DrawInstanced(4, 1, 0, 0);
+	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+	commandList->DrawInstanced(4, 1, 0, 0);
 
 	_executeCommandList();
 	p_renderingManager->GetDeferredRender()->SetSSAO(m_blurRenderTarget);
@@ -142,9 +147,9 @@ void SSAOPass::Release()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
+		SAFE_RELEASE(m_blurCommandList[i]);
 		SAFE_RELEASE(m_blurCommandAllocator[i]);
 	}
-	SAFE_RELEASE(m_blurCommandList);
 
 	p_releaseCommandList();
 }
@@ -463,7 +468,7 @@ HRESULT SSAOPass::_initBlurPass()
 		return hr;
 	}
 
-	SAFE_NEW(m_blurRenderTarget, new X12RenderTargetView(p_renderingManager, *p_window, m_blurCommandList));
+	SAFE_NEW(m_blurRenderTarget, new X12RenderTargetView(p_renderingManager, *p_window));
 
 	if (FAILED(hr = m_blurRenderTarget->CreateRenderTarget(
 		0,
@@ -491,16 +496,16 @@ HRESULT SSAOPass::_createLocalCommandList()
 			SET_NAME(m_blurCommandAllocator[i], L"SSAO blur Command allocator");
 			return hr;
 		}
-	}
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommandList(
-		0,
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		m_blurCommandAllocator[0],
-		nullptr,
-		IID_PPV_ARGS(&m_blurCommandList))))
-	{
-		SET_NAME(m_blurCommandList, L"SSAO blur Command list");
-		m_blurCommandList->Close();
+		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommandList(
+			0,
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			m_blurCommandAllocator[0],
+			nullptr,
+			IID_PPV_ARGS(&m_blurCommandList[i]))))
+		{
+			SET_NAME(m_blurCommandList[i], L"SSAO blur Command list");
+			m_blurCommandList[i]->Close();
+		}
 	}
 	return hr;
 }
@@ -511,7 +516,7 @@ HRESULT SSAOPass::_openCommandList()
 	const UINT frameIndex = *p_renderingManager->GetFrameIndex();
 	if (SUCCEEDED(hr = this->m_blurCommandAllocator[frameIndex]->Reset()))
 	{
-		if (SUCCEEDED(hr = this->m_blurCommandList->Reset(this->m_blurCommandAllocator[frameIndex], nullptr)))
+		if (SUCCEEDED(hr = this->m_blurCommandList[*p_renderingManager->GetFrameIndex()]->Reset(this->m_blurCommandAllocator[frameIndex], nullptr)))
 		{
 
 		}
@@ -522,9 +527,9 @@ HRESULT SSAOPass::_openCommandList()
 HRESULT SSAOPass::_executeCommandList() const
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = m_blurCommandList->Close()))
+	if (SUCCEEDED(hr = m_blurCommandList[*p_renderingManager->GetFrameIndex()]->Close()))
 	{
-		ID3D12CommandList* ppCommandLists[] = { m_blurCommandList };
+		ID3D12CommandList* ppCommandLists[] = { m_blurCommandList[*p_renderingManager->GetFrameIndex()] };
 		p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 	return hr;

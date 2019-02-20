@@ -93,8 +93,8 @@ private:
 	ID3D12Resource * m_calculationsOutputResource = nullptr;
 	SIZE_T m_calculationsOutputOffset = 0;
 
-	ID3D12GraphicsCommandList * m_commandList = nullptr;
-	ID3D12CommandAllocator * m_commandAllocator[FRAME_BUFFER_COUNT] {nullptr};
+	ID3D12GraphicsCommandList * m_commandList[FRAME_BUFFER_COUNT] = { nullptr };
+	ID3D12CommandAllocator * m_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };
 
 	RenderingManager * m_renderingManager = nullptr;
 	const Window * m_window = nullptr;

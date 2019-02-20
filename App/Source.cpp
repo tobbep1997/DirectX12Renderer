@@ -164,7 +164,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			if (Window::Updating())
 			{
 			}
-
+			
 			CameraMovement(camera, deltaTime);
 			camera->Update();
 
@@ -184,7 +184,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			directionalLight->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
-				pointLights[i]->Queue();
+				//pointLights[i]->Queue();
 			}
 			//directionalLight2->Queue();
 

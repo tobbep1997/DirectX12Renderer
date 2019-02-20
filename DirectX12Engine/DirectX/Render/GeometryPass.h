@@ -51,7 +51,8 @@ private:
 	HRESULT _initID3D12RootSignature();
 	HRESULT _initID3D12PipelineState();
 	HRESULT _initShaders();
-	HRESULT _createViewport();	
+	HRESULT _createViewport();
+	HRESULT _createBundle();
 
 	ID3D12PipelineState * m_pipelineState = nullptr;
 	ID3D12RootSignature * m_rootSignature = nullptr;
@@ -65,6 +66,9 @@ private:
 
 	X12DepthStencil * m_depthStencil = nullptr;
 	X12RenderTargetView * m_renderTarget[RENDER_TARGETS] = { nullptr };
+
+	ID3D12CommandAllocator * m_bundleCommandAllocator = { nullptr };
+	ID3D12GraphicsCommandList * m_bundleCommandList[FRAME_BUFFER_COUNT] = { nullptr };
 
 	D3D12_VIEWPORT	m_viewport{};
 	D3D12_RECT		m_rect{};

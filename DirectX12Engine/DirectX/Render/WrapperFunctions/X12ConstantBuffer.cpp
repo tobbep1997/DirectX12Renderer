@@ -53,7 +53,8 @@ HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* d
 			0, &readRange,
 			reinterpret_cast<void **>(&m_constantBufferGPUAddress[i]))))
 		{
-			memcpy(m_constantBufferGPUAddress[i], data, sizeOf);
+			if (data)
+				memcpy(m_constantBufferGPUAddress[i], data, sizeOf);
 		}
 	}
 	return hr;

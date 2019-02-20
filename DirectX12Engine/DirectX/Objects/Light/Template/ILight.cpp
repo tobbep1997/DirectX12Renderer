@@ -83,8 +83,13 @@ void ILight::Queue()
 {
 	if (m_intensity > 0)
 	{
-		reinterpret_cast<IRender*>(p_renderingManager->GetDeferredRender())->QueueLight(this);
-		reinterpret_cast<IRender*>(p_renderingManager->GetShadowPass())->QueueLight(this);
+		IRender * deferredPass = reinterpret_cast<IRender*>(p_renderingManager->GetDeferredRender());
+		IRender * shadowPass = reinterpret_cast<IRender*>(p_renderingManager->GetShadowPass());
+
+		if (deferredPass)
+			deferredPass->QueueLight(this);
+		if (shadowPass)
+			shadowPass->QueueLight(this);
 	}
 }
 

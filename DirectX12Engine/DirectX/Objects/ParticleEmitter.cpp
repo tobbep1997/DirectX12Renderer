@@ -35,7 +35,7 @@ BOOL ParticleEmitter::Init()
 	{
 		if (SUCCEEDED(hr = _createBuffer()))
 		{			
-			SAFE_NEW(m_shaderResourceView, new X12ShaderResourceView(m_renderingManager, *m_window, m_commandList));
+			SAFE_NEW(m_shaderResourceView, new X12ShaderResourceView(m_renderingManager, *m_window));
 			if (SUCCEEDED(hr = m_shaderResourceView->CreateShaderResourceView(
 				m_width,
 				m_height,
@@ -46,14 +46,14 @@ BOOL ParticleEmitter::Init()
 				{					
 					for (UINT i = 0; i < m_arraySize; i++)
 					{
-						m_shaderResourceView->BeginCopy();
+						m_shaderResourceView->BeginCopy(m_commandList[*m_renderingManager->GetFrameIndex()]);
 
 						m_shaderResourceView->CopySubresource(i,
-							m_textures[i]->GetResource());
+							m_textures[i]->GetResource(), m_commandList[*m_renderingManager->GetFrameIndex()]);
 
-						m_shaderResourceView->EndCopy();
+						m_shaderResourceView->EndCopy(m_commandList[*m_renderingManager->GetFrameIndex()]);
 					}
-					if (SUCCEEDED(hr = m_renderingManager->SignalGPU(m_commandList)))
+					if (SUCCEEDED(hr = m_renderingManager->SignalGPU(m_commandList[*m_renderingManager->GetFrameIndex()])))
 					{
 						
 					}
@@ -77,7 +77,6 @@ void ParticleEmitter::Release()
 
 	SAFE_RELEASE(m_calculationsOutputResource);
 
-	SAFE_RELEASE(m_commandList);
 
 	m_particles->clear();
 	SAFE_DELETE(m_particles);
@@ -87,6 +86,7 @@ void ParticleEmitter::Release()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
+		SAFE_RELEASE(m_commandList[i]);
 		SAFE_RELEASE(m_commandAllocator[i]);
 	}
 	Transform::Release();
@@ -109,7 +109,7 @@ ID3D12Resource* ParticleEmitter::GetCalcResource() const
 
 ID3D12GraphicsCommandList* ParticleEmitter::GetCommandList() const
 {
-	return this->m_commandList;
+	return this->m_commandList[*m_renderingManager->GetFrameIndex()];
 }
 
 const std::vector<ParticleEmitter::Particle>& ParticleEmitter::GetPositions() const
@@ -123,7 +123,7 @@ HRESULT ParticleEmitter::OpenCommandList()
 	const UINT frameIndex = *m_renderingManager->GetFrameIndex();
 	if (SUCCEEDED(hr = this->m_commandAllocator[frameIndex]->Reset()))
 	{
-		if (SUCCEEDED(hr = this->m_commandList->Reset(this->m_commandAllocator[frameIndex], nullptr)))
+		if (SUCCEEDED(hr = this->m_commandList[*m_renderingManager->GetFrameIndex()]->Reset(this->m_commandAllocator[frameIndex], nullptr)))
 		{
 
 		}
@@ -134,9 +134,9 @@ HRESULT ParticleEmitter::OpenCommandList()
 HRESULT ParticleEmitter::ExecuteCommandList() const
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = m_commandList->Close()))
+	if (SUCCEEDED(hr = m_commandList[*m_renderingManager->GetFrameIndex()]->Close()))
 	{
-		ID3D12CommandList* ppCommandLists[] = { m_commandList };
+		ID3D12CommandList* ppCommandLists[] = { m_commandList[*m_renderingManager->GetFrameIndex()] };
 		m_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 	return hr;
@@ -194,16 +194,18 @@ HRESULT ParticleEmitter::_createCommandList()
 		{
 			return hr;
 		}
-	}
-	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommandList(
-		0,
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		m_commandAllocator[0],
-		nullptr,
-		IID_PPV_ARGS(&m_commandList))))
-	{
-		SET_NAME(m_commandList, L"Particle Commandlist");
-		m_commandList->Close();
+		SET_NAME(m_commandAllocator[i], L"Particle CommandAllocator");
+
+		if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommandList(
+			0,
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			m_commandAllocator[0],
+			nullptr,
+			IID_PPV_ARGS(&m_commandList[i]))))
+		{
+			SET_NAME(m_commandList[i], L"Particle CommandList");
+			m_commandList[i]->Close();
+		}
 	}
 	return hr;
 }
@@ -211,12 +213,6 @@ HRESULT ParticleEmitter::_createCommandList()
 HRESULT ParticleEmitter::_createBuffer()
 {
 	HRESULT hr = 0;
-
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-	descriptorHeapDesc.NumDescriptors = 1;
-	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		
 
 	D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(4096 * 4096);
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -351,7 +347,9 @@ void ParticleEmitter::_updateParticles(const float & deltaTime)
 
 void ParticleEmitter::Draw()
 {
-	m_renderingManager->GetParticlePass()->AddEmitter(this);
+	ParticlePass * pass = m_renderingManager->GetParticlePass();
+	if (pass)
+		pass->AddEmitter(this);
 }
 
 void ParticleEmitter::UpdateEmitter(const float & deltaTime)
@@ -374,19 +372,14 @@ void ParticleEmitter::UpdateData()
 		DirectX::XMFLOAT4 ParticleInfo;
 	};
 
-	OutputCalculations *outputArray = nullptr;
+	OutputCalculations * outputArray = nullptr;
 	CD3DX12_RANGE readRange(0, sizeof(OutputCalculations) * m_particles->size());
 	if (SUCCEEDED(m_calculationsOutputResource->Map(0, &readRange, reinterpret_cast<void**>(&outputArray))))
 	{
 		for (size_t i = 0; i < m_particles->size(); i++)
 		{
-			const XMVECTOR dist = XMVector4Length(XMVectorSubtract(XMLoadFloat4(&m_particles->at(i).Position), XMLoadFloat4(&outputArray[i].Position)));
-			const float distance = XMVectorGetX(dist);
-
-
 			m_particles->at(i).Position = outputArray[i].Position;
-			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;
-	
+			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;	
 		}
 		m_calculationsOutputResource->Unmap(0, &readRange);
 	}
