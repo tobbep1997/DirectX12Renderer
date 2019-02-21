@@ -42,10 +42,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		renderingManager, 
 		hInstance, 
 		"Victor is Gay",
-		1600, 
-		900, 
+		1280, 
+		720, 
 		FALSE,
-		TRUE,
+		FALSE,
 		FALSE))
 	{
 		Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);

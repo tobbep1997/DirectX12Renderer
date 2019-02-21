@@ -108,9 +108,11 @@ void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(SHADOW_TEXTURE, commandList);
 
-	m_ssao->SetGraphicsRootDescriptorTable(SSAO_TEXTURE, commandList);
-
-	m_reflection->SetGraphicsRootDescriptorTable(REFLECTION_TEXTURE, commandList);
+	if (m_ssao)
+		m_ssao->SetGraphicsRootDescriptorTable(SSAO_TEXTURE, commandList);
+	
+	if (m_reflection)
+		m_reflection->SetGraphicsRootDescriptorTable(REFLECTION_TEXTURE, commandList);
 }
 
 void DeferredRender::Draw()

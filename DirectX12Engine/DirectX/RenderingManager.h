@@ -13,7 +13,7 @@ class ParticlePass;
 class ReflectionPass;
 class Camera;
 
-const unsigned int FRAME_BUFFER_COUNT = 3;
+const unsigned int FRAME_BUFFER_COUNT = 4;
 class RenderingManager
 {
 private:

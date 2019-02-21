@@ -121,7 +121,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 			m_particleBuffer->Copy(&m_particleValues, sizeof(ParticleBuffer), offset);
 			offset += sizeof(ParticleBuffer);
 		}
-		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), i * sizeof(ParticleInfoBuffer));
+		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), static_cast<UINT>(i) * sizeof(ParticleInfoBuffer));
 		offsets[i] = sizeof(ParticleBuffer);
 	}
 
