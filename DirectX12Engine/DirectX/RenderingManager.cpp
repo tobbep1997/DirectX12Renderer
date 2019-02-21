@@ -237,7 +237,7 @@ HRESULT RenderingManager::_present() const
 {
 	HRESULT hr = 0;
 	DXGI_PRESENT_PARAMETERS pp{};
-	hr = m_swapChain->Present1(1, 0, &pp);
+	hr = m_swapChain->Present1(0, 0, &pp);
 	return hr;
 }
 
