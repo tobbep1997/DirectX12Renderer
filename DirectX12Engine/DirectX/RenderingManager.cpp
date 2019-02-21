@@ -514,7 +514,7 @@ HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
 		{
 			return hr;
 		}
-		if (!updateFrame)
+		//if (!updateFrame)
 			WaitForSingleObject(m_fenceEvent, INFINITE);
 	}
 	m_fenceValue[m_frameIndex]++;

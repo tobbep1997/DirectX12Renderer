@@ -7,14 +7,18 @@
 #define MAX_EMITTERS 256
 
 #define PARTICLE_INFO	0
-#define VERTEX_OUTPUT	1
-#define CALC_OUTPUT		2
+#define PARTICLE_BUFFER 1
+#define VERTEX_OUTPUT	2
+#define CALC_OUTPUT		3
 
 ParticlePass::ParticlePass(RenderingManager* renderingManager, const Window& window)
 	: IRender(renderingManager, window)
 {
 	SAFE_NEW(m_emitters, new std::vector<ParticleEmitter*>());
 	SAFE_NEW(m_particleBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+	SAFE_NEW(m_particleInfoBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+
+	SAFE_NEW(m_fence, new X12Fence(p_renderingManager, *p_window));
 	this->m_geometryPass = renderingManager->GetGeometryPass();
 }
 
@@ -51,6 +55,15 @@ HRESULT ParticlePass::Init()
 	{		
 		return hr;
 	}
+	if (FAILED(hr = m_particleInfoBuffer->CreateBuffer(L"Particle info buffer", nullptr, 0, 256)))
+	{
+		return hr;
+	}
+	if (FAILED(hr = m_fence->CreateFence(L"Particle fence", p_renderingManager->GetCommandQueue())))
+	{		
+		return hr;
+	}
+
 	if (FAILED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
 	{
 		return hr;
@@ -60,46 +73,55 @@ HRESULT ParticlePass::Init()
 }
 
 void ParticlePass::Update(const Camera& camera, const float & deltaTime)
-{	
-	m_particleValues.CameraPosition = DirectX::XMFLOAT4A(
+{
+	UINT offsets[MAX_EMITTERS];
+	struct ParticleInfoBuffer
+	{
+		DirectX::XMFLOAT4	CameraPosition;
+		DirectX::XMFLOAT4X4 WorldMatrix;
+	}particleInfoBuffer;
+
+
+	particleInfoBuffer.CameraPosition = DirectX::XMFLOAT4A(
 		camera.GetPosition().x,
 		camera.GetPosition().y,
 		camera.GetPosition().z,
 		camera.GetPosition().w);
 
-	UINT offsets[MAX_EMITTERS];
-	
+	UINT offset = 0;
 	for (size_t i = 0; i < m_emitters->size() && i < MAX_EMITTERS; i++)
 	{
 		m_emitters->at(i)->UpdateEmitter(deltaTime);
-		
-		m_particleValues.WorldMatrix = m_emitters->at(i)->GetWorldMatrix();
+
+		particleInfoBuffer.WorldMatrix = m_emitters->at(i)->GetWorldMatrix();
 		for (size_t j = 0; j < m_emitters->at(i)->GetPositions().size(); j++)
 		{
-			m_particleValues.ParticleInfo[j].x = deltaTime;
-			m_particleValues.ParticleInfo[j].y = m_emitters->at(i)->GetPositions()[j].TimeAlive;
-			m_particleValues.ParticleInfo[j].z = m_emitters->at(i)->GetPositions()[j].TimeToLive;
+			m_particleValues.ParticleInfo.x = deltaTime;
+			m_particleValues.ParticleInfo.y = m_emitters->at(i)->GetPositions()[j].TimeAlive;
+			m_particleValues.ParticleInfo.z = m_emitters->at(i)->GetPositions()[j].TimeToLive;
 			
-			m_particleValues.ParticlePosition[j] = DirectX::XMFLOAT4A(
+			m_particleValues.ParticlePosition = DirectX::XMFLOAT4A(
 				m_emitters->at(i)->GetPositions()[j].Position.x,
 				m_emitters->at(i)->GetPositions()[j].Position.y,
 				m_emitters->at(i)->GetPositions()[j].Position.z,
 				m_emitters->at(i)->GetPositions()[j].Position.w
 			);
-			m_particleValues.ParticleSpeed[j] = DirectX::XMFLOAT4A(
+			m_particleValues.ParticleSpeed = DirectX::XMFLOAT4A(
 				m_emitters->at(i)->GetSettings().Direction.x,
 				m_emitters->at(i)->GetSettings().Direction.y,
 				m_emitters->at(i)->GetSettings().Direction.z,
 				m_emitters->at(i)->GetSettings().Speed
 			);
-			m_particleValues.ParticleSize[j] = DirectX::XMFLOAT4A(
+			m_particleValues.ParticleSize = DirectX::XMFLOAT4A(
 				m_emitters->at(i)->GetSettings().Size.x,
 				m_emitters->at(i)->GetSettings().Size.y,
 				m_emitters->at(i)->GetSettings().Size.z,
 				m_emitters->at(i)->GetSettings().Size.w
 				);
-			m_particleBuffer->Copy(&m_particleValues, sizeof(ParticleBuffer), 0);
+			m_particleBuffer->Copy(&m_particleValues, sizeof(ParticleBuffer), offset);
+			offset += sizeof(ParticleBuffer);
 		}
+		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), i * sizeof(ParticleInfoBuffer));
 		offsets[i] = sizeof(ParticleBuffer);
 	}
 
@@ -118,7 +140,9 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		commandList->SetPipelineState(m_computePipelineState);
 		commandList->SetComputeRootSignature(m_rootSignature);
 		
-		m_particleBuffer->SetComputeRootConstantBufferView(PARTICLE_INFO, 0, commandList);
+		m_particleInfoBuffer->SetComputeRootConstantBufferView(PARTICLE_INFO, 0, commandList);
+		m_particleBuffer->SetComputeRootShaderResourceView(PARTICLE_BUFFER, 0, commandList);
+
 		commandList->SetComputeRootUnorderedAccessView(VERTEX_OUTPUT, emitter->GetVertexResource()->GetGPUVirtualAddress());
 		commandList->SetComputeRootUnorderedAccessView(CALC_OUTPUT, emitter->GetCalcResource()->GetGPUVirtualAddress());
 		
@@ -131,6 +155,10 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 		// ReSharper disable once CppExpressionWithoutSideEffects
 		emitter->ExecuteCommandList();
+
+
+
+		//m_fence->WaitForCommandList();
 
 
 		if (!emitter->GetPositions().empty())
@@ -159,6 +187,12 @@ void ParticlePass::Release()
 
 	m_particleBuffer->Release();
 	SAFE_DELETE(m_particleBuffer);
+
+	m_particleInfoBuffer->Release();
+	SAFE_DELETE(m_particleInfoBuffer);
+
+	m_fence->Release();
+	SAFE_DELETE(m_fence);
 }
 
 void ParticlePass::AddEmitter(ParticleEmitter* particleEmitter) const
@@ -176,6 +210,10 @@ HRESULT ParticlePass::_initID3D12RootSignature()
 	rootDescriptor.RegisterSpace = 0;
 	rootDescriptor.ShaderRegister = 0;
 
+	D3D12_ROOT_DESCRIPTOR particleBuffer;
+	particleBuffer.RegisterSpace = 0;
+	particleBuffer.ShaderRegister = 0;
+
 	D3D12_ROOT_DESCRIPTOR uavVertexDescriptor;
 	uavVertexDescriptor.RegisterSpace = 0;
 	uavVertexDescriptor.ShaderRegister = 0;
@@ -187,6 +225,10 @@ HRESULT ParticlePass::_initID3D12RootSignature()
 	m_rootParameters[PARTICLE_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	m_rootParameters[PARTICLE_INFO].Descriptor = rootDescriptor;
 	m_rootParameters[PARTICLE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	m_rootParameters[PARTICLE_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+	m_rootParameters[PARTICLE_BUFFER].Descriptor = particleBuffer;
+	m_rootParameters[PARTICLE_BUFFER].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	m_rootParameters[VERTEX_OUTPUT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
 	m_rootParameters[VERTEX_OUTPUT].Descriptor = uavVertexDescriptor;

@@ -1,6 +1,7 @@
 #pragma once
 #include "Template/IRender.h"
 #include "WrapperFunctions/X12ConstantBuffer.h"
+#include "X12Fence.h"
 
 class ParticleEmitter;
 class X12ConstantBuffer;
@@ -9,17 +10,14 @@ class ParticlePass :
 	public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 3;
+	static const UINT ROOT_PARAMETERS = 4;
 
 	struct ParticleBuffer
 	{
-		DirectX::XMFLOAT4A CameraPosition;
-		DirectX::XMFLOAT4X4A WorldMatrix;
-
-		DirectX::XMFLOAT4A ParticleInfo[256];
-		DirectX::XMFLOAT4A ParticlePosition[256];
-		DirectX::XMFLOAT4A ParticleSpeed[256];
-		DirectX::XMFLOAT4A ParticleSize[256];
+		DirectX::XMFLOAT4A ParticleInfo;
+		DirectX::XMFLOAT4A ParticlePosition;
+		DirectX::XMFLOAT4A ParticleSpeed;
+		DirectX::XMFLOAT4A ParticleSize;
 	};
 
 
@@ -49,8 +47,10 @@ private:
 		
 	std::vector<ParticleEmitter*>* m_emitters = nullptr;
 
+	X12ConstantBuffer * m_particleInfoBuffer = nullptr;
 	X12ConstantBuffer * m_particleBuffer = nullptr;
 
 	GeometryPass * m_geometryPass;
 
+	X12Fence * m_fence;
 };

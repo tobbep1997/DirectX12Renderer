@@ -3,7 +3,7 @@
 #include <d3d12.h>
 #include <dxgi1_5.h>
 
-#define MAX_DESCRIPTOR_SIZE 100
+#define MAX_DESCRIPTOR_SIZE 1000
 
 class SSAOPass;
 class DeferredRender;
@@ -13,7 +13,7 @@ class ParticlePass;
 class ReflectionPass;
 class Camera;
 
-const unsigned int FRAME_BUFFER_COUNT = 5;
+const unsigned int FRAME_BUFFER_COUNT = 3;
 class RenderingManager
 {
 private:
