@@ -11,8 +11,11 @@ public:
 	HRESULT CreateBuffer(const std::wstring & name, void const* data, const UINT & sizeOf, const UINT & preAllocData = 0);
 
 	void SetComputeRootConstantBufferView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
+	void SetComputeRootShaderResourceView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
+
 	void SetGraphicsRootConstantBufferView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
 	void SetGraphicsRootShaderResourceView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
+
 	void Copy(void const* data, const UINT & sizeOf, const UINT & offset = 0);
 	void Release() override;
 

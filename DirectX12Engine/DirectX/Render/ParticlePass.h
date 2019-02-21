@@ -1,5 +1,6 @@
 #pragma once
 #include "Template/IRender.h"
+#include "WrapperFunctions/X12ConstantBuffer.h"
 
 class ParticleEmitter;
 class X12ConstantBuffer;
@@ -38,7 +39,6 @@ private:
 	HRESULT _initID3D12RootSignature();
 	HRESULT _initShaders();
 	HRESULT _initPipelineState();
-	HRESULT _createUAVOutput();
 
 	D3D12_ROOT_PARAMETER m_rootParameters[ROOT_PARAMETERS] {};
 	ID3D12RootSignature * m_rootSignature = nullptr;
@@ -49,9 +49,7 @@ private:
 		
 	std::vector<ParticleEmitter*>* m_emitters = nullptr;
 
-	ID3D12Resource *		m_constantParticleBuffer[FRAME_BUFFER_COUNT]{ nullptr };
-	int m_constantParticleBufferPerObjectAlignedSize = (sizeof(ParticleBuffer) + 255) & ~255;
-	UINT8* m_constantParticleBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
+	X12ConstantBuffer * m_particleBuffer = nullptr;
 
 	GeometryPass * m_geometryPass;
 

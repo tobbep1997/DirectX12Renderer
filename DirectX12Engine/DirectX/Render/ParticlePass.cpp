@@ -4,10 +4,17 @@
 #include "../Objects/ParticleEmitter.h"
 #include "GeometryPass.h"
 
+#define MAX_EMITTERS 256
+
+#define PARTICLE_INFO	0
+#define VERTEX_OUTPUT	1
+#define CALC_OUTPUT		2
+
 ParticlePass::ParticlePass(RenderingManager* renderingManager, const Window& window)
 	: IRender(renderingManager, window)
 {
 	SAFE_NEW(m_emitters, new std::vector<ParticleEmitter*>());
+	SAFE_NEW(m_particleBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
 	this->m_geometryPass = renderingManager->GetGeometryPass();
 }
 
@@ -19,32 +26,35 @@ ParticlePass::~ParticlePass()
 HRESULT ParticlePass::Init()
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = p_createCommandList(L"Particle")))
+	if (FAILED(hr = p_createCommandList(L"Particle")))
 	{
-		if (SUCCEEDED(hr = OpenCommandList()))
-		{
-			if (SUCCEEDED(hr = _initID3D12RootSignature()))
-			{
-				if (SUCCEEDED(hr = _initShaders()))
-				{
-					if (SUCCEEDED(hr = _initPipelineState()))
-					{
-						if (SUCCEEDED(hr = _createUAVOutput()))
-						{
-							
-						}
-					}
-				}
-			}
-		}
+		return hr;
 	}
-	if (SUCCEEDED(hr))
+
+	if (FAILED(hr = OpenCommandList()))
 	{
-		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
-		{
-			
-		}		
+		return hr;
 	}
+	if (FAILED(hr = _initID3D12RootSignature()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initShaders()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initPipelineState()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = m_particleBuffer->CreateBuffer(L"Particle buffer", nullptr, 0, 4096 * 4096)))
+	{		
+		return hr;
+	}
+	if (FAILED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
+	{
+		return hr;
+	}	
 
 	return hr;
 }
@@ -57,13 +67,12 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		camera.GetPosition().z,
 		camera.GetPosition().w);
 
+	UINT offsets[MAX_EMITTERS];
 	
-	
-	for (size_t i = 0; i < m_emitters->size(); i++)
+	for (size_t i = 0; i < m_emitters->size() && i < MAX_EMITTERS; i++)
 	{
 		m_emitters->at(i)->UpdateEmitter(deltaTime);
-
-
+		
 		m_particleValues.WorldMatrix = m_emitters->at(i)->GetWorldMatrix();
 		for (size_t j = 0; j < m_emitters->at(i)->GetPositions().size(); j++)
 		{
@@ -89,8 +98,9 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 				m_emitters->at(i)->GetSettings().Size.z,
 				m_emitters->at(i)->GetSettings().Size.w
 				);
-			memcpy(m_constantParticleBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + i * m_constantParticleBufferPerObjectAlignedSize, &m_particleValues, sizeof(m_particleValues));
+			m_particleBuffer->Copy(&m_particleValues, sizeof(ParticleBuffer), 0);
 		}
+		offsets[i] = sizeof(ParticleBuffer);
 	}
 
 	ParticleEmitter * emitter = nullptr;
@@ -108,9 +118,9 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		commandList->SetPipelineState(m_computePipelineState);
 		commandList->SetComputeRootSignature(m_rootSignature);
 		
-		commandList->SetComputeRootConstantBufferView(0, m_constantParticleBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + i * m_constantParticleBufferPerObjectAlignedSize);
-		commandList->SetComputeRootUnorderedAccessView(1, emitter->GetVertexResource()->GetGPUVirtualAddress());
-		commandList->SetComputeRootUnorderedAccessView(2, emitter->GetCalcResource()->GetGPUVirtualAddress());
+		m_particleBuffer->SetComputeRootConstantBufferView(PARTICLE_INFO, 0, commandList);
+		commandList->SetComputeRootUnorderedAccessView(VERTEX_OUTPUT, emitter->GetVertexResource()->GetGPUVirtualAddress());
+		commandList->SetComputeRootUnorderedAccessView(CALC_OUTPUT, emitter->GetCalcResource()->GetGPUVirtualAddress());
 		
 		commandList->Dispatch(static_cast<UINT>(m_emitters->at(i)->GetPositions().size()), 1, 1);
 
@@ -118,6 +128,8 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
+
+		// ReSharper disable once CppExpressionWithoutSideEffects
 		emitter->ExecuteCommandList();
 
 
@@ -145,16 +157,16 @@ void ParticlePass::Release()
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_computePipelineState);
 
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
-	{
-		SAFE_RELEASE(m_constantParticleBuffer[i]);
-	}
+	m_particleBuffer->Release();
+	SAFE_DELETE(m_particleBuffer);
 }
 
 void ParticlePass::AddEmitter(ParticleEmitter* particleEmitter) const
 {
 	m_emitters->push_back(particleEmitter);
 }
+
+
 
 HRESULT ParticlePass::_initID3D12RootSignature()
 {
@@ -172,17 +184,17 @@ HRESULT ParticlePass::_initID3D12RootSignature()
 	uavCalculationsDescriptor.RegisterSpace = 0;
 	uavCalculationsDescriptor.ShaderRegister = 1;
 
-	m_rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	m_rootParameters[0].Descriptor = rootDescriptor;
-	m_rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	m_rootParameters[PARTICLE_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	m_rootParameters[PARTICLE_INFO].Descriptor = rootDescriptor;
+	m_rootParameters[PARTICLE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	m_rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
-	m_rootParameters[1].Descriptor = uavVertexDescriptor;
-	m_rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	m_rootParameters[VERTEX_OUTPUT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+	m_rootParameters[VERTEX_OUTPUT].Descriptor = uavVertexDescriptor;
+	m_rootParameters[VERTEX_OUTPUT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
-	m_rootParameters[2].Descriptor = uavCalculationsDescriptor;
-	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	m_rootParameters[CALC_OUTPUT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+	m_rootParameters[CALC_OUTPUT].Descriptor = uavCalculationsDescriptor;
+	m_rootParameters[CALC_OUTPUT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(m_rootParameters),
@@ -246,35 +258,5 @@ HRESULT ParticlePass::_initPipelineState()
 		
 	}
 
-	return hr;
-}
-
-HRESULT ParticlePass::_createUAVOutput()
-{
-	HRESULT hr = 0;
-
-	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
-	{
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_constantParticleBuffer[i]))))
-		{
-			SET_NAME(m_constantParticleBuffer[i], L"Particle ConstantLightBuffer Upload Resource Heap");
-		}
-		else
-			return hr;
-
-		CD3DX12_RANGE readRange(0, 0);
-		if (SUCCEEDED(hr = m_constantParticleBuffer[i]->Map(
-			0, &readRange,
-			reinterpret_cast<void**>(&m_constantParticleBufferGPUAddress[i]))))
-		{
-			memcpy(m_constantParticleBufferGPUAddress[i], &m_particleValues, sizeof(ParticleBuffer));
-		}
-	}
 	return hr;
 }
