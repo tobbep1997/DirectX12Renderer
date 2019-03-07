@@ -60,7 +60,7 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 
 	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
 
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
+	p_renderingManager->ResourceDescriptorHeap(commandList);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -77,9 +77,12 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	commandList->RSSetScissorRects(1, &m_rect);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
+	m_worldPos->CopyDescriptorHeap();
 	m_worldPos->SetGraphicsRootDescriptorTable(0, commandList);	   
+	
+	m_depthStencils->CopyDescriptorHeap();
 	m_depthStencils->SetGraphicsRootDescriptorTable(1, commandList);
-
+		
 	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, 0, commandList);
 
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
@@ -94,7 +97,7 @@ void SSAOPass::Draw()
 
 	ID3D12GraphicsCommandList * commandList = m_blurCommandList[*p_renderingManager->GetFrameIndex()];
 
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
+	p_renderingManager->ResourceDescriptorHeap(commandList);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_blurRenderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 		*p_renderingManager->GetFrameIndex(),
@@ -109,9 +112,10 @@ void SSAOPass::Draw()
 	commandList->RSSetScissorRects(1, &m_rect);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	{
-		m_renderTarget->SetGraphicsRootDescriptorTable(0, commandList);
-	}
+	
+	m_renderTarget->CopyDescriptorHeap();
+	m_renderTarget->SetGraphicsRootDescriptorTable(0, commandList);
+	
 	
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->DrawInstanced(4, 1, 0, 0);

@@ -135,13 +135,17 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 							srvDesc.Texture2DArray.MostDetailedMip = 0;							
 						}
 
-						m_descriptorHeapOffset[i] = p_renderingManager->GetCbvSrvUavCurrentIndex() * p_renderingManager->GetCbvSrvUavIncrementalSize();
-						const D3D12_CPU_DESCRIPTOR_HANDLE handle = { p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset[i] };
+						m_cpuHandle[i] = 
+						{ 
+							p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
+							p_renderingManager->GetResourceCurrentIndex() * 
+							p_renderingManager->GetResourceIncrementalSize() 
+						};
 
 						p_renderingManager->GetDevice()->CreateShaderResourceView(
 							m_renderTargets[i],
 							&srvDesc,
-							handle
+							m_cpuHandle[i]
 						);
 
 						p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
@@ -194,13 +198,22 @@ void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
+void X12RenderTargetView::CopyDescriptorHeap()
+{
+	const UINT & frameIndex = *p_renderingManager->GetFrameIndex();
+	m_gpuHandle[frameIndex] = p_renderingManager->CopyToGpuDescriptorHeap(m_cpuHandle[frameIndex], m_arraySize);
+}
+
 void X12RenderTargetView::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex,
 	ID3D12GraphicsCommandList* commandList)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	
-	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex,
-		{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset[*p_renderingManager->GetFrameIndex()] });
+	const UINT & frameIndex = *p_renderingManager->GetFrameIndex();
+	if (m_gpuHandle[frameIndex].ptr == 0)
+		throw "GPU handle null";
+
+
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;	
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle[frameIndex]);
 }
 
 void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList) const

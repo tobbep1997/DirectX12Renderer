@@ -75,8 +75,12 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-	{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize() };
+	m_cpuHandle =
+	{
+		m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr +
+		m_renderingManager->GetResourceCurrentIndex() *
+		m_renderingManager->GetResourceIncrementalSize()
+	};
 
 	SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
@@ -91,7 +95,7 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 	m_renderingManager->GetDevice()->CreateShaderResourceView(
 		m_textureBuffer,
 		&srvDesc,
-		handle);
+		m_cpuHandle);
 	m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
 	
 	return TRUE;	
@@ -139,10 +143,14 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-	m_descriptorHeapOffset = +m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize();
+	
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-	{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset  };
+	m_cpuHandle =
+	{ 
+		m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
+		m_renderingManager->GetResourceCurrentIndex() * 
+		m_renderingManager->GetResourceIncrementalSize()
+	};
 	
 	SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
@@ -157,7 +165,7 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 	m_renderingManager->GetDevice()->CreateShaderResourceView(
 		m_textureBuffer,
 		&srvDesc,
-		handle);
+		m_cpuHandle);
 	m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
 	
 	return TRUE;
@@ -168,14 +176,19 @@ ID3D12Resource* Texture::GetResource() const
 	return this->m_textureBuffer;
 }
 
+void Texture::CopyDescriptorHeap() const
+{
+	m_gpuHandle = m_renderingManager->CopyToGpuDescriptorHeap(m_cpuHandle, m_textureBuffer->GetDesc().DepthOrArraySize);
+}
+
 void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootParameterIndex, ID3D12GraphicsCommandList * commandList) const
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : renderingManager->GetCommandList();
+	if (m_gpuHandle.ptr == 0)
+		throw "GPU handle null";
 
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
-	handle.ptr += m_descriptorHeapOffset;
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : renderingManager->GetCommandList();
 	
-	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, handle);
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
 }
 
 HRESULT Texture::_uploadTexture()

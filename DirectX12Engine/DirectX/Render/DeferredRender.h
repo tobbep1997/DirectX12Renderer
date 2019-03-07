@@ -10,14 +10,18 @@ constexpr auto MAX_SHADOWS = 32u;
 class DeferredRender : public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 9;
-	struct LightBuffer
+	static const UINT ROOT_PARAMETERS = 10;
+
+	struct LightStructuredBuffer
 	{
-		DirectX::XMFLOAT4A	CameraPosition;
-		DirectX::XMUINT4	Type[256];
-		DirectX::XMFLOAT4A	Position[256];
-		DirectX::XMFLOAT4A	Color[256];
-		DirectX::XMFLOAT4A	Vector[256];
+		DirectX::XMUINT4 Type;
+		DirectX::XMFLOAT4	Position;
+		DirectX::XMFLOAT4	Color;
+		union
+		{
+			DirectX::XMFLOAT4	Direction;
+			DirectX::XMFLOAT4	PointLight;			
+		};
 	};
 
 	struct ShadowLightBuffer
@@ -59,6 +63,8 @@ private:
 
 	HRESULT _createQuadBuffer();
 
+	void _copyLightData(const Camera& camera) const;
+
 	D3D12_VERTEX_BUFFER_VIEW		m_vertexBufferView{};
 	ID3D12Resource *				m_vertexBuffer = nullptr;
 	ID3D12Resource *				m_vertexHeapBuffer = nullptr;
@@ -76,18 +82,19 @@ private:
 
 	UINT m_renderTargetSize = 0;
 	X12RenderTargetView ** m_geometryRenderTargetView = nullptr;
-	X12ConstantBuffer * m_lightBuffer = nullptr;
-	X12ConstantBuffer * m_shadowBuffer = nullptr;
-	X12ShaderResourceView * m_shaderResourceView = nullptr;
 	X12RenderTargetView * m_ssao = nullptr;
 	X12RenderTargetView * m_reflection = nullptr;
 
-	LightBuffer m_lightValues{};
+	X12ConstantBuffer * m_lightBuffer = nullptr;
+	X12ConstantBuffer * m_lightTable = nullptr;
+	X12ConstantBuffer * m_shadowBuffer = nullptr;
+
+	X12ShaderResourceView * m_shaderResourceView = nullptr;
+
 	ShadowLightBuffer m_shadowValues{};
 
 	std::vector<ShadowMap*>*m_shadowMaps = nullptr;
-
-
+	
 	struct Vertex
 	{
 		Vertex()

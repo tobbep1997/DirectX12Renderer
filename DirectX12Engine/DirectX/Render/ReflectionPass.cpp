@@ -40,7 +40,7 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 {
 	OpenCommandList(m_pipelineState);
 	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
+	p_renderingManager->ResourceDescriptorHeap(commandList);
 
 	m_cameraValues.Position = camera.GetPosition();
 	m_cameraValues.ViewProjection = camera.GetViewProjectionMatrix();
@@ -64,8 +64,10 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 
 	for (UINT i = 0; i < m_renderTargetSize; i++)
 	{
+		m_geometryRenderTargetView[i]->CopyDescriptorHeap();
 		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i + 1, commandList);
 	}
+	m_depthStencil->CopyDescriptorHeap();
 	m_depthStencil->SetGraphicsRootDescriptorTable(5, commandList);
 	
 

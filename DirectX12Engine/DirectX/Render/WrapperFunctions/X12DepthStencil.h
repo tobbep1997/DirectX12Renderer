@@ -20,6 +20,7 @@ public:
 	void SwitchToDSV(ID3D12GraphicsCommandList * commandList = nullptr);
 	void SwitchToSRV(ID3D12GraphicsCommandList * commandList = nullptr);
 
+	void CopyDescriptorHeap();
 	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
 
 private:
@@ -27,10 +28,11 @@ private:
 	UINT m_height = 0;
 	UINT m_arraySize = 1;
 
+	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{0};
+	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle{0};
 	ID3D12Resource		* m_depthStencilBuffer = nullptr;
-	ID3D12DescriptorHeap* m_depthStencilDescriptorHeap = nullptr;
+	ID3D12DescriptorHeap* m_depthStencilDescriptorHeap = nullptr;	
 	
-	SIZE_T m_descriptorHeapOffset = 0;
 	D3D12_RESOURCE_STATES m_currentState;
 };
 

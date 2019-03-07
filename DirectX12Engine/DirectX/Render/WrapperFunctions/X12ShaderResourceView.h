@@ -17,6 +17,7 @@ public:
 	void BeginCopy(ID3D12GraphicsCommandList * commandList = nullptr);
 	void EndCopy(ID3D12GraphicsCommandList * commandList = nullptr);
 	void CopySubresource(const UINT & dstIndex, ID3D12Resource * resource, ID3D12GraphicsCommandList * commandList = nullptr) const;
+	void CopyDescriptorHeap();
 
 	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
 
@@ -27,8 +28,9 @@ private:
 	UINT m_width = 0;
 	UINT m_height = 0;
 	UINT m_arraySize = 1;
-	ID3D12Resource * m_resource = nullptr;
 
-	SIZE_T m_descriptorHeapOffset = 0;
+	ID3D12Resource * m_resource = nullptr;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{ 0 };
+	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle{ 0 };
 };
 

@@ -1,6 +1,50 @@
 
 #pragma warning (disable : 4000)
 
+struct LIGHT_STRUCT
+{
+    uint4 LightType;
+    float4 LightPosition;
+    float4 LightColor;
+    float4 LightVector;
+};
+
+float4 SingelLightCalculations(in LIGHT_STRUCT light,
+	in float4 cameraPosition,
+	in float4 worldPosition,
+	in float4 albedo,
+	in float4 normal,
+	in float4 metallic,
+	inout float4 specular)
+{
+    float4 worldToCamera = normalize(cameraPosition - worldPosition);
+    float4 posToLight = light.LightPosition - worldPosition;
+    float4 finalColor = float4(0, 0, 0, 0);
+    float4 halfWayDir = 0;
+    float distanceToLight = length(posToLight);
+    float attenuation = 0;
+	
+
+    if (light.LightType.x == 0) //pointlight
+    {
+        attenuation = light.LightVector.x / (1.0f + light.LightVector.y * pow(distanceToLight, light.LightVector.z));
+
+        halfWayDir = normalize(posToLight + worldToCamera);
+
+        specular += pow(max(dot(normal, halfWayDir), 0.0f), 128.0f) * length(metallic.rgb) * attenuation * light.LightColor;
+
+        if (distanceToLight < light.LightVector.w)
+        {
+            finalColor = max(dot(normal, normalize(posToLight)), 0.0f) * light.LightColor * albedo * attenuation;
+        }
+    }
+    else if (light.LightType.x == 1) //Dir
+    {
+        finalColor = max(dot(normal, normalize(-float4(light.LightVector.xyz, 0))), 0.0f) * light.LightColor * albedo * light.LightVector.w;
+    }
+    return finalColor;
+}
+
 float4 LightCalculation(
     uint4 LightType[256],
     float4 LightPosition[256], 

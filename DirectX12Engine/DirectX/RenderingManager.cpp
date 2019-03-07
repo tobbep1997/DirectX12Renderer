@@ -84,6 +84,10 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 				{
 					return Window::CreateError(hr);
 				}
+				if (FAILED(hr = _createCpuDescriptorHeap()))
+				{
+					return Window::CreateError(hr);
+				}
 				SAFE_NEW(m_geometryPass, new GeometryPass(this, *window));
 				if (FAILED(hr = m_geometryPass->Init()))
 				{
@@ -171,7 +175,7 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 
 	//---------------------------------------------------------------------
 
-	SetCbvSrvUavDescriptorHeap(m_commandList[m_frameIndex]);
+	ResourceDescriptorHeap(m_commandList[m_frameIndex]);
 
 	m_particlePass->ThreadUpdate(camera, deltaTime);
 	m_shadowPass->ThreadUpdate(camera, deltaTime);
@@ -181,12 +185,12 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 	m_geometryPass->ThreadUpdate(camera, deltaTime);
 	m_geometryPass->ThreadJoin();
 	
-	m_reflectionPass->ThreadUpdate(camera, deltaTime);
+	//m_reflectionPass->ThreadUpdate(camera, deltaTime);
 	m_ssaoPass->ThreadUpdate(camera, deltaTime);
 	
 	m_shadowPass->ThreadJoin();
 	m_ssaoPass->ThreadJoin();
-	m_reflectionPass->ThreadJoin();
+	//m_reflectionPass->ThreadJoin();
 	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
@@ -237,11 +241,11 @@ HRESULT RenderingManager::_present() const
 {
 	HRESULT hr = 0;
 	DXGI_PRESENT_PARAMETERS pp{};
-	hr = m_swapChain->Present1(1, 0, &pp);
+	hr = m_swapChain->Present1(0, 0, &pp);
 	return hr;
 }
 
-void RenderingManager::_clear() const
+void RenderingManager::_clear()
 {
 	m_geometryPass->Clear();
 	m_shadowPass->Clear();
@@ -249,6 +253,8 @@ void RenderingManager::_clear() const
 	m_particlePass->Clear();
 	m_ssaoPass->Clear();
 	m_reflectionPass->Clear();
+
+	m_copyOffset = 0;
 }
 
 void RenderingManager::Present() const
@@ -284,7 +290,7 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 		m_fenceValue[i] = 0;
 	};
 	SAFE_RELEASE(m_debugLayer);
-	SAFE_RELEASE(m_cbv_srv_uav_descriptorHeap);
+	SAFE_RELEASE(m_gpuDescriptorHeap);
 
 	m_frameIndex = 0;
 	m_rtvDescriptorSize = 0;
@@ -466,28 +472,45 @@ HRESULT RenderingManager::SignalGPU(ID3D12GraphicsCommandList* commandList)
 
 void RenderingManager::IterateCbvSrvUavDescriptorHeapIndex()
 {
-	m_cbv_srv_uav_currentIndex++;
+	m_resourceCurrentIndex++;
 }
 
-const SIZE_T & RenderingManager::GetCbvSrvUavCurrentIndex() const
+const SIZE_T & RenderingManager::GetResourceCurrentIndex() const
 {
-	return m_cbv_srv_uav_currentIndex;
+	return m_resourceCurrentIndex;
 }
 
-const SIZE_T & RenderingManager::GetCbvSrvUavIncrementalSize() const
+const SIZE_T & RenderingManager::GetResourceIncrementalSize() const
 {
-	return m_cbv_srv_uav_incrementalSize;
+	return m_resourceIncrementalSize;
 }
 
-ID3D12DescriptorHeap* RenderingManager::GetCbvSrvUavDescriptorHeap() const
+ID3D12DescriptorHeap* RenderingManager::GetCpuDescriptorHeap() const
 {
-	return this->m_cbv_srv_uav_descriptorHeap;
+	return this->m_cpuDescriptorHeap;
 }
 
-void RenderingManager::SetCbvSrvUavDescriptorHeap(ID3D12GraphicsCommandList* commandList) const
+void RenderingManager::ResourceDescriptorHeap(ID3D12GraphicsCommandList* commandList) const
 {
-	ID3D12DescriptorHeap* depthDescriptorHeaps[] = { m_cbv_srv_uav_descriptorHeap };
-	commandList->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
+	ID3D12DescriptorHeap* DescriptorHeaps[] = { m_gpuDescriptorHeap };
+	commandList->SetDescriptorHeaps(_countof(DescriptorHeaps), DescriptorHeaps);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE RenderingManager::CopyToGpuDescriptorHeap(
+	const D3D12_CPU_DESCRIPTOR_HANDLE& descriptorHandle, const UINT& numDescriptors)
+{
+	const SIZE_T offset = m_copyOffset;
+	const D3D12_CPU_DESCRIPTOR_HANDLE destHandle = { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_copyOffset };
+
+	m_device->CopyDescriptorsSimple(
+		numDescriptors,
+		destHandle,
+		descriptorHandle,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	m_copyOffset += m_resourceIncrementalSize * numDescriptors;
+
+	return { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + offset };
 }
 
 UINT64 * RenderingManager::GetFenceValues()
@@ -514,8 +537,9 @@ HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
 		{
 			return hr;
 		}
-		if (!updateFrame)
-			WaitForSingleObject(m_fenceEvent, INFINITE);
+		//if (!updateFrame)
+		m_commandQueue->Wait(m_fence[m_frameIndex], m_fenceValue[m_frameIndex]);
+			//WaitForSingleObject(m_fenceEvent, INFINITE);
 	}
 	m_fenceValue[m_frameIndex]++;
 	
@@ -701,6 +725,19 @@ HRESULT RenderingManager::_createFenceAndFenceEvent()
 	return hr;
 }
 
+HRESULT RenderingManager::_createCpuDescriptorHeap()
+{
+	HRESULT hr = 0;
+	
+	const D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_DESCRIPTOR_SIZE, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0 };
+	if (FAILED(hr = m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_cpuDescriptorHeap))))
+	{		
+		return hr;
+	}
+	
+	return hr;
+}
+
 HRESULT RenderingManager::_createCbvSrvUavDescriptorHeap()
 {
 	HRESULT hr = 0;
@@ -712,12 +749,12 @@ HRESULT RenderingManager::_createCbvSrvUavDescriptorHeap()
 	   
 	if (FAILED(hr = m_device->CreateDescriptorHeap(
 		&descriptorHeap, 
-		IID_PPV_ARGS(&m_cbv_srv_uav_descriptorHeap))))
+		IID_PPV_ARGS(&m_gpuDescriptorHeap))))
 	{
 		return hr;
 	}
 
-	m_cbv_srv_uav_incrementalSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_resourceIncrementalSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 
 	return hr;

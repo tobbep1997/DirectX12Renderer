@@ -42,7 +42,7 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 {	
 	OpenCommandList(m_pipelineState);
 	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
+	p_renderingManager->ResourceDescriptorHeap(commandList);
 
 	m_cameraValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
@@ -100,6 +100,7 @@ void GeometryPass::Draw()
 		for (size_t i = 0; i < emitterSize; i++)
 		{
 			emitter = m_emitters->at(i);
+			emitter->GetShaderResourceView()->CopyDescriptorHeap();
 			emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, commandList);
 			commandList->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
 
