@@ -24,6 +24,7 @@ public:
 
 	ID3D12Resource * GetResource() const;
 
+	void CopyDescriptorHeap() const;
 	void MapTexture(RenderingManager * renderingManager, const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr) const;
 
 private:
@@ -34,7 +35,9 @@ private:
 
 	HRESULT _uploadTexture();
 
-	SIZE_T m_descriptorHeapOffset = 0;
+	//SIZE_T m_descriptorHeapOffset = 0;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{ 0 };
+	mutable D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle{ 0 };
 };
 
 

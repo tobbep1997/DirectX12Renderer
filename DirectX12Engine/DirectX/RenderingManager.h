@@ -62,7 +62,7 @@ public:
 	void IterateCbvSrvUavDescriptorHeapIndex();
 	const SIZE_T & GetResourceCurrentIndex() const;
 	const SIZE_T & GetResourceIncrementalSize() const;
-	ID3D12DescriptorHeap * GetResourceDescriptorHeap() const;
+	ID3D12DescriptorHeap * GetCpuDescriptorHeap() const;
 
 	void ResourceDescriptorHeap(ID3D12GraphicsCommandList * commandList) const;
 
@@ -88,7 +88,7 @@ private:
 
 	HRESULT _flush(const Camera & camera, const float & deltaTime);
 	HRESULT _present() const;
-	void _clear() const;
+	void _clear();
 
 	HRESULT _updatePipeline(const Camera & camera, const float & deltaTime);
 	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE);

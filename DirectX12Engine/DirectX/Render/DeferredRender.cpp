@@ -82,6 +82,7 @@ void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 
 	for (UINT i = 0; i < this->m_renderTargetSize; i++)
 	{
+		m_geometryRenderTargetView[i]->CopyDescriptorHeap();
 		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i, commandList);
 	}
 
@@ -106,13 +107,20 @@ void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
 	m_shadowBuffer->SetGraphicsRootConstantBufferView(SHADOW_BUFFER, 0, commandList);
 
+	m_shaderResourceView->CopyDescriptorHeap();
 	m_shaderResourceView->SetGraphicsRootDescriptorTable(SHADOW_TEXTURE, commandList);
 
 	if (m_ssao)
+	{
+		m_ssao->CopyDescriptorHeap();
 		m_ssao->SetGraphicsRootDescriptorTable(SSAO_TEXTURE, commandList);
+	}
 	
 	if (m_reflection)
+	{
+		m_reflection->CopyDescriptorHeap();
 		m_reflection->SetGraphicsRootDescriptorTable(REFLECTION_TEXTURE, commandList);
+	}
 }
 
 void DeferredRender::Draw()

@@ -246,7 +246,7 @@ HRESULT ParticleEmitter::_createBuffer()
 
 		m_vertexOutputOffset = m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
 		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-		{ m_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
+		{ m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
 
 		m_renderingManager->GetDevice()->CreateUnorderedAccessView(
 			m_vertexOutputResource,
@@ -284,7 +284,7 @@ HRESULT ParticleEmitter::_createBuffer()
 
 		m_calculationsOutputOffset = m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
 		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-		{ m_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
+		{ m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
 
 		m_renderingManager->GetDevice()->CreateUnorderedAccessView(
 			m_calculationsOutputResource,

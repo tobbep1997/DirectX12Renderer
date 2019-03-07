@@ -22,6 +22,7 @@ public:
 	ID3D12Resource*const* GetResource() const;
 
 private:
+	D3D12_CPU_DESCRIPTOR_HANDLE m_handle;
 	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
 
 	UINT8* m_constantBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };

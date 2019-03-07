@@ -48,6 +48,7 @@ namespace Instancing
 			
 			for (UINT i = 0; i < 5; i++)
 			{	
+				arr[i]->CopyDescriptorHeap();
 				arr[i]->MapTexture(nullptr, rootParameterIndex + i, commandList);
 			}
 		}

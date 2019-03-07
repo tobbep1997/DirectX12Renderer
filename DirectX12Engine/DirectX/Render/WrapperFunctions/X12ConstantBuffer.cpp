@@ -41,13 +41,12 @@ HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* d
 		cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
 		m_descriptorHeapOffset = p_renderingManager->GetResourceCurrentIndex() * p_renderingManager->GetResourceIncrementalSize();
-		const D3D12_CPU_DESCRIPTOR_HANDLE handle = 
-			{ p_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
 		
+		
+		m_handle = { p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
 		p_renderingManager->GetDevice()->CreateConstantBufferView(
 			&cbvDesc,
-			handle);
-
+			m_handle);
 		p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
 
 		CD3DX12_RANGE readRange(0, 0);

@@ -185,12 +185,12 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 	m_geometryPass->ThreadUpdate(camera, deltaTime);
 	m_geometryPass->ThreadJoin();
 	
-	m_reflectionPass->ThreadUpdate(camera, deltaTime);
+	//m_reflectionPass->ThreadUpdate(camera, deltaTime);
 	m_ssaoPass->ThreadUpdate(camera, deltaTime);
 	
 	m_shadowPass->ThreadJoin();
 	m_ssaoPass->ThreadJoin();
-	m_reflectionPass->ThreadJoin();
+	//m_reflectionPass->ThreadJoin();
 	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
@@ -245,7 +245,7 @@ HRESULT RenderingManager::_present() const
 	return hr;
 }
 
-void RenderingManager::_clear() const
+void RenderingManager::_clear()
 {
 	m_geometryPass->Clear();
 	m_shadowPass->Clear();
@@ -253,6 +253,8 @@ void RenderingManager::_clear() const
 	m_particlePass->Clear();
 	m_ssaoPass->Clear();
 	m_reflectionPass->Clear();
+
+	m_copyOffset = 0;
 }
 
 void RenderingManager::Present() const
@@ -483,15 +485,15 @@ const SIZE_T & RenderingManager::GetResourceIncrementalSize() const
 	return m_resourceIncrementalSize;
 }
 
-ID3D12DescriptorHeap* RenderingManager::GetResourceDescriptorHeap() const
+ID3D12DescriptorHeap* RenderingManager::GetCpuDescriptorHeap() const
 {
-	return this->m_gpuDescriptorHeap;
+	return this->m_cpuDescriptorHeap;
 }
 
 void RenderingManager::ResourceDescriptorHeap(ID3D12GraphicsCommandList* commandList) const
 {
-	ID3D12DescriptorHeap* depthDescriptorHeaps[] = { m_gpuDescriptorHeap };
-	commandList->SetDescriptorHeaps(_countof(depthDescriptorHeaps), depthDescriptorHeaps);
+	ID3D12DescriptorHeap* DescriptorHeaps[] = { m_gpuDescriptorHeap };
+	commandList->SetDescriptorHeaps(_countof(DescriptorHeaps), DescriptorHeaps);
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE RenderingManager::CopyToGpuDescriptorHeap(

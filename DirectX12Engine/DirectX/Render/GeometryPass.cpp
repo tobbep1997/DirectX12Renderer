@@ -100,6 +100,7 @@ void GeometryPass::Draw()
 		for (size_t i = 0; i < emitterSize; i++)
 		{
 			emitter = m_emitters->at(i);
+			emitter->GetShaderResourceView()->CopyDescriptorHeap();
 			emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, commandList);
 			commandList->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
 

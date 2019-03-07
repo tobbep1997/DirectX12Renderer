@@ -87,13 +87,16 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 					srvDesc.Texture2DArray.MostDetailedMip = 0;
 				}
 				
-				m_descriptorHeapOffset = p_renderingManager->GetResourceCurrentIndex() * p_renderingManager->GetResourceIncrementalSize();
-				const D3D12_CPU_DESCRIPTOR_HANDLE handle{ p_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
+				m_cpuHandle = { 
+					p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
+					p_renderingManager->GetResourceCurrentIndex() * 
+					p_renderingManager->GetResourceIncrementalSize() 
+				};
 				
 				p_renderingManager->GetDevice()->CreateShaderResourceView(
 					m_depthStencilBuffer,
 					&srvDesc,
-					handle
+					m_cpuHandle
 				);
 				p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();				
 			}
@@ -150,13 +153,20 @@ void X12DepthStencil::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 
 }
 
+void X12DepthStencil::CopyDescriptorHeap()
+{
+	m_gpuHandle = p_renderingManager->CopyToGpuDescriptorHeap(m_cpuHandle, m_arraySize);
+}
+
 void X12DepthStencil::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex,
 	ID3D12GraphicsCommandList* commandList)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+	if (m_gpuHandle.ptr == 0)
+		throw "GPU handle null";
 
-	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex,
-		{ p_renderingManager->GetResourceDescriptorHeap()->GetGPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset });
+
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
+	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
 }
 
 void X12DepthStencil::Release()
