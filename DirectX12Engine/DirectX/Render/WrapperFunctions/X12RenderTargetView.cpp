@@ -135,8 +135,8 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 							srvDesc.Texture2DArray.MostDetailedMip = 0;							
 						}
 
-						m_descriptorHeapOffset[i] = p_renderingManager->GetCbvSrvUavCurrentIndex() * p_renderingManager->GetCbvSrvUavIncrementalSize();
-						const D3D12_CPU_DESCRIPTOR_HANDLE handle = { p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset[i] };
+						m_descriptorHeapOffset[i] = p_renderingManager->GetResourceCurrentIndex() * p_renderingManager->GetResourceIncrementalSize();
+						const D3D12_CPU_DESCRIPTOR_HANDLE handle = { p_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset[i] };
 
 						p_renderingManager->GetDevice()->CreateShaderResourceView(
 							m_renderTargets[i],
@@ -200,7 +200,7 @@ void X12RenderTargetView::SetGraphicsRootDescriptorTable(const UINT& rootParamet
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 	
 	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex,
-		{ p_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset[*p_renderingManager->GetFrameIndex()] });
+		{ p_renderingManager->GetResourceDescriptorHeap()->GetGPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset[*p_renderingManager->GetFrameIndex()] });
 }
 
 void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList) const

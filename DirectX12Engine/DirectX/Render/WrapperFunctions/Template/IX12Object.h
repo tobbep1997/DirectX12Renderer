@@ -11,11 +11,7 @@ protected:
 	{
 		this->p_renderingManager = renderingManager;
 		this->p_window = &window;
-
-		//if (commandList)
-		//	this->p_commandList = commandList;
-		//else
-		//	this->p_commandList = this->p_renderingManager->GetCommandList();
+		p_commandList = nullptr;
 	}
 public:
 	virtual~IX12Object() = default;

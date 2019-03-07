@@ -228,7 +228,7 @@ HRESULT DeferredRender::_preInit()
 	if (FAILED(hr = m_lightTable->CreateBuffer(
 		L"LightTable",
 		nullptr,
-		0,
+		sizeof(LightStructuredBuffer),
 		1024 * 64)))
 	{		
 		return hr;

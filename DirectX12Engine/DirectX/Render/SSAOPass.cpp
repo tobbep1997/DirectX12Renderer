@@ -60,7 +60,7 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 
 	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
 
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
+	p_renderingManager->ResourceDescriptorHeap(commandList);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -94,7 +94,7 @@ void SSAOPass::Draw()
 
 	ID3D12GraphicsCommandList * commandList = m_blurCommandList[*p_renderingManager->GetFrameIndex()];
 
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
+	p_renderingManager->ResourceDescriptorHeap(commandList);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_blurRenderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 		*p_renderingManager->GetFrameIndex(),

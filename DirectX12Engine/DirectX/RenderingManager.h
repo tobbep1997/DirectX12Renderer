@@ -60,11 +60,13 @@ public:
 	HRESULT SignalGPU(ID3D12GraphicsCommandList * commandList);
 
 	void IterateCbvSrvUavDescriptorHeapIndex();
-	const SIZE_T & GetCbvSrvUavCurrentIndex() const;
-	const SIZE_T & GetCbvSrvUavIncrementalSize() const;
-	ID3D12DescriptorHeap * GetCbvSrvUavDescriptorHeap() const;
+	const SIZE_T & GetResourceCurrentIndex() const;
+	const SIZE_T & GetResourceIncrementalSize() const;
+	ID3D12DescriptorHeap * GetResourceDescriptorHeap() const;
 
-	void SetCbvSrvUavDescriptorHeap(ID3D12GraphicsCommandList * commandList) const;
+	void ResourceDescriptorHeap(ID3D12GraphicsCommandList * commandList) const;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE CopyToGpuDescriptorHeap(const D3D12_CPU_DESCRIPTOR_HANDLE & descriptorHandle, const UINT & numDescriptors = 1);
 
 private:
 
@@ -98,6 +100,7 @@ private:
 	HRESULT _createCommandAllocators();
 	HRESULT _createCommandList();
 	HRESULT _createFenceAndFenceEvent();
+	HRESULT _createCpuDescriptorHeap();
 
 	GeometryPass *	m_geometryPass = nullptr;
 	ShadowPass *	m_shadowPass = nullptr;
@@ -106,9 +109,11 @@ private:
 	SSAOPass * m_ssaoPass = nullptr;
 	ReflectionPass * m_reflectionPass = nullptr;
 
-	SIZE_T m_cbv_srv_uav_currentIndex = 0;
-	SIZE_T m_cbv_srv_uav_incrementalSize = 0;
-	ID3D12DescriptorHeap * m_cbv_srv_uav_descriptorHeap = nullptr;
+	SIZE_T m_copyOffset = 0;
+	SIZE_T m_resourceCurrentIndex = 0;
+	SIZE_T m_resourceIncrementalSize = 0;
+	ID3D12DescriptorHeap * m_gpuDescriptorHeap = nullptr;
+	ID3D12DescriptorHeap * m_cpuDescriptorHeap = nullptr;
 
 	HRESULT _createCbvSrvUavDescriptorHeap();
 

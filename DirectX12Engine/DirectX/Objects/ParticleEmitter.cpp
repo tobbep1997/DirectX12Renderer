@@ -244,9 +244,9 @@ HRESULT ParticleEmitter::_createBuffer()
 		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 		unorderedAccessViewDesc.Buffer = uav;
 
-		m_vertexOutputOffset = m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize();
+		m_vertexOutputOffset = m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
 		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-		{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
+		{ m_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
 
 		m_renderingManager->GetDevice()->CreateUnorderedAccessView(
 			m_vertexOutputResource,
@@ -282,9 +282,9 @@ HRESULT ParticleEmitter::_createBuffer()
 		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 		unorderedAccessViewDesc.Buffer = uav;
 
-		m_calculationsOutputOffset = m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize();
+		m_calculationsOutputOffset = m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
 		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-		{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
+		{ m_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
 
 		m_renderingManager->GetDevice()->CreateUnorderedAccessView(
 			m_calculationsOutputResource,

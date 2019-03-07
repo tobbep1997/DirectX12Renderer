@@ -76,7 +76,7 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-	{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize() };
+	{ m_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize() };
 
 	SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
@@ -139,10 +139,10 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-	m_descriptorHeapOffset = +m_renderingManager->GetCbvSrvUavCurrentIndex() * m_renderingManager->GetCbvSrvUavIncrementalSize();
+	m_descriptorHeapOffset = +m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-	{ m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset  };
+	{ m_renderingManager->GetResourceDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset  };
 	
 	SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
@@ -172,7 +172,7 @@ void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootPar
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : renderingManager->GetCommandList();
 
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_renderingManager->GetCbvSrvUavDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_renderingManager->GetResourceDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
 	handle.ptr += m_descriptorHeapOffset;
 	
 	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, handle);

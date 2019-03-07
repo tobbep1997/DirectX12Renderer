@@ -42,8 +42,6 @@ float4 main(VS_OUTPUT input) : SV_Target
     float4 reflection = reflectionTexture.Sample(defaultSampler, input.uv.xy);
     float ssao = ssaoTexture.Sample(defaultSampler, input.uv.xy).r;
 
-	//return reflection;
-
     float4 ambient = float4(0.15f, 0.15f, 0.15f, 1.0f) * albedo;
     ambient.w = 1;
     float4 specular = float4(0, 0, 0, 1.0f);
@@ -53,6 +51,9 @@ float4 main(VS_OUTPUT input) : SV_Target
         return albedo;
        
     float4 finalColor = float4(0, 0, 0, 1);
+
+
+   
     for (uint i = 0; i < NumberOfLights.x; i++)
     {
         finalColor += SingelLightCalculations(LIGHT_STRUCT_BUFFER[i], 

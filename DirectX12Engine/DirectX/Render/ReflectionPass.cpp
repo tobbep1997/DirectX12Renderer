@@ -40,7 +40,7 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 {
 	OpenCommandList(m_pipelineState);
 	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
-	p_renderingManager->SetCbvSrvUavDescriptorHeap(commandList);
+	p_renderingManager->ResourceDescriptorHeap(commandList);
 
 	m_cameraValues.Position = camera.GetPosition();
 	m_cameraValues.ViewProjection = camera.GetViewProjectionMatrix();
