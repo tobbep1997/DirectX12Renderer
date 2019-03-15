@@ -40,5 +40,9 @@ TODO::
 ```diff
 +Multiple Commandlists
 +Multi threading
--Single DescriptorHeaps
++Single DescriptorHeaps
+-Multiple Commandqueues
+-CPU DescriptorHeaps
+-Bindless
+-Multiple GPU
 ```
