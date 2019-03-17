@@ -123,13 +123,15 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), static_cast<UINT>(i) * sizeof(ParticleInfoBuffer));
 	}
 
+	OpenCommandList();
+
 	ParticleEmitter * emitter = nullptr;
 	for (size_t i = 0; i < m_emitters->size(); i++)
 	{
 		emitter = m_emitters->at(i);
 
-		ID3D12GraphicsCommandList * commandList = emitter->GetCommandList();
-		emitter->OpenCommandList();
+		const UINT frameIndex = *p_renderingManager->GetFrameIndex();
+		ID3D12GraphicsCommandList * commandList = p_commandList[frameIndex];
 
 
 		emitter->SwitchToUAVState(commandList);
@@ -150,20 +152,22 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
 
-		if (FAILED(emitter->ExecuteCommandList()))
-			continue;
-
-		if (SUCCEEDED(m_fence->Signal(p_renderingManager->GetCommandQueue())))
-		{
-			//TODO:: Remove
-			m_fence->WaitCpu();
-		}
-
-		emitter->UpdateData();
 
 		if (!emitter->GetPositions().empty())
 			m_geometryPass->AddEmitter(emitter);
-	}	
+	}
+	ExecuteCommandList();
+
+	if (SUCCEEDED(m_fence->Signal(p_renderingManager->GetCommandQueue())))
+	{
+		//TODO:: Remove
+		m_fence->WaitCpu();
+	}
+	for (size_t i = 0; i < m_emitters->size(); i++)
+	{
+		emitter = m_emitters->at(i);
+		emitter->UpdateData();
+	}
 }
 
 void ParticlePass::Draw()

@@ -87,14 +87,14 @@ void IRender::QueueLight(ILight* light) const
 	p_lightQueue->push_back(light);
 }
 
-HRESULT IRender::p_createCommandList(const std::wstring & name)
+HRESULT IRender::p_createCommandList(const std::wstring & name, const D3D12_COMMAND_LIST_TYPE & type)
 {
 	HRESULT hr = 0;
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
 		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandAllocator(
-			D3D12_COMMAND_LIST_TYPE_DIRECT, 
+			type,
 			IID_PPV_ARGS(&p_commandAllocator[i]))))
 		{
 			return hr;
@@ -104,7 +104,7 @@ HRESULT IRender::p_createCommandList(const std::wstring & name)
 
 		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommandList(
 			0, 
-			D3D12_COMMAND_LIST_TYPE_DIRECT, 
+			type,
 			p_commandAllocator[i], 
 			nullptr, 
 			IID_PPV_ARGS(&p_commandList[i]))))

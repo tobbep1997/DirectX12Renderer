@@ -35,7 +35,7 @@ protected:
 	ID3D12CommandAllocator * p_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };
 	ID3D12GraphicsCommandList * p_commandList[FRAME_BUFFER_COUNT] = { nullptr };
 
-	HRESULT p_createCommandList(const std::wstring & name);
+	HRESULT p_createCommandList(const std::wstring & name, const D3D12_COMMAND_LIST_TYPE & type = D3D12_COMMAND_LIST_TYPE_DIRECT);
 	void p_releaseCommandList();
 
 	HRESULT p_createInstanceBuffer(const std::wstring & name, const UINT & bufferSize = 1024u * 64u);
