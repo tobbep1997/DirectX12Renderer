@@ -75,7 +75,6 @@ void ParticleEmitter::Release()
 {
 	SAFE_RELEASE(m_vertexOutputResource);
 
-	SAFE_RELEASE(m_calculationsOutputResource);
 
 
 	m_particles->clear();
@@ -88,6 +87,7 @@ void ParticleEmitter::Release()
 	{
 		SAFE_RELEASE(m_commandList[i]);
 		SAFE_RELEASE(m_commandAllocator[i]);
+		SAFE_RELEASE(m_calculationsOutputResource[i]);
 	}
 	Transform::Release();
 }
@@ -104,7 +104,7 @@ ID3D12Resource* ParticleEmitter::GetVertexResource() const
 
 ID3D12Resource* ParticleEmitter::GetCalcResource() const
 {
-	return this->m_calculationsOutputResource;
+	return this->m_calculationsOutputResource[*m_renderingManager->GetFrameIndex()];
 }
 
 ID3D12GraphicsCommandList* ParticleEmitter::GetCommandList() const
@@ -258,40 +258,43 @@ HRESULT ParticleEmitter::_createBuffer()
 	
 	if (FAILED(hr))
 		return hr;
-
-	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&resourceDesc,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-		nullptr,
-		IID_PPV_ARGS(&m_calculationsOutputResource))))
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		SET_NAME(m_calculationsOutputResource, L"Particle UAV output");
-
-		D3D12_BUFFER_UAV uav{};
-		uav.NumElements = 256;
-		uav.FirstElement = 0;
-		uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
-		uav.CounterOffsetInBytes = 0;
-		uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-		D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
-		unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
-		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-		unorderedAccessViewDesc.Buffer = uav;
-
-		m_calculationsOutputOffset = m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
-		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-		{ m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
-
-		m_renderingManager->GetDevice()->CreateUnorderedAccessView(
-			m_calculationsOutputResource,
+		if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			nullptr,
-			&unorderedAccessViewDesc,
-			handle);
-		m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+			IID_PPV_ARGS(&m_calculationsOutputResource[i]))))
+		{
+			m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			SET_NAME(m_calculationsOutputResource[i], L"Particle UAV output");
+
+			D3D12_BUFFER_UAV uav{};
+			uav.NumElements = 256;
+			uav.FirstElement = 0;
+			uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
+			uav.CounterOffsetInBytes = 0;
+			uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
+			unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+			unorderedAccessViewDesc.Buffer = uav;
+
+			m_calculationsOutputOffset = m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
+			const D3D12_CPU_DESCRIPTOR_HANDLE handle =
+			{ m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
+
+			m_renderingManager->GetDevice()->CreateUnorderedAccessView(
+				m_calculationsOutputResource[i],
+				nullptr,
+				&unorderedAccessViewDesc,
+				handle);
+			m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+		}
+
 	}
 	
 	return hr;
@@ -372,15 +375,19 @@ void ParticleEmitter::UpdateData()
 		DirectX::XMFLOAT4 ParticleInfo;
 	};
 
+	const UINT frameIndex = *m_renderingManager->GetFrameIndex();
+	if (frameIndex == UINT_MAX)
+		return;
+
 	OutputCalculations * outputArray = nullptr;
 	CD3DX12_RANGE readRange(0, sizeof(OutputCalculations) * m_particles->size());
-	if (SUCCEEDED(m_calculationsOutputResource->Map(0, &readRange, reinterpret_cast<void**>(&outputArray))))
+	if (SUCCEEDED(m_calculationsOutputResource[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&outputArray))))
 	{
 		for (size_t i = 0; i < m_particles->size(); i++)
 		{
 			m_particles->at(i).Position = outputArray[i].Position;
 			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;	
 		}
-		m_calculationsOutputResource->Unmap(0, &readRange);
+		m_calculationsOutputResource[frameIndex]->Unmap(0, &readRange);
 	}
 }

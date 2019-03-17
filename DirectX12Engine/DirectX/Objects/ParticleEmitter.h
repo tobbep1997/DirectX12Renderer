@@ -90,7 +90,7 @@ private:
 	ID3D12Resource * m_vertexOutputResource = nullptr;
 	SIZE_T m_vertexOutputOffset = 0;
 
-	ID3D12Resource * m_calculationsOutputResource = nullptr;
+	ID3D12Resource * m_calculationsOutputResource[FRAME_BUFFER_COUNT] = { nullptr };
 	SIZE_T m_calculationsOutputOffset = 0;
 
 	ID3D12GraphicsCommandList * m_commandList[FRAME_BUFFER_COUNT] = { nullptr };

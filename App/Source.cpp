@@ -119,7 +119,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
-		const int pointLightSize = 1;
+		const int pointLightSize = 3;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
@@ -132,6 +132,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			pointLights[i]->SetRadius(7.5f);
 			pointLights[i]->SetColor(1, 1, 1);
 			pointLights[i]->Update();
+			pointLights[i]->SetCastShadows(true);
 		}
 
 		DirectionalLight* directionalLight = new DirectionalLight(renderingManager, *window);
@@ -184,7 +185,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			directionalLight->Queue();
 			for (UINT i = 0; i < pointLightSize; i++)
 			{
-				//pointLights[i]->Queue();
+				pointLights[i]->Queue();
 			}
 			//directionalLight2->Queue();
 

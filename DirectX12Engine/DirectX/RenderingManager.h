@@ -45,6 +45,7 @@ public:
 
 	UINT64 * GetFenceValues();
 	UINT * GetFrameIndex();
+	const UINT & GetPrevFrameIndex() const;
 	UINT * GetRTVDescriptorSize();
 
 	GeometryPass * GetGeometryPass() const;
@@ -84,6 +85,7 @@ private:
 	UINT64						m_fenceValue[FRAME_BUFFER_COUNT]{ 0,0,0 };
 
 	UINT m_frameIndex = 0;
+	UINT m_prevFrameIndex = UINT_MAX;
 	UINT m_rtvDescriptorSize = 0;
 
 	HRESULT _flush(const Camera & camera, const float & deltaTime);

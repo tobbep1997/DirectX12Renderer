@@ -59,7 +59,7 @@ HRESULT ParticlePass::Init()
 	{
 		return hr;
 	}
-	if (FAILED(hr = m_fence->CreateFence(L"Particle fence", p_renderingManager->GetCommandQueue())))
+	if (FAILED(hr = m_fence->CreateFence(L"Particle fence")))
 	{		
 		return hr;
 	}
@@ -74,7 +74,6 @@ HRESULT ParticlePass::Init()
 
 void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 {
-	UINT offsets[MAX_EMITTERS];
 	struct ParticleInfoBuffer
 	{
 		DirectX::XMFLOAT4	CameraPosition;
@@ -88,7 +87,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		camera.GetPosition().z,
 		camera.GetPosition().w);
 
-	UINT offset = 0;
+	UINT offset = 0;	
 	for (size_t i = 0; i < m_emitters->size() && i < MAX_EMITTERS; i++)
 	{
 		m_emitters->at(i)->UpdateEmitter(deltaTime);
@@ -122,7 +121,6 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 			offset += sizeof(ParticleBuffer);
 		}
 		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), static_cast<UINT>(i) * sizeof(ParticleInfoBuffer));
-		offsets[i] = sizeof(ParticleBuffer);
 	}
 
 	ParticleEmitter * emitter = nullptr;
@@ -131,7 +129,6 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		emitter = m_emitters->at(i);
 
 		ID3D12GraphicsCommandList * commandList = emitter->GetCommandList();
-		emitter->UpdateData();
 		emitter->OpenCommandList();
 
 
@@ -153,13 +150,16 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
 
-		// ReSharper disable once CppExpressionWithoutSideEffects
-		emitter->ExecuteCommandList();
+		if (FAILED(emitter->ExecuteCommandList()))
+			continue;
 
+		if (SUCCEEDED(m_fence->Signal(p_renderingManager->GetCommandQueue())))
+		{
+			//TODO:: Remove
+			m_fence->WaitCpu();
+		}
 
-
-		//m_fence->WaitForCommandList();
-
+		emitter->UpdateData();
 
 		if (!emitter->GetPositions().empty())
 			m_geometryPass->AddEmitter(emitter);

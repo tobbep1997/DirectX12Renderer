@@ -388,6 +388,11 @@ UINT* RenderingManager::GetFrameIndex()
 	return &this->m_frameIndex;
 }
 
+const UINT& RenderingManager::GetPrevFrameIndex() const
+{
+	return this->m_prevFrameIndex;
+}
+
 UINT* RenderingManager::GetRTVDescriptorSize()
 {
 	return &this->m_rtvDescriptorSize;
@@ -526,7 +531,7 @@ ID3D12CommandQueue* RenderingManager::GetCommandQueue() const
 HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
 {
 	HRESULT hr = 0;
-
+	m_prevFrameIndex = m_frameIndex;
 	if (updateFrame)
 		m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 

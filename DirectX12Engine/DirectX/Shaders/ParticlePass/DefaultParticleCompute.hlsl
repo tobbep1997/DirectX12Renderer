@@ -31,7 +31,7 @@ void ParticleCalculations(inout float4 position, inout float4 info, in float4 di
 
 
 
-[numthreads(256, 1, 1)]
+[numthreads(1, 1, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
     uint textures = 3;
