@@ -27,7 +27,7 @@ Texture2D positionTexture   : register(t0);
 Texture2D albdeoTexture     : register(t1);
 Texture2D normalTexture     : register(t2);
 Texture2D metallicTexture   : register(t3);
-Texture2D ssaoTexture : register(t4);
+Texture2D ssaoTexture		: register(t4);
 Texture2D reflectionTexture : register(t6);
 
 Texture2DArray shadowMap : register(t0, space1);
@@ -51,7 +51,6 @@ float4 main(VS_OUTPUT input) : SV_Target
         return albedo;
        
     float4 finalColor = float4(0, 0, 0, 1);
-
 
    
     for (uint i = 0; i < NumberOfLights.x; i++)

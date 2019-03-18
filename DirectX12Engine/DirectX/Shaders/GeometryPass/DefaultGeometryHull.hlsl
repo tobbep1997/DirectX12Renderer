@@ -5,6 +5,7 @@ struct VS_OUTPUT
     float4 normal : NORMAL;
     float3x3 TBN : TBN;
     float4 texCord : TEXCORD;
+	uint4 textureIndex : TEXTURE_INDEX;
 
     float tessFactor : TESSFACTOR;
 };
@@ -16,6 +17,7 @@ struct HS_OUTPUT
     float4 normal : NORMAL;
     float3x3 TBN : TBN;
     float4 texCord : TEXCORD;
+	uint4 textureIndex : TEXTURE_INDEX;
 };
 
 struct HS_CONSTANT_DATA_OUTPUT
@@ -69,7 +71,7 @@ HS_OUTPUT main(InputPatch<VS_OUTPUT, 3> p,
     hout.normal = p[i].normal;
     hout.TBN = p[i].TBN;
     hout.texCord = p[i].texCord;
-
+	hout.textureIndex = p[i].textureIndex;
     
     return hout;
 }

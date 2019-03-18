@@ -4,6 +4,7 @@
 #include "../WrapperFunctions/Functions/Instancing.h"
 
 class Camera;
+class X12BindlessTexture;
 
 class IRender
 {
@@ -31,6 +32,8 @@ protected:
 	std::vector<Instancing::InstanceGroup> * p_instanceGroups = nullptr;
 	ID3D12Resource * p_instanceBuffer = nullptr;
 	ID3D12Resource * p_intermediateInstanceBuffer = nullptr;
+	X12BindlessTexture * p_bindlessTexture = nullptr; 
+
 
 	ID3D12CommandAllocator * p_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };
 	ID3D12GraphicsCommandList * p_commandList[FRAME_BUFFER_COUNT] = { nullptr };

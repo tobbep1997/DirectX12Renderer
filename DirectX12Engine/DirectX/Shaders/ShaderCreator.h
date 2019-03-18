@@ -22,7 +22,7 @@ public:
 			D3D_COMPILE_STANDARD_FILE_INCLUDE,
 			entryPoint.c_str(),
 			target.c_str(),
-			0,
+			D3DCOMPILE_ENABLE_UNBOUNDED_DESCRIPTOR_TABLES,
 			0,
 			&blob,
 			&errorBlob

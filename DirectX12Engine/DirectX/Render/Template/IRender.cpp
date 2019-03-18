@@ -1,6 +1,7 @@
 #include  "DirectX12EnginePCH.h"
 #include "IRender.h"
 #include "DirectX/Render/WrapperFunctions/Functions/Instancing.h"
+#include "DirectX/Render/WrapperFunctions/X12BindlessTexture.h"
 
 void IRender::_updateWithThreads()
 {
@@ -36,6 +37,7 @@ IRender::~IRender()
 	SAFE_DELETE(p_lightQueue);
 	SAFE_DELETE(p_drawQueue);
 	SAFE_DELETE(p_instanceGroups);
+	SAFE_DELETE(p_bindlessTexture);
 }
 
 void IRender::ThreadUpdate(const Camera & camera, const float & deltaTime)
@@ -129,7 +131,7 @@ HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & 
 {
 	HRESULT hr = 0;
 
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
@@ -137,19 +139,25 @@ HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & 
 		nullptr,
 		IID_PPV_ARGS(&p_instanceBuffer))))
 	{
-		SET_NAME(p_instanceBuffer, name + L" intermediate INSTANCE BUFFER");
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&p_intermediateInstanceBuffer))))
-		{
-			SET_NAME(p_intermediateInstanceBuffer, name + L" intermediate INSTANCE BUFFER");
+		return hr;
 
-		}
 	}
+	SET_NAME(p_instanceBuffer, name + L" intermediate INSTANCE BUFFER");
+	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&p_intermediateInstanceBuffer))))
+	{
+		return hr;
+	}
+	SET_NAME(p_intermediateInstanceBuffer, name + L" intermediate INSTANCE BUFFER");
+
+	SAFE_NEW(p_bindlessTexture, new X12BindlessTexture());
+	p_bindlessTexture->ResetDescriptorHandle();
+
 	return hr;
 }
 
@@ -184,15 +192,34 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 	if (instanceGroupSize <= 0)
 		return;
 
+	UINT counter = 0;
+	for (size_t i = 0; i < instanceGroupSize; i++)
+	{
+		p_bindlessTexture->PushBackTexture(*p_instanceGroups->at(i).Albedo);
+		p_bindlessTexture->PushBackTexture(*p_instanceGroups->at(i).Normal);
+		p_bindlessTexture->PushBackTexture(*p_instanceGroups->at(i).Metallic);
+		p_bindlessTexture->PushBackTexture(*p_instanceGroups->at(i).Displacement);
+
+		for (UINT j = 0; j < p_instanceGroups->at(i).GetSize(); j++)
+		{
+			p_instanceGroups->at(i).Transforms[j].TextureIndex.x = counter;
+		}
+		counter += 4;
+	}
+
 	D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
 	if (!p_updateInstanceBuffer(instanceBufferView))
 		throw "FAILED TO UPDATE INSTANCE BUFFER";
+	
 
+	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
 	for (size_t i = 0; i < instanceGroupSize; i++)
 	{		
 
 		if (mapTextures)
-			p_instanceGroups->at(i).MapTextures(textureStartIndex, p_commandList[*p_renderingManager->GetFrameIndex()]);
+		{
+			p_bindlessTexture->SetGraphicsRootDescriptorTable(commandList, textureStartIndex);
+		}
 
 		D3D12_VERTEX_BUFFER_VIEW bufferArr[2] = 
 			{ 
@@ -209,6 +236,7 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 			static_cast<UINT>(i));
 
 	}
+	p_bindlessTexture->ResetDescriptorHandle();
 }
 
 void IRender::p_releaseInstanceBuffer()

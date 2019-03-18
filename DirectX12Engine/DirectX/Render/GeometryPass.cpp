@@ -250,25 +250,10 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 {
 	HRESULT hr;
 	
-	D3D12_DESCRIPTOR_RANGE albedoRangeTable;
-	D3D12_ROOT_DESCRIPTOR_TABLE albedoTable;
-	RenderingHelpClass::CreateRootDescriptorTable(albedoRangeTable, albedoTable, 0);
 
-	D3D12_DESCRIPTOR_RANGE normalRangeTable;
-	D3D12_ROOT_DESCRIPTOR_TABLE normalTable;
-	RenderingHelpClass::CreateRootDescriptorTable(normalRangeTable, normalTable, 1);
+	const D3D12_DESCRIPTOR_RANGE bindlessRange {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, -1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND };
+	const D3D12_ROOT_DESCRIPTOR_TABLE bindlessTable {1, &bindlessRange};
 	
-	D3D12_DESCRIPTOR_RANGE metallicRangeTable;
-	D3D12_ROOT_DESCRIPTOR_TABLE metallicTable;
-	RenderingHelpClass::CreateRootDescriptorTable(metallicRangeTable, metallicTable, 2);	
-
-	D3D12_DESCRIPTOR_RANGE displacementRangeTable;
-	D3D12_ROOT_DESCRIPTOR_TABLE displacementTable;
-	RenderingHelpClass::CreateRootDescriptorTable(displacementRangeTable, displacementTable, 0);
-
-	D3D12_DESCRIPTOR_RANGE displacementNormalRangeTable;
-	D3D12_ROOT_DESCRIPTOR_TABLE displacementNormalTable;
-	RenderingHelpClass::CreateRootDescriptorTable(displacementNormalRangeTable, displacementNormalTable, 1);
 
 	D3D12_ROOT_DESCRIPTOR rootDescriptor;
 	rootDescriptor.RegisterSpace = 0;
@@ -281,26 +266,10 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 	m_rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	m_rootParameters[1].Descriptor = rootDescriptor;
 	m_rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
-
+	   
 	m_rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[2].DescriptorTable = albedoTable;
-	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	m_rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[3].DescriptorTable = normalTable;
-	m_rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	
-	m_rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[4].DescriptorTable = metallicTable;
-	m_rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	m_rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[5].DescriptorTable = displacementTable;
-	m_rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
-
-	m_rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	m_rootParameters[6].DescriptorTable = displacementNormalTable;
-	m_rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+	m_rootParameters[2].DescriptorTable = bindlessTable;
+	m_rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 		   
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
@@ -404,7 +373,8 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 		{ "WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
 		{ "WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
 		{ "WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-		{ "WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
+		{ "WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "TEXTURE_INDEX", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
 	};
 
 	m_inputLayoutDesc.NumElements = sizeof(inputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);

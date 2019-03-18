@@ -191,6 +191,11 @@ void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootPar
 	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
 }
 
+const D3D12_CPU_DESCRIPTOR_HANDLE& Texture::GetCpuHandle() const
+{
+	return this->m_cpuHandle;
+}
+
 HRESULT Texture::_uploadTexture()
 {
 	HRESULT hr = 0;

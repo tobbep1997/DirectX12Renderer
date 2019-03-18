@@ -84,7 +84,7 @@ void ShadowPass::Draw()
 		p_commandList[*p_renderingManager->GetFrameIndex()]->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
 
 		m_constantLightBuffer->SetGraphicsRootConstantBufferView(0, counter * m_constantLightBufferPerObjectAlignedSize, p_commandList[*p_renderingManager->GetFrameIndex()]);
-
+		
 		p_drawInstance();
 
 		counter++;

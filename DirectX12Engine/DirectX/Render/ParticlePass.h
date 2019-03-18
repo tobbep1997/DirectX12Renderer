@@ -1,7 +1,7 @@
 #pragma once
 #include "Template/IRender.h"
 #include "WrapperFunctions/X12ConstantBuffer.h"
-#include "X12Fence.h"
+#include "WrapperFunctions/X12Fence.h"
 
 class ParticleEmitter;
 class X12ConstantBuffer;
