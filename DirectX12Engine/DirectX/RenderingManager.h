@@ -3,7 +3,7 @@
 #include <d3d12.h>
 #include <dxgi1_5.h>
 
-#define MAX_DESCRIPTOR_SIZE 1000
+#define MAX_DESCRIPTOR_SIZE 100000
 
 class SSAOPass;
 class DeferredRender;

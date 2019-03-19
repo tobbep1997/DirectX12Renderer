@@ -4,7 +4,6 @@
 #include "../WrapperFunctions/Functions/Instancing.h"
 
 class Camera;
-class X12BindlessTexture;
 
 class IRender
 {
@@ -17,6 +16,10 @@ private:
 	float m_deltaTime;
 
 	void _updateWithThreads();
+
+	ID3D12DescriptorHeap * m_gpuDescriptorHeap;
+	SIZE_T m_copyOffset;
+	SIZE_T m_resourceIncrementalSize;
 
 protected:
 	RenderingManager * p_renderingManager;
@@ -32,8 +35,6 @@ protected:
 	std::vector<Instancing::InstanceGroup> * p_instanceGroups = nullptr;
 	ID3D12Resource * p_instanceBuffer = nullptr;
 	ID3D12Resource * p_intermediateInstanceBuffer = nullptr;
-	X12BindlessTexture * p_bindlessTexture = nullptr; 
-
 
 	ID3D12CommandAllocator * p_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };
 	ID3D12GraphicsCommandList * p_commandList[FRAME_BUFFER_COUNT] = { nullptr };
@@ -41,10 +42,17 @@ protected:
 	HRESULT p_createCommandList(const std::wstring & name, const D3D12_COMMAND_LIST_TYPE & type = D3D12_COMMAND_LIST_TYPE_DIRECT);
 	void p_releaseCommandList();
 
+	void p_resetDescriptorHeap();
+	void p_setResourceDescriptorHeap(ID3D12GraphicsCommandList * commandList) const;
+	HRESULT p_createDescriptorHeap();
+	void p_releaseDescriptorHeap();
+	D3D12_GPU_DESCRIPTOR_HANDLE p_copyToDescriptorHeap(const D3D12_CPU_DESCRIPTOR_HANDLE & descriptorHandle, const UINT & numDescriptors = 1);
+	
+
 	HRESULT p_createInstanceBuffer(const std::wstring & name, const UINT & bufferSize = 1024u * 64u);
 	UINT64 p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferView) const;
 
-	void p_drawInstance(const UINT & textureStartIndex = 0, const BOOL & mapTextures = FALSE) const;
+	void p_drawInstance(const UINT & textureStartIndex = 0, const BOOL & mapTextures = FALSE);
 	void p_releaseInstanceBuffer();
 	
 public:

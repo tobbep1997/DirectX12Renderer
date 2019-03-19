@@ -23,6 +23,8 @@ public:
 	void CopyDescriptorHeap();
 	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
 
+	const D3D12_CPU_DESCRIPTOR_HANDLE & GetCpuDescriptorHeap() const;
+
 private:
 	UINT m_width = 0;
 	UINT m_height = 0;

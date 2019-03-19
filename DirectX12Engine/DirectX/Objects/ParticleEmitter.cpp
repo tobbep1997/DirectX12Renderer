@@ -182,6 +182,17 @@ X12ShaderResourceView* ParticleEmitter::GetShaderResourceView() const
 	return this->m_shaderResourceView;
 }
 
+D3D12_CPU_DESCRIPTOR_HANDLE ParticleEmitter::GetVertexCpuDescriptorHandle() const
+{
+	return { m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE ParticleEmitter::GetCalcCpuDescriptorHandle() const
+{
+	return { m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
+
+}
+
 HRESULT ParticleEmitter::_createCommandList()
 {
 	HRESULT hr = 0;

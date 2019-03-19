@@ -515,7 +515,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE RenderingManager::CopyToGpuDescriptorHeap(
 
 	m_copyOffset += m_resourceIncrementalSize * numDescriptors;
 
-	return { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + offset };
+	return { m_gpuDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + offset };
 }
 
 UINT64 * RenderingManager::GetFenceValues()

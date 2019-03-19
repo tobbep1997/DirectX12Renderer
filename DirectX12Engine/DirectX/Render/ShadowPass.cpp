@@ -96,10 +96,11 @@ void ShadowPass::Draw()
 			DirectionalLight* directionalLight = dynamic_cast<DirectionalLight*>(p_lightQueue->at(i));			
 
 			DirectX::XMFLOAT4X4A arr[1] = { directionalLight->GetCamera()->GetViewProjectionMatrix() };
-
-			p_renderingManager->GetDeferredRender()->AddShadowMap(
-				directionalLight->GetDepthStencil()->GetResource(),
-				arr);
+			if (directionalLight->GetDepthStencil()->GetCpuDescriptorHeap().ptr != 0)
+				p_renderingManager->GetDeferredRender()->AddShadowMap(
+					directionalLight->GetDepthStencil()->GetCpuDescriptorHeap(),
+					arr,
+					1);
 		}
 		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
 		{
@@ -110,10 +111,11 @@ void ShadowPass::Draw()
 			{
 				arr[k] = pointLight->GetCameras()[k]->GetViewProjectionMatrix();
 			}
-
-			p_renderingManager->GetDeferredRender()->AddShadowMap(
-				pointLight->GetDepthStencil()->GetResource(),
-				arr);			
+			if (pointLight->GetDepthStencil()->GetCpuDescriptorHeap().ptr != 0)
+				p_renderingManager->GetDeferredRender()->AddShadowMap(
+					pointLight->GetDepthStencil()->GetCpuDescriptorHeap(),
+					arr,
+					1);			
 		}
 	}
 	ExecuteCommandList();

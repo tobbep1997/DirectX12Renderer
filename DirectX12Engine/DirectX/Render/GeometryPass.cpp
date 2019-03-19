@@ -42,7 +42,8 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 {	
 	OpenCommandList(m_pipelineState);
 	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
-	p_renderingManager->ResourceDescriptorHeap(commandList);
+	//p_renderingManager->ResourceDescriptorHeap(commandList);
+	p_setResourceDescriptorHeap(commandList);
 
 	m_cameraValues.CameraPosition = DirectX::XMFLOAT4A(camera.GetPosition().x,
 		camera.GetPosition().y,
@@ -100,8 +101,10 @@ void GeometryPass::Draw()
 		for (size_t i = 0; i < emitterSize; i++)
 		{
 			emitter = m_emitters->at(i);
-			emitter->GetShaderResourceView()->CopyDescriptorHeap();
-			emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, commandList);
+			const D3D12_GPU_DESCRIPTOR_HANDLE handle = p_copyToDescriptorHeap(emitter->GetShaderResourceView()->GetCpuDescriptorHandle(), emitter->GetShaderResourceView()->GetResource()->GetDesc().DepthOrArraySize);
+			//emitter->GetShaderResourceView()->CopyDescriptorHeap();
+			//emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, commandList);
+			commandList->SetGraphicsRootDescriptorTable(1, handle);
 			commandList->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
 
 			commandList->DrawInstanced(
@@ -135,6 +138,7 @@ void GeometryPass::Clear()
 	this->p_lightQueue->clear();
 	this->m_emitters->clear();
 	Instancing::ClearInstanceGroup(p_instanceGroups);
+	p_resetDescriptorHeap();
 }
 
 void GeometryPass::Release()
@@ -150,6 +154,7 @@ void GeometryPass::Release()
 
 	SAFE_RELEASE(m_bundleCommandAllocator);
 
+	p_releaseDescriptorHeap();
 	p_releaseInstanceBuffer();
 	p_releaseCommandList();
 
@@ -165,6 +170,7 @@ void GeometryPass::Release()
 		SAFE_RELEASE(m_bundleCommandList[i]);
 	}
 
+
 	m_cameraBuffer->Release();
 	SAFE_DELETE(m_cameraBuffer);
 }
@@ -178,54 +184,69 @@ HRESULT GeometryPass::_preInit()
 {
 	HRESULT hr;
 
-	if (SUCCEEDED(hr = p_createCommandList(L"Geometry")))
+	if (FAILED(hr = p_createCommandList(L"Geometry")))
 	{
-		if (SUCCEEDED(hr = OpenCommandList()))
-		{
-			if (SUCCEEDED(hr = _initID3D12RootSignature()))
-			{
-				if (SUCCEEDED(hr = _initShaders()))
-				{
-					if (SUCCEEDED(hr = _initID3D12PipelineState()))
-					{
-						if (SUCCEEDED(hr = _createViewport()))
-						{
-							SAFE_NEW(m_depthStencil, new X12DepthStencil(p_renderingManager, *p_window, nullptr));
-							if (SUCCEEDED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
-								0, 0,
-								1, TRUE)))
-							{								
-								for (UINT i = 0; i < RENDER_TARGETS; i++)									
-									SAFE_NEW(m_renderTarget[i], new X12RenderTargetView(p_renderingManager, *p_window, nullptr));
-								for (UINT i = 0; i < RENDER_TARGETS; i++)
-								{
-									if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
-										0, 0,
-										1,
-										TRUE,
-										RENDER_TARGET_FORMAT)))
-									{
-										return hr;
-									}
-								}
-								if (SUCCEEDED(hr = p_createInstanceBuffer(L"Geometry")))
-								{
-									SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, nullptr));
+		return hr;		
+	}
+	if (FAILED(hr = OpenCommandList()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initID3D12RootSignature()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initShaders()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initID3D12PipelineState()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _createViewport()))
+	{
+		return hr;
+	}
+	
+	SAFE_NEW(m_depthStencil, new X12DepthStencil(p_renderingManager, *p_window, nullptr));
+	if (FAILED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
+		0, 0,
+		1, TRUE)))
+	{
+		return hr;		
+	}
 
-									if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(
-										L"Geometry camera",
-										&m_cameraValues,
-										sizeof(CameraBuffer))))
-									{
-										
-									}
-								}								
-							}
-						}
-					}
-				}
-			}
+	for (UINT i = 0; i < RENDER_TARGETS; i++)
+		SAFE_NEW(m_renderTarget[i], new X12RenderTargetView(p_renderingManager, *p_window, nullptr));
+	for (UINT i = 0; i < RENDER_TARGETS; i++)
+	{
+		if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
+			0, 0,
+			1,
+			TRUE,
+			RENDER_TARGET_FORMAT)))
+		{
+			return hr;
 		}
+	}
+	if (FAILED(hr = p_createInstanceBuffer(L"Geometry")))
+	{
+		return hr;
+	}
+
+	SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, nullptr));
+	if (FAILED(hr = m_cameraBuffer->CreateBuffer(
+		L"Geometry camera",
+		&m_cameraValues,
+		sizeof(CameraBuffer))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = p_createDescriptorHeap()))
+	{
+		return hr;
 	}
 
 	if (FAILED(hr = _createBundle()))	
@@ -374,7 +395,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 		{ "WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
 		{ "WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
 		{ "WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-		{ "TEXTURE_INDEX", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
+		{ "TEXTURE_INDEX", 0, DXGI_FORMAT_R32G32B32A32_UINT, 1, 64, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
 	};
 
 	m_inputLayoutDesc.NumElements = sizeof(inputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
