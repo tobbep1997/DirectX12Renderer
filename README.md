@@ -42,7 +42,7 @@ TODO::
 +Multi threading
 +Single DescriptorHeaps
 -Multiple Commandqueues
--CPU DescriptorHeaps
--Bindless
++CPU DescriptorHeaps
++Bindless
 -Multiple GPU
 ```
