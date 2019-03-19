@@ -66,10 +66,10 @@ DS_OUTPUT main(
     output.TBN = patch[0].TBN;
 	output.textureIndex = patch[0].textureIndex;
 
-	float height = length(BindlessMap[patch[0].textureIndex.x + 4].SampleLevel(defaultSampler, output.texCord.xy, 0).rgb);
+	float height = length(BindlessMap[patch[0].textureIndex.x + 3].SampleLevel(defaultSampler, output.texCord.xy, 0).rgb);
     height = clamp(height, 0.0f, 1.0f);
 
-    float4 normal = float4(normalize(output.normal.xyz + mul((2.0f * BindlessMap[patch[0].textureIndex.x + 2].SampleLevel(defaultSampler, output.texCord.xy, 0).xyz - 1.0f), output.TBN)), 0);
+    float4 normal = float4(normalize(output.normal.xyz + mul((2.0f * BindlessMap[patch[0].textureIndex.x + 1].SampleLevel(defaultSampler, output.texCord.xy, 0).xyz - 1.0f), output.TBN)), 0);
 
     output.worldPos += (0.05f * (height - 1.0f)) * normal;
 

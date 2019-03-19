@@ -102,8 +102,7 @@ void GeometryPass::Draw()
 		{
 			emitter = m_emitters->at(i);
 			const D3D12_GPU_DESCRIPTOR_HANDLE handle = p_copyToDescriptorHeap(emitter->GetShaderResourceView()->GetCpuDescriptorHandle(), emitter->GetShaderResourceView()->GetResource()->GetDesc().DepthOrArraySize);
-			//emitter->GetShaderResourceView()->CopyDescriptorHeap();
-			//emitter->GetShaderResourceView()->SetGraphicsRootDescriptorTable(1, commandList);
+
 			commandList->SetGraphicsRootDescriptorTable(1, handle);
 			commandList->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
 

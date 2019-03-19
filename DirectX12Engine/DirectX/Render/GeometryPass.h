@@ -10,7 +10,7 @@ class GeometryPass :
 {
 private:
 
-	static const UINT ROOT_PARAMETERS = 10;
+	static const UINT ROOT_PARAMETERS = 3;
 	static const UINT PARTICLE_ROOT_PARAMETERS = 2;
 	static const UINT NUM_BUFFERS = 2;
 
