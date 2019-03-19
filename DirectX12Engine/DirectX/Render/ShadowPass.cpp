@@ -115,7 +115,7 @@ void ShadowPass::Draw()
 				p_renderingManager->GetDeferredRender()->AddShadowMap(
 					pointLight->GetDepthStencil()->GetCpuDescriptorHeap(),
 					arr,
-					1);			
+					pointLight->GetNumRenderTargets());			
 		}
 	}
 	ExecuteCommandList();

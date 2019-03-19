@@ -45,7 +45,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		TRUE,
+		FALSE,
 		FALSE))
 	{
 		Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);
@@ -119,13 +119,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
 
-		const int pointLightSize = 0;
+		const int pointLightSize = 1;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
 			pointLights[i]->Init();
-			pointLights[i]->SetPosition(0,1,0);
+			//pointLights[i]->SetPosition((rand() % 11) - 5, 1, (rand() % 11) - 5);
+			pointLights[i]->SetPosition(0,2,0);
 			pointLights[i]->SetIntensity(15.5f);
 			pointLights[i]->SetDropOff(2.0f);
 			pointLights[i]->SetPow(1.5f);

@@ -11,7 +11,7 @@ constexpr auto MAX_SHADOWS = 1024u;
 class DeferredRender : public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 10;
+	static const UINT ROOT_PARAMETERS = 11;
 
 	struct LightStructuredBuffer
 	{
@@ -27,8 +27,12 @@ private:
 
 	struct ShadowLightBuffer
 	{
-		DirectX::XMINT4 Values;
-		DirectX::XMFLOAT4X4A ViewProjection[MAX_SHADOWS];
+		DirectX::XMUINT4 Values;
+	};
+	struct ShadowLightMatrixBuffer
+	{		
+		DirectX::XMUINT4 Size;
+		DirectX::XMFLOAT4X4A ViewProjection[6];
 	};
 
 	struct ShadowMap
@@ -89,12 +93,14 @@ private:
 
 	X12ConstantBuffer * m_lightBuffer = nullptr;
 	X12ConstantBuffer * m_lightTable = nullptr;
+
 	X12ConstantBuffer * m_shadowBuffer = nullptr;
+	X12ConstantBuffer * m_shadowStructuredBuffer = nullptr;
 
 	X12ShaderResourceView * m_shaderResourceView = nullptr;
 	X12BindlessTexture * m_bindlessTexture = nullptr;
 
-	ShadowLightBuffer m_shadowValues{};
+	
 
 	std::vector<ShadowMap*>*m_shadowMaps = nullptr;
 	

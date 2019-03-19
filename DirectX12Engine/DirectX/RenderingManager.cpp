@@ -340,7 +340,7 @@ void RenderingManager::WaitForFrames()
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
 	{
 		m_frameIndex = i;
-		_waitForPreviousFrame(FALSE);
+		_waitForPreviousFrame(FALSE, TRUE);
 	}
 }
 
@@ -529,7 +529,7 @@ ID3D12CommandQueue* RenderingManager::GetCommandQueue() const
 	return this->m_commandQueue;
 }
 
-HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
+HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame, const BOOL & waitOnCpu)
 {
 	HRESULT hr = 0;
 	m_prevFrameIndex = m_frameIndex;
@@ -543,9 +543,10 @@ HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
 		{
 			return hr;
 		}
-		//if (!updateFrame)
-		m_commandQueue->Wait(m_fence[m_frameIndex], m_fenceValue[m_frameIndex]);
-			//WaitForSingleObject(m_fenceEvent, INFINITE);
+		if (!waitOnCpu)
+			m_commandQueue->Wait(m_fence[m_frameIndex], m_fenceValue[m_frameIndex]);
+		else
+			WaitForSingleObject(m_fenceEvent, INFINITE);
 	}
 	m_fenceValue[m_frameIndex]++;
 	

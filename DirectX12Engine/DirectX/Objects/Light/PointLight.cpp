@@ -79,7 +79,7 @@ BOOL PointLight::Init()
 		return FALSE;
 	HRESULT hr = 0;
 
-	if (FAILED(hr = p_createDirectXContext(6u)))
+	if (FAILED(hr = p_createDirectXContext(6u, TRUE)))
 	{
 		return FALSE;
 	}

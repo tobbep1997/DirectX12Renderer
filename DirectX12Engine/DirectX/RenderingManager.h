@@ -93,7 +93,7 @@ private:
 	void _clear();
 
 	HRESULT _updatePipeline(const Camera & camera, const float & deltaTime);
-	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE);
+	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE, const BOOL & waitOnCpu = FALSE);
 
 	HRESULT _checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const;
 	HRESULT _createCommandQueue();

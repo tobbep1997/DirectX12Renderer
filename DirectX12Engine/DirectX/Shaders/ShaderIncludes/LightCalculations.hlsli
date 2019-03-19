@@ -116,6 +116,13 @@ float TexelSize(Texture2DArray tTexture)
     return 1.0f / width;
 }
 
+uint GetArraySize(Texture2DArray tTexture)
+{
+    uint arraySize, dummy;
+    tTexture.GetDimensions(0, dummy, dummy, arraySize, dummy);
+    return arraySize;
+}
+
 float TexelSize(Texture2D tTexture)
 {
     float width, height, element;
@@ -131,8 +138,7 @@ float2 TexelSize2(Texture2D tTexture)
 }
 
 int ShadowCalculations(Texture2DArray shadowMap, uint index, SamplerComparisonState samplerState, in float texelSize, in float4 fragmentLightPos, inout float shadowCoeff, in int PFCSampleRate = 1, in float min = 0.0f, in float max = 1.0f)
-{    
-    
+{        
     if (abs(fragmentLightPos.x) > 1 || abs(fragmentLightPos.y) > 1)
         return 0;
 
@@ -142,17 +148,17 @@ int ShadowCalculations(Texture2DArray shadowMap, uint index, SamplerComparisonSt
     float epsilon = 0.01f;
     float divider = 0.0f;
     float currentShadowCoeff = 1.0f;
-       
 
     for (int x = -PFCSampleRate; x <= PFCSampleRate; ++x)
     {
         for (int y = -PFCSampleRate; y <= PFCSampleRate; ++y)
         {
             smTex = baseUV + (float2(x, y) * texelSize);
-            currentShadowCoeff += shadowMap.SampleCmpLevelZero(samplerState, float3(smTex.x, smTex.y, index), depth - epsilon).r;
+            currentShadowCoeff += shadowMap.SampleCmpLevelZero(samplerState, float3(smTex.xy, index), depth - epsilon).r;
             divider += 1.0f;
         }
     }
+    
     currentShadowCoeff /= divider;
     shadowCoeff += currentShadowCoeff;
     return 1;
