@@ -17,7 +17,7 @@ BOOL DirectionalLight::Init()
 	if (!ILight::Init())
 		return FALSE;
 	m_camera->Init();
-	if (FAILED(p_createDirectXContext()))
+	if (FAILED(p_createDirectXContext(1, TRUE)))
 	{
 		return FALSE;
 	}

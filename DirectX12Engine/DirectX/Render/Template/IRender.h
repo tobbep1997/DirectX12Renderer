@@ -17,6 +17,10 @@ private:
 
 	void _updateWithThreads();
 
+	ID3D12DescriptorHeap * m_gpuDescriptorHeap;
+	SIZE_T m_copyOffset;
+	SIZE_T m_resourceIncrementalSize;
+
 protected:
 	RenderingManager * p_renderingManager;
 	const Window * p_window;
@@ -38,10 +42,17 @@ protected:
 	HRESULT p_createCommandList(const std::wstring & name, const D3D12_COMMAND_LIST_TYPE & type = D3D12_COMMAND_LIST_TYPE_DIRECT);
 	void p_releaseCommandList();
 
+	void p_resetDescriptorHeap();
+	void p_setResourceDescriptorHeap(ID3D12GraphicsCommandList * commandList) const;
+	HRESULT p_createDescriptorHeap();
+	void p_releaseDescriptorHeap();
+	D3D12_GPU_DESCRIPTOR_HANDLE p_copyToDescriptorHeap(const D3D12_CPU_DESCRIPTOR_HANDLE & descriptorHandle, const UINT & numDescriptors = 1);
+	
+
 	HRESULT p_createInstanceBuffer(const std::wstring & name, const UINT & bufferSize = 1024u * 64u);
 	UINT64 p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferView) const;
 
-	void p_drawInstance(const UINT & textureStartIndex = 0, const BOOL & mapTextures = FALSE) const;
+	void p_drawInstance(const UINT & textureStartIndex = 0, const BOOL & mapTextures = FALSE);
 	void p_releaseInstanceBuffer();
 	
 public:

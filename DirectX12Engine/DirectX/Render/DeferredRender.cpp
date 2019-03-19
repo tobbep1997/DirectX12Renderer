@@ -4,6 +4,7 @@
 #include "WrapperFunctions/RenderingHelpClass.h"
 #include "WrapperFunctions/X12ConstantBuffer.h"
 #include "WrapperFunctions/X12ShaderResourceView.h"
+#include "WrapperFunctions/X12BindlessTexture.h"
 
 #define SHADOW_SPACE	1
 #define LIGHT_SPACE		2
@@ -14,6 +15,7 @@
 #define METALLIC	3
 
 #define SHADOW_BUFFER	4
+#define SHADOW_STRUCTURED_BUFFER 10
 #define SHADOW_TEXTURE	5
 
 #define SSAO_TEXTURE	6
@@ -35,6 +37,8 @@ DeferredRender::DeferredRender(RenderingManager* renderingManager, const Window&
 	SAFE_NEW(m_lightTable, new X12ConstantBuffer(p_renderingManager, *p_window));
 	SAFE_NEW(m_shadowBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
 	SAFE_NEW(m_shaderResourceView, new X12ShaderResourceView(p_renderingManager, *p_window));
+	SAFE_NEW(m_shadowStructuredBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+
 
 	SAFE_NEW(m_shadowMaps, new std::vector<ShadowMap*>());
 }
@@ -86,29 +90,35 @@ void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i, commandList);
 	}
 
-	UINT index = 0;
-	m_shaderResourceView->BeginCopy(commandList);
-	for (UINT i = 0; i < m_shadowMaps->size() && i < MAX_SHADOWS && index < MAX_SHADOWS; i++)
+	struct Uint4
+	{	
+		UINT X, Y, Z, W;
+	} shadowValues;
+
+	ShadowLightMatrixBuffer matrixBuffer;
+	UINT offset = 0;
+	for (size_t i = 0; i < m_shadowMaps->size(); i++)
 	{
-		const D3D12_RESOURCE_DESC desc = m_shadowMaps->at(i)->Resource->GetDesc();
-		UINT currentMatrix = 0;
-		for (UINT pos = index; pos < desc.DepthOrArraySize + index; pos++)
+		matrixBuffer.Size.x = m_shadowMaps->at(i)->ViewProjectionSize;
+		for (UINT j = 0; j < m_shadowMaps->at(i)->ViewProjectionSize; j++)
 		{
-			m_shadowValues.ViewProjection[pos] = m_shadowMaps->at(i)->ViewProjection[currentMatrix++];
+			matrixBuffer.ViewProjection[j] = m_shadowMaps->at(i)->ViewProjection[j];
 		}
-		m_shaderResourceView->CopySubresource(index, m_shadowMaps->at(i)->Resource, commandList);
-		index += m_shadowMaps->at(i)->Resource->GetDesc().DepthOrArraySize;
+		m_bindlessTexture->PushBackCpuHandle(m_shadowMaps->at(i)->CpuHandle);
+
+		m_shadowStructuredBuffer->Copy(&matrixBuffer, sizeof(ShadowLightMatrixBuffer), offset);
+		offset += sizeof(ShadowLightMatrixBuffer);
 	}
-	m_shaderResourceView->EndCopy(commandList);
 
-
-	m_shadowValues.Values.x = index;
-
-	m_shadowBuffer->Copy(&m_shadowValues, sizeof(m_shadowValues));
+	shadowValues.X = static_cast<UINT>(m_shadowMaps->size());
+	m_shadowBuffer->Copy(&shadowValues, sizeof(Uint4));
 	m_shadowBuffer->SetGraphicsRootConstantBufferView(SHADOW_BUFFER, 0, commandList);
+	m_shadowStructuredBuffer->SetGraphicsRootShaderResourceView(SHADOW_STRUCTURED_BUFFER, 0, commandList);
 
-	m_shaderResourceView->CopyDescriptorHeap();
-	m_shaderResourceView->SetGraphicsRootDescriptorTable(SHADOW_TEXTURE, commandList);
+	//m_shaderResourceView->CopyDescriptorHeap();
+	//m_shaderResourceView->SetGraphicsRootDescriptorTable(SHADOW_TEXTURE, commandList);
+	m_bindlessTexture->SetGraphicsRootDescriptorTable(commandList, SHADOW_TEXTURE);
+	m_bindlessTexture->ResetDescriptorHandle();
 
 	if (m_ssao)
 	{
@@ -162,8 +172,13 @@ void DeferredRender::Release()
 	m_shaderResourceView->Release();
 	SAFE_DELETE(m_shaderResourceView);
 
+	m_shadowStructuredBuffer->Release();
+	SAFE_DELETE(m_shadowStructuredBuffer);
+
 	m_shadowBuffer->Release();
 	SAFE_DELETE(m_shadowBuffer);
+
+	SAFE_DELETE(m_bindlessTexture);
 }
 
 void DeferredRender::SetRenderTarget(X12RenderTargetView** renderTarget, const UINT& size)
@@ -177,19 +192,19 @@ void DeferredRender::SetReflection(X12RenderTargetView* renderTarget)
 	this->m_reflection = renderTarget;
 }
 
-void DeferredRender::AddShadowMap(
-	ID3D12Resource* resource,
-	DirectX::XMFLOAT4X4A const* ViewProjection) const
+void DeferredRender::AddShadowMap(const D3D12_CPU_DESCRIPTOR_HANDLE& cpuDescriptorHandle,
+	DirectX::XMFLOAT4X4A const* viewProjection, const UINT& size) const
 {
 	ShadowMap* sm = nullptr;
 	SAFE_NEW(sm, new ShadowMap());
-	sm->Resource = resource;
-	for (UINT i = 0; i < resource->GetDesc().DepthOrArraySize; i++)
+	sm->CpuHandle = cpuDescriptorHandle;
+	sm->ViewProjectionSize = size;
+	for (UINT i = 0; i < size; i++)
 	{
-		sm->ViewProjection[i] = ViewProjection[i];
+		sm->ViewProjection[i] = viewProjection[i];
 	}
-
 	m_shadowMaps->push_back(sm);
+
 }
 
 void DeferredRender::SetSSAO(X12RenderTargetView* renderTarget)
@@ -243,8 +258,17 @@ HRESULT DeferredRender::_preInit()
 	}
 	if (FAILED(hr = m_shadowBuffer->CreateBuffer(
 		L"Deferred Shadow matrix", 
-		&m_shadowValues, 
-		sizeof(ShadowLightBuffer))))
+		nullptr, 
+		0, 
+		4096 * 4096)))
+	{
+		return hr;
+	}
+	if (FAILED(hr = m_shadowStructuredBuffer->CreateBuffer(
+		L"Deferred Shadow structured buffer", 
+		nullptr, 
+		0, 
+		64 * 1024)))
 	{
 		return hr;
 	}
@@ -256,7 +280,7 @@ HRESULT DeferredRender::_preInit()
 	{
 		return hr;
 	}
-					
+	SAFE_NEW(m_bindlessTexture, new X12BindlessTexture());
 				
 	return hr;
 }
@@ -285,7 +309,7 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 
 	D3D12_DESCRIPTOR_RANGE shadowRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE shadowTable;
-	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 0, SHADOW_SPACE);
+	RenderingHelpClass::CreateRootDescriptorTable(shadowRangeTable, shadowTable, 1, SHADOW_SPACE, -1);
 
 	D3D12_DESCRIPTOR_RANGE ssaoRangeTable;
 	D3D12_ROOT_DESCRIPTOR_TABLE ssaoTable;
@@ -302,6 +326,10 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	D3D12_ROOT_DESCRIPTOR shadowRootDescriptor;
 	shadowRootDescriptor.RegisterSpace = SHADOW_SPACE;
 	shadowRootDescriptor.ShaderRegister = 0;
+
+	D3D12_ROOT_DESCRIPTOR shadowStructuredBuffer;
+	shadowStructuredBuffer.RegisterSpace = SHADOW_SPACE;
+	shadowStructuredBuffer.ShaderRegister = 0;
 
 	m_rootParameters[WORLD_POS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_rootParameters[WORLD_POS].DescriptorTable = worldPosTable;
@@ -342,6 +370,10 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 	m_rootParameters[LIGHT_TABLE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
 	m_rootParameters[LIGHT_TABLE].Descriptor = LightTable;
 	m_rootParameters[LIGHT_TABLE].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	m_rootParameters[SHADOW_STRUCTURED_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+	m_rootParameters[SHADOW_STRUCTURED_BUFFER].Descriptor = shadowStructuredBuffer;
+	m_rootParameters[SHADOW_STRUCTURED_BUFFER].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
 	RenderingHelpClass::CreateSampler(sampler, 0, 0, D3D12_SHADER_VISIBILITY_PIXEL);

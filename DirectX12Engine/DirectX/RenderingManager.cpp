@@ -291,6 +291,7 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	};
 	SAFE_RELEASE(m_debugLayer);
 	SAFE_RELEASE(m_gpuDescriptorHeap);
+	SAFE_RELEASE(m_cpuDescriptorHeap);
 
 	m_frameIndex = 0;
 	m_rtvDescriptorSize = 0;
@@ -339,7 +340,7 @@ void RenderingManager::WaitForFrames()
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; ++i)
 	{
 		m_frameIndex = i;
-		_waitForPreviousFrame(FALSE);
+		_waitForPreviousFrame(FALSE, TRUE);
 	}
 }
 
@@ -515,7 +516,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE RenderingManager::CopyToGpuDescriptorHeap(
 
 	m_copyOffset += m_resourceIncrementalSize * numDescriptors;
 
-	return { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + offset };
+	return { m_gpuDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + offset };
 }
 
 UINT64 * RenderingManager::GetFenceValues()
@@ -528,7 +529,7 @@ ID3D12CommandQueue* RenderingManager::GetCommandQueue() const
 	return this->m_commandQueue;
 }
 
-HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
+HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame, const BOOL & waitOnCpu)
 {
 	HRESULT hr = 0;
 	m_prevFrameIndex = m_frameIndex;
@@ -542,9 +543,10 @@ HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame)
 		{
 			return hr;
 		}
-		//if (!updateFrame)
-		m_commandQueue->Wait(m_fence[m_frameIndex], m_fenceValue[m_frameIndex]);
-			//WaitForSingleObject(m_fenceEvent, INFINITE);
+		if (!waitOnCpu)
+			m_commandQueue->Wait(m_fence[m_frameIndex], m_fenceValue[m_frameIndex]);
+		else
+			WaitForSingleObject(m_fenceEvent, INFINITE);
 	}
 	m_fenceValue[m_frameIndex]++;
 	

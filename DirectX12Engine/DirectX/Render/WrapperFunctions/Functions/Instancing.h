@@ -18,6 +18,7 @@ namespace Instancing
 			WorldMatrix = worldMatrix;
 		}
 		DirectX::XMFLOAT4X4 WorldMatrix;
+		DirectX::XMUINT4 TextureIndex;
 	};
 
 	struct InstanceGroup

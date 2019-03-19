@@ -1,5 +1,5 @@
 #pragma once
-#include "DirectX/Render/WrapperFunctions/Template/IX12Object.h"
+#include "Template/IX12Object.h"
 
 class X12Fence : public IX12Object
 {

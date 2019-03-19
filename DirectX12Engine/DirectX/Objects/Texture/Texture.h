@@ -27,6 +27,8 @@ public:
 	void CopyDescriptorHeap() const;
 	void MapTexture(RenderingManager * renderingManager, const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr) const;
 
+	const D3D12_CPU_DESCRIPTOR_HANDLE & GetCpuHandle() const;
+
 private:
 	RenderingManager * m_renderingManager;
 

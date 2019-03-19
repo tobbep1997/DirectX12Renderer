@@ -4,13 +4,14 @@
 class X12ConstantBuffer;
 class X12RenderTargetView;
 class X12ShaderResourceView;
+class X12BindlessTexture;
 
-constexpr auto MAX_SHADOWS = 32u;
+constexpr auto MAX_SHADOWS = 1024u;
 
 class DeferredRender : public IRender
 {
 private:
-	static const UINT ROOT_PARAMETERS = 10;
+	static const UINT ROOT_PARAMETERS = 11;
 
 	struct LightStructuredBuffer
 	{
@@ -26,13 +27,18 @@ private:
 
 	struct ShadowLightBuffer
 	{
-		DirectX::XMINT4 Values;
-		DirectX::XMFLOAT4X4A ViewProjection[MAX_SHADOWS];
+		DirectX::XMUINT4 Values;
+	};
+	struct ShadowLightMatrixBuffer
+	{		
+		DirectX::XMUINT4 Size;
+		DirectX::XMFLOAT4X4A ViewProjection[6];
 	};
 
 	struct ShadowMap
 	{
-		ID3D12Resource * Resource;
+		D3D12_CPU_DESCRIPTOR_HANDLE CpuHandle;
+		UINT ViewProjectionSize;
 		DirectX::XMFLOAT4X4A ViewProjection[6];
 	};
 
@@ -49,7 +55,7 @@ public:
 
 	void SetRenderTarget(X12RenderTargetView ** renderTarget, const UINT & size);
 	void SetReflection(X12RenderTargetView * renderTarget);
-	void AddShadowMap(ID3D12Resource * resource, DirectX::XMFLOAT4X4A const* ViewProjection) const;
+	void AddShadowMap(const D3D12_CPU_DESCRIPTOR_HANDLE & cpuDescriptorHandle, DirectX::XMFLOAT4X4A const* viewProjection, const UINT & size) const;
 
 	void SetSSAO(X12RenderTargetView * renderTarget);
 
@@ -87,11 +93,14 @@ private:
 
 	X12ConstantBuffer * m_lightBuffer = nullptr;
 	X12ConstantBuffer * m_lightTable = nullptr;
+
 	X12ConstantBuffer * m_shadowBuffer = nullptr;
+	X12ConstantBuffer * m_shadowStructuredBuffer = nullptr;
 
 	X12ShaderResourceView * m_shaderResourceView = nullptr;
+	X12BindlessTexture * m_bindlessTexture = nullptr;
 
-	ShadowLightBuffer m_shadowValues{};
+	
 
 	std::vector<ShadowMap*>*m_shadowMaps = nullptr;
 	

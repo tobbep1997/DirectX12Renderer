@@ -77,6 +77,9 @@ public:
 
 	X12ShaderResourceView * GetShaderResourceView() const;
 
+	D3D12_CPU_DESCRIPTOR_HANDLE GetVertexCpuDescriptorHandle() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCalcCpuDescriptorHandle() const;
+
 private:
 	HRESULT _createCommandList();
 	HRESULT _createBuffer();

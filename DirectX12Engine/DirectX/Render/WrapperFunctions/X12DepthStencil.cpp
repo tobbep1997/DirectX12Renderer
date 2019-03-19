@@ -169,6 +169,11 @@ void X12DepthStencil::SetGraphicsRootDescriptorTable(const UINT& rootParameterIn
 	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
 }
 
+const D3D12_CPU_DESCRIPTOR_HANDLE& X12DepthStencil::GetCpuDescriptorHeap() const
+{
+	return m_cpuHandle;
+}
+
 void X12DepthStencil::Release()
 {
 	SAFE_RELEASE(m_depthStencilBuffer);

@@ -23,6 +23,8 @@ public:
 
 	ID3D12Resource * GetResource() const;
 
+	const D3D12_CPU_DESCRIPTOR_HANDLE & GetCpuDescriptorHandle() const;
+
 	void Release() override;
 private:
 	UINT m_width = 0;

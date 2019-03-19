@@ -13,11 +13,18 @@ cbuffer LIGHT_BUFFER : register(b0, space2)
 
 StructuredBuffer<LIGHT_STRUCT> LIGHT_STRUCT_BUFFER : register(t0, space2);
 
+struct SHADOW_LIGHT
+{
+    uint4 size;
+    float4x4 viewProjection[6];
+};
 cbuffer SHADOW_BUFFER : register(b0, space1)
 {
-    int4 values;
-    float4x4 ShadowViewProjection[16];
+    uint4 values; //x == Number of lights
 }
+StructuredBuffer<SHADOW_LIGHT> SHADOW_LIGHT_BUFFER : register(t0, space1);
+
+Texture2DArray shadowMap[] : register(t1, space1);
 
 
 SamplerState defaultSampler : register(s0);
@@ -27,10 +34,9 @@ Texture2D positionTexture   : register(t0);
 Texture2D albdeoTexture     : register(t1);
 Texture2D normalTexture     : register(t2);
 Texture2D metallicTexture   : register(t3);
-Texture2D ssaoTexture : register(t4);
+Texture2D ssaoTexture		: register(t4);
 Texture2D reflectionTexture : register(t6);
 
-Texture2DArray shadowMap : register(t0, space1);
 
 
 float4 main(VS_OUTPUT input) : SV_Target
@@ -52,7 +58,6 @@ float4 main(VS_OUTPUT input) : SV_Target
        
     float4 finalColor = float4(0, 0, 0, 1);
 
-
    
     for (uint i = 0; i < NumberOfLights.x; i++)
     {
@@ -66,15 +71,18 @@ float4 main(VS_OUTPUT input) : SV_Target
     }
 
     int divider = 1;
-    for (int i = 0; i < values.x; i++)
+    for (uint k = 0; k < values.x; k++)
     {
-        divider += ShadowCalculations(shadowMap, 
-            i, 
-            shadowSampler, 
-            TexelSize(shadowMap), 
-            FragmentLightPos(worldPos, ShadowViewProjection[i]), 
+        for (uint j = 0; j < SHADOW_LIGHT_BUFFER[k].size.x; j++)
+        {
+            divider += ShadowCalculations(shadowMap[k],
+            j,
+            shadowSampler,
+            TexelSize(shadowMap[k]),
+            FragmentLightPos(worldPos, SHADOW_LIGHT_BUFFER[k].viewProjection[j]),
             shadowCoeff,
             1);
+        }
     }
     shadowCoeff = pow(shadowCoeff / divider, 2);
 

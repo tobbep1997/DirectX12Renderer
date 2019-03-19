@@ -55,6 +55,7 @@ HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& h
 		&rtvHeapDesc,
 		IID_PPV_ARGS(&m_rtvDescriptorHeap))))
 	{
+		SET_NAME(m_rtvDescriptorHeap, L"Render Target View Descriptor Heap");
 		D3D12_HEAP_PROPERTIES heapProperties{};
 		heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 

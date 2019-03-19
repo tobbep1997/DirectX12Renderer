@@ -1,6 +1,7 @@
 #include  "DirectX12EnginePCH.h"
 #include "IRender.h"
 #include "DirectX/Render/WrapperFunctions/Functions/Instancing.h"
+#include "DirectX/Render/WrapperFunctions/X12BindlessTexture.h"
 
 void IRender::_updateWithThreads()
 {
@@ -125,11 +126,59 @@ void IRender::p_releaseCommandList()
 	}
 }
 
+void IRender::p_resetDescriptorHeap()
+{
+	m_copyOffset = 0;
+}
+
+void IRender::p_setResourceDescriptorHeap(ID3D12GraphicsCommandList* commandList) const
+{
+	ID3D12DescriptorHeap* DescriptorHeaps[] = { m_gpuDescriptorHeap };
+	commandList->SetDescriptorHeaps(_countof(DescriptorHeaps), DescriptorHeaps);
+}
+
+HRESULT IRender::p_createDescriptorHeap()
+{
+	p_releaseDescriptorHeap();
+	m_resourceIncrementalSize = p_renderingManager->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	const D3D12_DESCRIPTOR_HEAP_DESC desc{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_DESCRIPTOR_SIZE, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 };
+	const HRESULT hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_gpuDescriptorHeap));
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+	SET_NAME(m_gpuDescriptorHeap, L"pass descriptor heap");
+	return hr;
+}
+
+void IRender::p_releaseDescriptorHeap()
+{
+	SAFE_RELEASE(m_gpuDescriptorHeap);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE IRender::p_copyToDescriptorHeap(const D3D12_CPU_DESCRIPTOR_HANDLE& descriptorHandle, const UINT& numDescriptors)
+{
+	if (numDescriptors == 0)
+		throw;
+	const SIZE_T offset = m_copyOffset;
+	const D3D12_CPU_DESCRIPTOR_HANDLE destHandle = { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_copyOffset };
+
+	p_renderingManager->GetDevice()->CopyDescriptorsSimple(
+		numDescriptors,
+		destHandle,
+		descriptorHandle,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	m_copyOffset += m_resourceIncrementalSize * numDescriptors;
+
+	return { m_gpuDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + offset };
+}
+
 HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & bufferSize)
 {
 	HRESULT hr = 0;
 
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
@@ -137,19 +186,23 @@ HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & 
 		nullptr,
 		IID_PPV_ARGS(&p_instanceBuffer))))
 	{
-		SET_NAME(p_instanceBuffer, name + L" intermediate INSTANCE BUFFER");
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&p_intermediateInstanceBuffer))))
-		{
-			SET_NAME(p_intermediateInstanceBuffer, name + L" intermediate INSTANCE BUFFER");
+		return hr;
 
-		}
 	}
+	SET_NAME(p_instanceBuffer, name + L" intermediate INSTANCE BUFFER");
+	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&p_intermediateInstanceBuffer))))
+	{
+		return hr;
+	}
+	SET_NAME(p_intermediateInstanceBuffer, name + L" intermediate INSTANCE BUFFER");
+
+
 	return hr;
 }
 
@@ -175,7 +228,7 @@ UINT64 IRender::p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferVi
 	return bufferSize;
 }
 
-void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapTextures) const
+void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapTextures)
 {
 	ID3D12GraphicsCommandList * gcl = p_commandList[*p_renderingManager->GetFrameIndex()] ? p_commandList[*p_renderingManager->GetFrameIndex()] : p_renderingManager->GetCommandList();
 
@@ -184,15 +237,40 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 	if (instanceGroupSize <= 0)
 		return;
 
+	D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle {0};
+
+	UINT counter = 0;
+	for (size_t i = 0; i < instanceGroupSize && mapTextures; i++)
+	{
+		if (counter == 0)
+			gpu_handle = p_copyToDescriptorHeap(p_instanceGroups->at(i).Albedo->GetCpuHandle(), p_instanceGroups->at(i).Albedo->GetResource()->GetDesc().DepthOrArraySize);
+		else
+			p_copyToDescriptorHeap(p_instanceGroups->at(i).Albedo->GetCpuHandle(), p_instanceGroups->at(i).Albedo->GetResource()->GetDesc().DepthOrArraySize);
+		p_copyToDescriptorHeap(p_instanceGroups->at(i).Normal->GetCpuHandle(), p_instanceGroups->at(i).Normal->GetResource()->GetDesc().DepthOrArraySize);
+		p_copyToDescriptorHeap(p_instanceGroups->at(i).Metallic->GetCpuHandle(), p_instanceGroups->at(i).Metallic->GetResource()->GetDesc().DepthOrArraySize);
+		p_copyToDescriptorHeap(p_instanceGroups->at(i).Displacement->GetCpuHandle(), p_instanceGroups->at(i).Displacement->GetResource()->GetDesc().DepthOrArraySize);
+
+		for (UINT j = 0; j < p_instanceGroups->at(i).GetSize(); j++)
+		{
+			p_instanceGroups->at(i).Transforms[j].TextureIndex.x = counter;
+		}
+		counter += 4;
+	}
+
 	D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
 	if (!p_updateInstanceBuffer(instanceBufferView))
 		throw "FAILED TO UPDATE INSTANCE BUFFER";
+	
 
+	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
 	for (size_t i = 0; i < instanceGroupSize; i++)
 	{		
 
 		if (mapTextures)
-			p_instanceGroups->at(i).MapTextures(textureStartIndex, p_commandList[*p_renderingManager->GetFrameIndex()]);
+		{
+			//p_bindlessTexture->SetGraphicsRootDescriptorTable(commandList, textureStartIndex);
+			commandList->SetGraphicsRootDescriptorTable(textureStartIndex, gpu_handle);
+		}
 
 		D3D12_VERTEX_BUFFER_VIEW bufferArr[2] = 
 			{ 
@@ -209,6 +287,7 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 			static_cast<UINT>(i));
 
 	}
+
 }
 
 void IRender::p_releaseInstanceBuffer()

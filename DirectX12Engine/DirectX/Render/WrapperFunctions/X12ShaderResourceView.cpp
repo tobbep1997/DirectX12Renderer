@@ -144,6 +144,11 @@ ID3D12Resource* X12ShaderResourceView::GetResource() const
 	return m_resource;
 }
 
+const D3D12_CPU_DESCRIPTOR_HANDLE& X12ShaderResourceView::GetCpuDescriptorHandle() const
+{
+	return m_cpuHandle;
+}
+
 void X12ShaderResourceView::Release()
 {
 	SAFE_RELEASE(m_resource);

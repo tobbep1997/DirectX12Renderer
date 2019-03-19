@@ -4,7 +4,9 @@ struct VS_INPUT
     float4 normal : NORMAL;
     float4 tangent : TANGENT;
     float4 texCord : TEXCORD;
+
     float4x4 worldMatrix : WORLD;
+	uint4 textureIndex : TEXTURE_INDEX;
 };
 
 
@@ -15,6 +17,7 @@ struct VS_OUTPUT
     float4 normal : NORMAL;
     float3x3 TBN : TBN;
     float4 texCord : TEXCORD;
+	uint4 textureIndex : TEXTURE_INDEX;
 
     float tessFactor : TESSFACTOR;
 };
@@ -50,6 +53,7 @@ VS_OUTPUT main(VS_INPUT input)
     float tess = saturate((MIN_TESS_DIST - distanceToCamera) / (MIN_TESS_DIST - MAX_TESS_DIST));
     output.tessFactor = tess * (MAX_TESS - MIN_TESS);
     output.tessFactor = MAX_TESS - output.tessFactor;
+	output.textureIndex = input.textureIndex;
 
     return output;
 }

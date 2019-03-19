@@ -5,6 +5,7 @@ struct DS_OUTPUT
     float4 normal : NORMAL;
     float3x3 TBN : TBN;
     float4 texCord : TEXCORD;
+	uint4 textureIndex : TEXTURE_INDEX;
 };
 
 // Output control point
@@ -15,6 +16,7 @@ struct HS_OUTPUT
     float4 normal : NORMAL;
     float3x3 TBN : TBN;
     float4 texCord : TEXCORD;
+	uint4 textureIndex : TEXTURE_INDEX;
 };
 
 // Output patch constant data.
@@ -34,8 +36,8 @@ cbuffer CAMERA_BUFFER : register(b0)
 }
 
 SamplerState defaultSampler : register(s0);
-Texture2D displacementMap : register(t0);
-Texture2D displacementNormalMap : register(t1);
+
+Texture2D BindlessMap[] : register(t0);
 
 [domain("tri")]
 DS_OUTPUT main(
@@ -62,12 +64,12 @@ DS_OUTPUT main(
     output.texCord.w = 0;
 
     output.TBN = patch[0].TBN;
+	output.textureIndex = patch[0].textureIndex;
 
-
-    float height = length(displacementMap.SampleLevel(defaultSampler, output.texCord.xy, 0).rgb);
+	float height = length(BindlessMap[patch[0].textureIndex.x + 4].SampleLevel(defaultSampler, output.texCord.xy, 0).rgb);
     height = clamp(height, 0.0f, 1.0f);
 
-    float4 normal = float4(normalize(output.normal.xyz + mul((2.0f * displacementNormalMap.SampleLevel(defaultSampler, output.texCord.xy, 0).xyz - 1.0f), output.TBN)), 0);
+    float4 normal = float4(normalize(output.normal.xyz + mul((2.0f * BindlessMap[patch[0].textureIndex.x + 2].SampleLevel(defaultSampler, output.texCord.xy, 0).xyz - 1.0f), output.TBN)), 0);
 
     output.worldPos += (0.05f * (height - 1.0f)) * normal;
 

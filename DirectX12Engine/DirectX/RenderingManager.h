@@ -3,7 +3,7 @@
 #include <d3d12.h>
 #include <dxgi1_5.h>
 
-#define MAX_DESCRIPTOR_SIZE 1000
+#define MAX_DESCRIPTOR_SIZE 100000
 
 class SSAOPass;
 class DeferredRender;
@@ -93,7 +93,7 @@ private:
 	void _clear();
 
 	HRESULT _updatePipeline(const Camera & camera, const float & deltaTime);
-	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE);
+	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE, const BOOL & waitOnCpu = FALSE);
 
 	HRESULT _checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const;
 	HRESULT _createCommandQueue();
