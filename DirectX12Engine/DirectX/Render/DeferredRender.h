@@ -32,6 +32,7 @@ private:
 	struct ShadowLightMatrixBuffer
 	{		
 		DirectX::XMUINT4 Size;
+		DirectX::XMFLOAT4 lightValues;
 		DirectX::XMFLOAT4X4A ViewProjection[6];
 	};
 
@@ -40,6 +41,7 @@ private:
 		D3D12_CPU_DESCRIPTOR_HANDLE CpuHandle;
 		UINT ViewProjectionSize;
 		DirectX::XMFLOAT4X4A ViewProjection[6];
+		ILight * Light;
 	};
 
 public:
@@ -55,7 +57,7 @@ public:
 
 	void SetRenderTarget(X12RenderTargetView ** renderTarget, const UINT & size);
 	void SetReflection(X12RenderTargetView * renderTarget);
-	void AddShadowMap(const D3D12_CPU_DESCRIPTOR_HANDLE & cpuDescriptorHandle, DirectX::XMFLOAT4X4A const* viewProjection, const UINT & size) const;
+	void AddShadowMap(const D3D12_CPU_DESCRIPTOR_HANDLE & cpuDescriptorHandle, DirectX::XMFLOAT4X4A const* viewProjection, const UINT & size, ILight * light) const;
 
 	void SetSSAO(X12RenderTargetView * renderTarget);
 

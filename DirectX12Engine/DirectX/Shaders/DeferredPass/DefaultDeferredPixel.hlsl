@@ -16,6 +16,7 @@ StructuredBuffer<LIGHT_STRUCT> LIGHT_STRUCT_BUFFER : register(t0, space2);
 struct SHADOW_LIGHT
 {
     uint4 size;
+    float4 lightValues;
     float4x4 viewProjection[6];
 };
 cbuffer SHADOW_BUFFER : register(b0, space1)
@@ -57,7 +58,6 @@ float4 main(VS_OUTPUT input) : SV_Target
         return albedo;
        
     float4 finalColor = float4(0, 0, 0, 1);
-
    
     for (uint i = 0; i < NumberOfLights.x; i++)
     {
@@ -73,6 +73,7 @@ float4 main(VS_OUTPUT input) : SV_Target
     int divider = 1;
     for (uint k = 0; k < values.x; k++)
     {
+        float currentShadowCoeff = 0;
         for (uint j = 0; j < SHADOW_LIGHT_BUFFER[k].size.x; j++)
         {
             divider += ShadowCalculations(shadowMap[k],
@@ -80,9 +81,12 @@ float4 main(VS_OUTPUT input) : SV_Target
             shadowSampler,
             TexelSize(shadowMap[k]),
             FragmentLightPos(worldPos, SHADOW_LIGHT_BUFFER[k].viewProjection[j]),
-            shadowCoeff,
+            currentShadowCoeff,
             1);
+
         }
+        currentShadowCoeff *= saturate(SHADOW_LIGHT_BUFFER[k].lightValues.x);
+        shadowCoeff += currentShadowCoeff;
     }
     shadowCoeff = pow(shadowCoeff / divider, 2);
 

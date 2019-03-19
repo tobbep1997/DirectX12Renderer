@@ -93,7 +93,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		}
 
 
-		const int floorSize = 10;
+		const int floorSize = 20;
 
 		Drawable * floor = new Drawable();
 		floor->SetPosition(0, -2, 0);
@@ -143,7 +143,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->GetCamera()->SetFocusPoint(TRUE);
 		directionalLight->GetCamera()->SetUp(1, 0, 0);
 		directionalLight->GetCamera()->Update();
-		directionalLight->SetIntensity(1.2f);
+		directionalLight->SetIntensity(0.4f);
 				
 		ParticleEmitter * emitter = new ParticleEmitter(
 			renderingManager, 

@@ -30,7 +30,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float currentAO = 0;
     float divider = 1;
 
-    int ssaoSize = 2;
+    int ssaoSize = 8;
 
     for (int x = -ssaoSize; x <= ssaoSize; ++x)
     {

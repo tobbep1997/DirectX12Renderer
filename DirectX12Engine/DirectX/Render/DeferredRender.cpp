@@ -100,6 +100,7 @@ void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 	for (size_t i = 0; i < m_shadowMaps->size(); i++)
 	{
 		matrixBuffer.Size.x = m_shadowMaps->at(i)->ViewProjectionSize;
+		matrixBuffer.lightValues.x = m_shadowMaps->at(i)->Light->GetIntensity();
 		for (UINT j = 0; j < m_shadowMaps->at(i)->ViewProjectionSize; j++)
 		{
 			matrixBuffer.ViewProjection[j] = m_shadowMaps->at(i)->ViewProjection[j];
@@ -193,12 +194,13 @@ void DeferredRender::SetReflection(X12RenderTargetView* renderTarget)
 }
 
 void DeferredRender::AddShadowMap(const D3D12_CPU_DESCRIPTOR_HANDLE& cpuDescriptorHandle,
-	DirectX::XMFLOAT4X4A const* viewProjection, const UINT& size) const
+	DirectX::XMFLOAT4X4A const* viewProjection, const UINT& size, ILight * light) const
 {
 	ShadowMap* sm = nullptr;
 	SAFE_NEW(sm, new ShadowMap());
 	sm->CpuHandle = cpuDescriptorHandle;
 	sm->ViewProjectionSize = size;
+	sm->Light = light;
 	for (UINT i = 0; i < size; i++)
 	{
 		sm->ViewProjection[i] = viewProjection[i];

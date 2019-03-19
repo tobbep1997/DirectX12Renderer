@@ -14,9 +14,9 @@ float multiplier(uint2 index)
 {
     float3x3 table =
     {
-        1.0f, 2.0f, 1.0f,
-        2.0f, 4.0f, 2.0f,
-        1.0f, 2.0f, 1.0f
+        1.0f,   4.0f,     1.0f,
+        4.0f,   10.0f,    4.0f,
+        1.0f,   4.0f,     1.0f
     };
 
     return table[index.x][index.y];
@@ -25,15 +25,16 @@ float multiplier(uint2 index)
 float multiplier(int2 pos, int radius, float centerStregth = 4.0f)
 {
     float l = length(float2(pos.x, pos.y));
-    return (radius- l) * centerStregth;
+    return pow(radius - l, centerStregth);
 }
 
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
     float finalColor = 0;
     float2 texelSize = TexelSize2(ssaoTexture);
-    int sampleRadius = 2;
+    int sampleRadius = 1;
 
+    //return float4(ssaoTexture.Sample(defaultSampler, input.UV.xy).r, 0, 0, 1);
 
     float2 smTex;
     float divider = 1.0f;
@@ -42,7 +43,8 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         for (int y = -sampleRadius; y <= sampleRadius; ++y)
         {
             smTex = input.UV.xy + (float2(x, y) * texelSize);
-            finalColor += ssaoTexture.Sample(defaultSampler, smTex).r * multiplier(int2(x, y), sampleRadius, 1.5);
+            uint2 index = ((float2(x, y) * 0.5) + 0.5) * 2;
+            finalColor += ssaoTexture.Sample(defaultSampler, smTex).r;
             divider += 1.0f;
         }
     }

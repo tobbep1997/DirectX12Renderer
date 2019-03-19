@@ -100,7 +100,8 @@ void ShadowPass::Draw()
 				p_renderingManager->GetDeferredRender()->AddShadowMap(
 					directionalLight->GetDepthStencil()->GetCpuDescriptorHeap(),
 					arr,
-					1);
+					1,
+					p_lightQueue->at(i));
 		}
 		else if (dynamic_cast<PointLight*>(p_lightQueue->at(i)))
 		{
@@ -115,7 +116,8 @@ void ShadowPass::Draw()
 				p_renderingManager->GetDeferredRender()->AddShadowMap(
 					pointLight->GetDepthStencil()->GetCpuDescriptorHeap(),
 					arr,
-					pointLight->GetNumRenderTargets());			
+					pointLight->GetNumRenderTargets(),
+					p_lightQueue->at(i));
 		}
 	}
 	ExecuteCommandList();

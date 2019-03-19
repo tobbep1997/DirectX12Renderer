@@ -71,8 +71,10 @@ DS_OUTPUT main(
 
     float4 normal = float4(normalize(output.normal.xyz + mul((2.0f * BindlessMap[patch[0].textureIndex.x + 1].SampleLevel(defaultSampler, output.texCord.xy, 0).xyz - 1.0f), output.TBN)), 0);
 
-    output.worldPos += (0.05f * (height - 1.0f)) * normal;
+    float finalHight = lerp(0, 0.01f, height);
 
+    //output.worldPos += (0.05f * (height - 1.0f)) * normal;
+    output.worldPos += finalHight * output.normal;
     output.pos = mul(output.worldPos, ViewProjection);
 	return output;
 }
