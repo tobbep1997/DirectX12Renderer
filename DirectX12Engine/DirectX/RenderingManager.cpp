@@ -291,6 +291,7 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	};
 	SAFE_RELEASE(m_debugLayer);
 	SAFE_RELEASE(m_gpuDescriptorHeap);
+	SAFE_RELEASE(m_cpuDescriptorHeap);
 
 	m_frameIndex = 0;
 	m_rtvDescriptorSize = 0;
