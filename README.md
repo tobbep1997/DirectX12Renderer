@@ -1,6 +1,7 @@
-# ID3D12HelpMe
-A simple DirectX12 Engine
+# DirectX 12 Renderer
+A simple DirectX12 Engine.
 
+![alt text](https://github.com/tobbep1997/DirectX12Renderer/blob/master/Capture.PNG)
 
 TODO::
 
