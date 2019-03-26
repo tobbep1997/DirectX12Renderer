@@ -41,11 +41,11 @@ HRESULT ParticlePass::Init()
 	const UINT nodeMask = p_renderingManager->GetSecondDevice() ? 1 : 0;
 	ID3D12Device * device = p_renderingManager->GetSecondDevice() ? p_renderingManager->GetSecondDevice() : p_renderingManager->GetDevice();
 
-	if (FAILED(hr = _initCommandQueue(device, type, nodeMask)))
+	if (FAILED(hr = _initCommandQueue(device, type, 0)))
 	{		
 		return hr;
 	}
-	if (FAILED(hr = _initCommandList(device, type, nodeMask)))
+	if (FAILED(hr = _initCommandList(device, type, 0)))
 	{		
 		return hr;
 	}
@@ -79,7 +79,7 @@ HRESULT ParticlePass::Init()
 		}	
 	}
 
-	if (FAILED(hr = m_fence->CreateFence(L"Particle fence")))
+	if (FAILED(hr = m_fence->CreateFence(L"Particle fence", p_renderingManager->GetSecondDevice())))
 	{		
 		return hr;
 	}
@@ -173,8 +173,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
-
-
+		
 	
 	}
 
@@ -200,8 +199,8 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 	for (size_t i = 0; i < m_emitters->size(); i++)
 	{
 		emitter = m_emitters->at(i);
-		if (!emitter->GetPositions().empty())
-			m_geometryPass->AddEmitter(emitter);
+		//if (!emitter->GetPositions().empty())
+		//	m_geometryPass->AddEmitter(emitter);
 	}
 
 }
@@ -342,7 +341,7 @@ HRESULT ParticlePass::_initID3D12RootSignature()
 		&signature,
 		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+		if (FAILED(hr = p_renderingManager->GetSecondDevice()->CreateRootSignature(
 			0,
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -380,7 +379,7 @@ HRESULT ParticlePass::_initPipelineState()
 	computePipelineStateDesc.pRootSignature = m_rootSignature;
 	computePipelineStateDesc.CS = m_computeShader;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateComputePipelineState(
+	if (FAILED(hr = p_renderingManager->GetSecondDevice()->CreateComputePipelineState(
 		&computePipelineStateDesc,
 		IID_PPV_ARGS(&m_computePipelineState))))
 	{

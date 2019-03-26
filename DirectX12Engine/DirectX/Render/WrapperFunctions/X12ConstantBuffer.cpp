@@ -67,9 +67,8 @@ HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UI
 
 	const UINT bufferSize = preAllocData ? preAllocData : 1024 * 64;
 	const D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
-	D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	heapProperties.CreationNodeMask = 1;
-	heapProperties.VisibleNodeMask = 1;
+	const D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	
 
 	ID3D12Device * device = p_renderingManager->GetSecondDevice();
 	if (!device)
@@ -77,6 +76,7 @@ HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UI
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
+
 		if (FAILED(hr = device->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
