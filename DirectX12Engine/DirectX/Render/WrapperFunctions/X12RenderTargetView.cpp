@@ -180,7 +180,7 @@ void X12RenderTargetView::SwitchToRTV(ID3D12GraphicsCommandList * commandList)
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 
-	const UINT frameIndex = *p_renderingManager->GetFrameIndex();;
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();;
 
 	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState[frameIndex])
 		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -192,7 +192,7 @@ void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 
-	const UINT frameIndex = *p_renderingManager->GetFrameIndex();;
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();;
 
 	if (D3D12_RESOURCE_STATE_RENDER_TARGET == m_currentState[frameIndex])
 		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
@@ -201,14 +201,14 @@ void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 
 void X12RenderTargetView::CopyDescriptorHeap()
 {
-	const UINT & frameIndex = *p_renderingManager->GetFrameIndex();
+	const UINT & frameIndex = p_renderingManager->GetFrameIndex();
 	m_gpuHandle[frameIndex] = p_renderingManager->CopyToGpuDescriptorHeap(m_cpuHandle[frameIndex], m_arraySize);
 }
 
 void X12RenderTargetView::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex,
 	ID3D12GraphicsCommandList* commandList)
 {
-	const UINT & frameIndex = *p_renderingManager->GetFrameIndex();
+	const UINT & frameIndex = p_renderingManager->GetFrameIndex();
 	if (m_gpuHandle[frameIndex].ptr == 0)
 		throw "GPU handle null";
 

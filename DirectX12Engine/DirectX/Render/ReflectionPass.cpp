@@ -24,7 +24,7 @@ HRESULT ReflectionPass::Init()
 	HRESULT hr = 0;
 	if (SUCCEEDED(hr = _preInit()))
 	{
-		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
+		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[p_renderingManager->GetFrameIndex()])))
 		{
 			
 		}
@@ -39,7 +39,7 @@ HRESULT ReflectionPass::Init()
 void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 {
 	OpenCommandList(m_pipelineState);
-	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+	ID3D12GraphicsCommandList * commandList = p_commandList[p_renderingManager->GetFrameIndex()];
 	p_renderingManager->ResourceDescriptorHeap(commandList);
 
 	m_cameraValues.Position = camera.GetPosition();
@@ -51,7 +51,7 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTargetView->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-		*p_renderingManager->GetFrameIndex(),
+		p_renderingManager->GetFrameIndex(),
 		m_renderTargetView->GetDescriptorSize());
 
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
@@ -75,7 +75,7 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 
 void ReflectionPass::Draw()
 {
-	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+	ID3D12GraphicsCommandList * commandList = p_commandList[p_renderingManager->GetFrameIndex()];
 
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 
@@ -384,9 +384,9 @@ HRESULT ReflectionPass::_createQuadBuffer()
 			vertexData.RowPitch = m_vertexBufferSize;
 			vertexData.SlicePitch = m_vertexBufferSize;
 
-			UpdateSubresources(p_commandList[*p_renderingManager->GetFrameIndex()], m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
+			UpdateSubresources(p_commandList[p_renderingManager->GetFrameIndex()], m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
 
-			p_commandList[*p_renderingManager->GetFrameIndex()]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+			p_commandList[p_renderingManager->GetFrameIndex()]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 		}
 	}
 

@@ -64,7 +64,7 @@ HRESULT ParticlePass::Init()
 		return hr;
 	}
 
-	if (FAILED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
+	if (FAILED(hr = p_renderingManager->SignalGPU(p_commandList[p_renderingManager->GetFrameIndex()])))
 	{
 		return hr;
 	}	
@@ -130,7 +130,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 	{
 		emitter = m_emitters->at(i);
 
-		const UINT frameIndex = *p_renderingManager->GetFrameIndex();
+		const UINT frameIndex = p_renderingManager->GetFrameIndex();
 		ID3D12GraphicsCommandList * commandList = p_commandList[frameIndex];
 
 

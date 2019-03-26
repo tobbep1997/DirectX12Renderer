@@ -68,7 +68,7 @@ void X12ConstantBuffer::SetComputeRootConstantBufferView(const UINT& rootParamet
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 	
 	gcl->SetComputeRootConstantBufferView(rootParameterIndex,
-		m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
+		m_constantBuffer[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
 }
 
 void X12ConstantBuffer::SetComputeRootShaderResourceView(const UINT& rootParameterIndex, const UINT& offset,
@@ -77,7 +77,7 @@ void X12ConstantBuffer::SetComputeRootShaderResourceView(const UINT& rootParamet
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 
 	gcl->SetComputeRootShaderResourceView(rootParameterIndex,
-		m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
+		m_constantBuffer[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
 }
 
 void X12ConstantBuffer::SetGraphicsRootConstantBufferView(const UINT& rootParameterIndex, 
@@ -87,7 +87,7 @@ void X12ConstantBuffer::SetGraphicsRootConstantBufferView(const UINT& rootParame
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 
 	gcl->SetGraphicsRootConstantBufferView(rootParameterIndex,
-		m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
+		m_constantBuffer[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
 }
 
 void X12ConstantBuffer::SetGraphicsRootShaderResourceView(const UINT& rootParameterIndex, const UINT& offset,
@@ -96,12 +96,12 @@ void X12ConstantBuffer::SetGraphicsRootShaderResourceView(const UINT& rootParame
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 
 	gcl->SetGraphicsRootShaderResourceView(rootParameterIndex,
-		m_constantBuffer[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
+		m_constantBuffer[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
 }
 
 void X12ConstantBuffer::Copy(void const* data, const UINT& sizeOf, const UINT & offset)
 {
-	memcpy(m_constantBufferGPUAddress[*p_renderingManager->GetFrameIndex()] + offset, data, sizeOf);
+	memcpy(m_constantBufferGPUAddress[p_renderingManager->GetFrameIndex()] + offset, data, sizeOf);
 }
 
 void X12ConstantBuffer::Release()

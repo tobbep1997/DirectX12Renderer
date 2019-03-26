@@ -46,14 +46,14 @@ BOOL ParticleEmitter::Init()
 				{					
 					for (UINT i = 0; i < m_arraySize; i++)
 					{
-						m_shaderResourceView->BeginCopy(m_commandList[*m_renderingManager->GetFrameIndex()]);
+						m_shaderResourceView->BeginCopy(m_commandList[m_renderingManager->GetFrameIndex()]);
 
 						m_shaderResourceView->CopySubresource(i,
-							m_textures[i]->GetResource(), m_commandList[*m_renderingManager->GetFrameIndex()]);
+							m_textures[i]->GetResource(), m_commandList[m_renderingManager->GetFrameIndex()]);
 
-						m_shaderResourceView->EndCopy(m_commandList[*m_renderingManager->GetFrameIndex()]);
+						m_shaderResourceView->EndCopy(m_commandList[m_renderingManager->GetFrameIndex()]);
 					}
-					if (SUCCEEDED(hr = m_renderingManager->SignalGPU(m_commandList[*m_renderingManager->GetFrameIndex()])))
+					if (SUCCEEDED(hr = m_renderingManager->SignalGPU(m_commandList[m_renderingManager->GetFrameIndex()])))
 					{
 						
 					}
@@ -104,12 +104,12 @@ ID3D12Resource* ParticleEmitter::GetVertexResource() const
 
 ID3D12Resource* ParticleEmitter::GetCalcResource() const
 {
-	return this->m_calculationsOutputResource[*m_renderingManager->GetFrameIndex()];
+	return this->m_calculationsOutputResource[m_renderingManager->GetFrameIndex()];
 }
 
 ID3D12GraphicsCommandList* ParticleEmitter::GetCommandList() const
 {
-	return this->m_commandList[*m_renderingManager->GetFrameIndex()];
+	return this->m_commandList[m_renderingManager->GetFrameIndex()];
 }
 
 const std::vector<ParticleEmitter::Particle>& ParticleEmitter::GetPositions() const
@@ -120,10 +120,10 @@ const std::vector<ParticleEmitter::Particle>& ParticleEmitter::GetPositions() co
 HRESULT ParticleEmitter::OpenCommandList()
 {
 	HRESULT hr = 0;
-	const UINT frameIndex = *m_renderingManager->GetFrameIndex();
+	const UINT frameIndex = m_renderingManager->GetFrameIndex();
 	if (SUCCEEDED(hr = this->m_commandAllocator[frameIndex]->Reset()))
 	{
-		if (SUCCEEDED(hr = this->m_commandList[*m_renderingManager->GetFrameIndex()]->Reset(this->m_commandAllocator[frameIndex], nullptr)))
+		if (SUCCEEDED(hr = this->m_commandList[m_renderingManager->GetFrameIndex()]->Reset(this->m_commandAllocator[frameIndex], nullptr)))
 		{
 
 		}
@@ -134,9 +134,9 @@ HRESULT ParticleEmitter::OpenCommandList()
 HRESULT ParticleEmitter::ExecuteCommandList() const
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = m_commandList[*m_renderingManager->GetFrameIndex()]->Close()))
+	if (SUCCEEDED(hr = m_commandList[m_renderingManager->GetFrameIndex()]->Close()))
 	{
-		ID3D12CommandList* ppCommandLists[] = { m_commandList[*m_renderingManager->GetFrameIndex()] };
+		ID3D12CommandList* ppCommandLists[] = { m_commandList[m_renderingManager->GetFrameIndex()] };
 		m_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 	return hr;
@@ -386,7 +386,7 @@ void ParticleEmitter::UpdateData()
 		DirectX::XMFLOAT4 ParticleInfo;
 	};
 
-	const UINT frameIndex = *m_renderingManager->GetFrameIndex();
+	const UINT frameIndex = m_renderingManager->GetFrameIndex();
 	if (frameIndex == UINT_MAX)
 		return;
 

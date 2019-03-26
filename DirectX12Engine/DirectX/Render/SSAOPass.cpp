@@ -30,7 +30,7 @@ HRESULT SSAOPass::Init()
 	{
 		if (SUCCEEDED(hr = _preInit()))
 		{
-			if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
+			if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[p_renderingManager->GetFrameIndex()])))
 			{
 				m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 				m_vertexBufferView.StrideInBytes = sizeof(Vertex);
@@ -41,7 +41,7 @@ HRESULT SSAOPass::Init()
 
 	if (SUCCEEDED(hr = _initBlurPass()))
 	{
-		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(m_blurCommandList[*p_renderingManager->GetFrameIndex()])))
+		if (SUCCEEDED(hr = p_renderingManager->SignalGPU(m_blurCommandList[p_renderingManager->GetFrameIndex()])))
 		{
 			
 		}
@@ -58,13 +58,13 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 
 	OpenCommandList();
 
-	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+	ID3D12GraphicsCommandList * commandList = p_commandList[p_renderingManager->GetFrameIndex()];
 
 	p_renderingManager->ResourceDescriptorHeap(commandList);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_renderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-		*p_renderingManager->GetFrameIndex(),
+		p_renderingManager->GetFrameIndex(),
 		m_renderTarget->GetDescriptorSize());
 
 	m_renderTarget->Clear(rtvHandle, commandList);
@@ -95,12 +95,12 @@ void SSAOPass::Draw()
 {
 	_openCommandList();
 
-	ID3D12GraphicsCommandList * commandList = m_blurCommandList[*p_renderingManager->GetFrameIndex()];
+	ID3D12GraphicsCommandList * commandList = m_blurCommandList[p_renderingManager->GetFrameIndex()];
 
 	p_renderingManager->ResourceDescriptorHeap(commandList);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		m_blurRenderTarget->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-		*p_renderingManager->GetFrameIndex(),
+		p_renderingManager->GetFrameIndex(),
 		m_blurRenderTarget->GetDescriptorSize());
 
 	m_blurRenderTarget->Clear(rtvHandle, commandList);
@@ -517,10 +517,10 @@ HRESULT SSAOPass::_createLocalCommandList()
 HRESULT SSAOPass::_openCommandList()
 {
 	HRESULT hr = 0;
-	const UINT frameIndex = *p_renderingManager->GetFrameIndex();
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 	if (SUCCEEDED(hr = this->m_blurCommandAllocator[frameIndex]->Reset()))
 	{
-		if (SUCCEEDED(hr = this->m_blurCommandList[*p_renderingManager->GetFrameIndex()]->Reset(this->m_blurCommandAllocator[frameIndex], nullptr)))
+		if (SUCCEEDED(hr = this->m_blurCommandList[p_renderingManager->GetFrameIndex()]->Reset(this->m_blurCommandAllocator[frameIndex], nullptr)))
 		{
 
 		}
@@ -531,9 +531,9 @@ HRESULT SSAOPass::_openCommandList()
 HRESULT SSAOPass::_executeCommandList() const
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = m_blurCommandList[*p_renderingManager->GetFrameIndex()]->Close()))
+	if (SUCCEEDED(hr = m_blurCommandList[p_renderingManager->GetFrameIndex()]->Close()))
 	{
-		ID3D12CommandList* ppCommandLists[] = { m_blurCommandList[*p_renderingManager->GetFrameIndex()] };
+		ID3D12CommandList* ppCommandLists[] = { m_blurCommandList[p_renderingManager->GetFrameIndex()] };
 		p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 	return hr;
@@ -583,9 +583,9 @@ HRESULT SSAOPass::_createQuadBuffer()
 			vertexData.RowPitch = m_vertexBufferSize;
 			vertexData.SlicePitch = m_vertexBufferSize;
 
-			UpdateSubresources(p_commandList[*p_renderingManager->GetFrameIndex()], m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
+			UpdateSubresources(p_commandList[p_renderingManager->GetFrameIndex()], m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
 
-			p_commandList[*p_renderingManager->GetFrameIndex()]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+			p_commandList[p_renderingManager->GetFrameIndex()]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 		}
 	}
 	return hr;

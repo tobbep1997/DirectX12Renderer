@@ -384,9 +384,9 @@ ID3D12Fence* RenderingManager::GetFence() const
 	return *this->m_fence;
 }
 
-UINT* RenderingManager::GetFrameIndex()
+const UINT & RenderingManager::GetFrameIndex() const
 {
-	return &this->m_frameIndex;
+	return this->m_frameIndex;
 }
 
 const UINT& RenderingManager::GetPrevFrameIndex() const
@@ -394,9 +394,9 @@ const UINT& RenderingManager::GetPrevFrameIndex() const
 	return this->m_prevFrameIndex;
 }
 
-UINT* RenderingManager::GetRTVDescriptorSize()
+const UINT & RenderingManager::GetRTVDescriptorSize() const
 {
-	return &this->m_rtvDescriptorSize;
+	return this->m_rtvDescriptorSize;
 }
 
 GeometryPass* RenderingManager::GetGeometryPass() const

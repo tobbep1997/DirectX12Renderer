@@ -41,7 +41,7 @@ HRESULT GeometryPass::Init()
 void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 {	
 	OpenCommandList(m_pipelineState);
-	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+	ID3D12GraphicsCommandList * commandList = p_commandList[p_renderingManager->GetFrameIndex()];
 	//p_renderingManager->ResourceDescriptorHeap(commandList);
 	p_setResourceDescriptorHeap(commandList);
 
@@ -62,7 +62,7 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 		m_renderTarget[i]->SwitchToRTV(commandList);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 			m_renderTarget[i]->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-			*p_renderingManager->GetFrameIndex(),
+			p_renderingManager->GetFrameIndex(),
 			m_renderTarget[i]->GetDescriptorSize());
 
 		m_renderTarget[i]->Clear(rtvHandle, commandList);
@@ -71,7 +71,7 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 
 	commandList->OMSetRenderTargets(4, d12CpuDescriptorHandle, FALSE, &dsvHandle);
 
-	commandList->ExecuteBundle(m_bundleCommandList[*p_renderingManager->GetFrameIndex()]);
+	commandList->ExecuteBundle(m_bundleCommandList[p_renderingManager->GetFrameIndex()]);
 	
 	commandList->RSSetViewports(1, &m_viewport);
 	commandList->RSSetScissorRects(1, &m_rect);
@@ -85,7 +85,7 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 
 void GeometryPass::Draw()
 {	
-	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+	ID3D12GraphicsCommandList * commandList = p_commandList[p_renderingManager->GetFrameIndex()];
 
 	p_drawInstance(2, TRUE);
 	const size_t emitterSize = m_emitters->size();
@@ -260,7 +260,7 @@ HRESULT GeometryPass::_signalGPU() const
 {
 	HRESULT hr;
 
-	if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
+	if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[p_renderingManager->GetFrameIndex()])))
 	{	}
 
 	return hr;

@@ -44,9 +44,9 @@ public:
 	ID3D12Fence *	GetFence() const;
 
 	UINT64 * GetFenceValues();
-	UINT * GetFrameIndex();
+	const UINT & GetFrameIndex() const;
 	const UINT & GetPrevFrameIndex() const;
-	UINT * GetRTVDescriptorSize();
+	const UINT & GetRTVDescriptorSize() const;
 
 	GeometryPass * GetGeometryPass() const;
 	ShadowPass * GetShadowPass() const;

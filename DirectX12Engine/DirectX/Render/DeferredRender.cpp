@@ -68,8 +68,8 @@ void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 	ID3D12GraphicsCommandList* commandList = p_renderingManager->GetCommandList();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		p_renderingManager->GetRTVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-		*p_renderingManager->GetFrameIndex(),
-		*p_renderingManager->GetRTVDescriptorSize());
+		p_renderingManager->GetFrameIndex(),
+		p_renderingManager->GetRTVDescriptorSize());
 
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 

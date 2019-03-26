@@ -41,7 +41,7 @@ IRender::~IRender()
 
 void IRender::ThreadUpdate(const Camera & camera, const float & deltaTime)
 {
-	if (p_commandList[*p_renderingManager->GetFrameIndex()] == nullptr)
+	if (p_commandList[p_renderingManager->GetFrameIndex()] == nullptr)
 		throw "Missing command list";
 
 	if (m_threadDone && m_threadRunning && m_thread.get_id() != std::thread::id())
@@ -210,7 +210,7 @@ UINT64 IRender::p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferVi
 {
 	UINT64 bufferSize = 0;
 
-	bufferSize = Instancing::UpdateInstanceGroup(p_commandList[*p_renderingManager->GetFrameIndex()],
+	bufferSize = Instancing::UpdateInstanceGroup(p_commandList[p_renderingManager->GetFrameIndex()],
 		vertexBufferView,
 		p_instanceBuffer,
 		p_intermediateInstanceBuffer,
@@ -230,7 +230,7 @@ UINT64 IRender::p_updateInstanceBuffer(D3D12_VERTEX_BUFFER_VIEW & vertexBufferVi
 
 void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapTextures)
 {
-	ID3D12GraphicsCommandList * gcl = p_commandList[*p_renderingManager->GetFrameIndex()] ? p_commandList[*p_renderingManager->GetFrameIndex()] : p_renderingManager->GetCommandList();
+	ID3D12GraphicsCommandList * gcl = p_commandList[p_renderingManager->GetFrameIndex()] ? p_commandList[p_renderingManager->GetFrameIndex()] : p_renderingManager->GetCommandList();
 
 	const size_t instanceGroupSize = p_instanceGroups->size();
 
@@ -262,7 +262,7 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 		throw "FAILED TO UPDATE INSTANCE BUFFER";
 	
 
-	ID3D12GraphicsCommandList * commandList = p_commandList[*p_renderingManager->GetFrameIndex()];
+	ID3D12GraphicsCommandList * commandList = p_commandList[p_renderingManager->GetFrameIndex()];
 	for (size_t i = 0; i < instanceGroupSize; i++)
 	{		
 
@@ -300,7 +300,7 @@ void IRender::p_releaseInstanceBuffer()
 HRESULT IRender::OpenCommandList(ID3D12PipelineState * pipelineState)
 {
 	HRESULT hr = 0;
-	const UINT frameIndex = *p_renderingManager->GetFrameIndex();
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 	if (SUCCEEDED(hr = this->p_commandAllocator[frameIndex]->Reset()))
 	{
 		if (SUCCEEDED(hr = this->p_commandList[frameIndex]->Reset(this->p_commandAllocator[frameIndex], pipelineState)))
@@ -314,9 +314,9 @@ HRESULT IRender::OpenCommandList(ID3D12PipelineState * pipelineState)
 HRESULT IRender::ExecuteCommandList() const
 {
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = p_commandList[*p_renderingManager->GetFrameIndex()]->Close()))
+	if (SUCCEEDED(hr = p_commandList[p_renderingManager->GetFrameIndex()]->Close()))
 	{
-		ID3D12CommandList* ppCommandLists[] = { p_commandList[*p_renderingManager->GetFrameIndex()] };
+		ID3D12CommandList* ppCommandLists[] = { p_commandList[p_renderingManager->GetFrameIndex()] };
 		p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 	return hr;

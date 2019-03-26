@@ -33,7 +33,10 @@ HRESULT ShadowPass::Init()
 void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 {
 	OpenCommandList();
-	p_renderingManager->ResourceDescriptorHeap(p_commandList[*p_renderingManager->GetFrameIndex()]);
+
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();
+
+	p_renderingManager->ResourceDescriptorHeap(p_commandList[frameIndex]);
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
@@ -56,40 +59,41 @@ void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 		m_constantLightBuffer->Copy(&m_lightValues, sizeof(m_lightValues), m_constantLightBufferPerObjectAlignedSize * counter++);
 	}
 	   
-	p_commandList[*p_renderingManager->GetFrameIndex()]->SetPipelineState(m_pipelineState);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->SetGraphicsRootSignature(m_rootSignature);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetViewports(1, &m_viewport);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->RSSetScissorRects(1, &m_rect);
-	p_commandList[*p_renderingManager->GetFrameIndex()]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	
+	p_commandList[frameIndex]->SetPipelineState(m_pipelineState);
+	p_commandList[frameIndex]->SetGraphicsRootSignature(m_rootSignature);
+	p_commandList[frameIndex]->RSSetViewports(1, &m_viewport);
+	p_commandList[frameIndex]->RSSetScissorRects(1, &m_rect);
+	p_commandList[frameIndex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	
 }
 
 void ShadowPass::Draw()
 {
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
 	{
-		p_lightQueue->at(i)->GetDepthStencil()->SwitchToDSV(p_commandList[*p_renderingManager->GetFrameIndex()]);
-		p_lightQueue->at(i)->GetDepthStencil()->ClearDepthStencil(p_commandList[*p_renderingManager->GetFrameIndex()]);
+		p_lightQueue->at(i)->GetDepthStencil()->SwitchToDSV(p_commandList[frameIndex]);
+		p_lightQueue->at(i)->GetDepthStencil()->ClearDepthStencil(p_commandList[frameIndex]);
 
 		const CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(p_lightQueue->at(i)->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 			p_lightQueue->at(i)->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-			*p_renderingManager->GetFrameIndex(),
+			frameIndex,
 			p_lightQueue->at(i)->GetRenderTargetView()->GetDescriptorSize());
-		p_lightQueue->at(i)->GetRenderTargetView()->Clear(rtvHandle, p_commandList[*p_renderingManager->GetFrameIndex()]);
+		p_lightQueue->at(i)->GetRenderTargetView()->Clear(rtvHandle, p_commandList[frameIndex]);
 		
-		p_commandList[*p_renderingManager->GetFrameIndex()]->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
+		p_commandList[frameIndex]->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
 
-		m_constantLightBuffer->SetGraphicsRootConstantBufferView(0, counter * m_constantLightBufferPerObjectAlignedSize, p_commandList[*p_renderingManager->GetFrameIndex()]);
+		m_constantLightBuffer->SetGraphicsRootConstantBufferView(0, counter * m_constantLightBufferPerObjectAlignedSize, p_commandList[frameIndex]);
 		
 		p_drawInstance();
 
 		counter++;
 
-		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV(p_commandList[*p_renderingManager->GetFrameIndex()]);
+		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV(p_commandList[frameIndex]);
 
 		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
 		{
@@ -175,7 +179,7 @@ HRESULT ShadowPass::_signalGPU() const
 {
 	HRESULT hr;
 
-	if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[*p_renderingManager->GetFrameIndex()])))
+	if (SUCCEEDED(hr = p_renderingManager->SignalGPU(p_commandList[p_renderingManager->GetFrameIndex()])))
 	{	}
 
 	return hr;

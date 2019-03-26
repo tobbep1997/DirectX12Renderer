@@ -72,13 +72,13 @@ HRESULT X12StructuredBuffer::Create(const std::wstring & name, const UINT& size)
 
 void X12StructuredBuffer::Copy(void* data, const UINT& size, const UINT& offset)
 {
-	memcpy(m_resourceAddress[*p_renderingManager->GetFrameIndex()] + offset, data, size);
+	memcpy(m_resourceAddress[p_renderingManager->GetFrameIndex()] + offset, data, size);
 }
 
 void X12StructuredBuffer::SetGraphicsRootShaderResourceView(const UINT& rootParameterIndex, ID3D12GraphicsCommandList* commandList)
 {
 	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	gcl->SetGraphicsRootShaderResourceView(rootParameterIndex, m_resource[*p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
+	gcl->SetGraphicsRootShaderResourceView(rootParameterIndex, m_resource[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
 }
 
 void X12StructuredBuffer::Release()
