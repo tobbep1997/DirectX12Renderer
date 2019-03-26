@@ -311,13 +311,14 @@ HRESULT IRender::OpenCommandList(ID3D12PipelineState * pipelineState)
 	return hr;
 }
 
-HRESULT IRender::ExecuteCommandList() const
+HRESULT IRender::ExecuteCommandList(ID3D12CommandQueue * commandQueue) const
 {
 	HRESULT hr = 0;
+	ID3D12CommandQueue * cq = commandQueue ? commandQueue : p_renderingManager->GetCommandQueue();
 	if (SUCCEEDED(hr = p_commandList[p_renderingManager->GetFrameIndex()]->Close()))
 	{
 		ID3D12CommandList* ppCommandLists[] = { p_commandList[p_renderingManager->GetFrameIndex()] };
-		p_renderingManager->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+		cq->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 	return hr;
 }

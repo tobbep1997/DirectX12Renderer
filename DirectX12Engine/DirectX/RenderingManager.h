@@ -13,7 +13,7 @@ class ParticlePass;
 class ReflectionPass;
 class Camera;
 
-const unsigned int FRAME_BUFFER_COUNT = 4;
+const unsigned int FRAME_BUFFER_COUNT = 3;
 class RenderingManager
 {
 private:
@@ -33,6 +33,7 @@ public:
 
 	void UnsafeInit(const Window * window, const bool & enableDebugTools);
 
+	ID3D12Device * GetSecondDevice() const;
 	ID3D12Device * GetDevice() const;
 	IDXGISwapChain4 * GetSwapChain() const;
 	ID3D12GraphicsCommandList * GetCommandList() const;
@@ -72,6 +73,7 @@ public:
 private:
 
 	ID3D12Device *				m_device = nullptr;
+	ID3D12Device *				m_secondDevice = nullptr;
 	IDXGISwapChain4 *			m_swapChain = nullptr;
 	
 	ID3D12CommandQueue *		m_commandQueue = nullptr;
@@ -96,6 +98,7 @@ private:
 	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE, const BOOL & waitOnCpu = FALSE);
 
 	HRESULT _checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const;
+	HRESULT _createSecondAdapter(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const;
 	HRESULT _createCommandQueue();
 	HRESULT _createSwapChain(const Window & window, IDXGIFactory4 * dxgiFactory);
 	HRESULT _createRenderTargetDescriptorHeap();

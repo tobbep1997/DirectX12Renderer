@@ -3,6 +3,7 @@
 #include "WrapperFunctions/X12ConstantBuffer.h"
 #include "../Objects/ParticleEmitter.h"
 #include "GeometryPass.h"
+#include <stdlib.h>
 
 #define MAX_EMITTERS 256
 
@@ -30,15 +31,24 @@ ParticlePass::~ParticlePass()
 HRESULT ParticlePass::Init()
 {
 	HRESULT hr = 0;
-	if (FAILED(hr = p_createCommandList(L"Particle")))
-	{
+
+	if (FAILED(hr = p_createCommandList(L"tmp")))
+	{		
 		return hr;
 	}
 
-	if (FAILED(hr = OpenCommandList()))
-	{
+	const D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+	const UINT nodeMask = p_renderingManager->GetSecondDevice() ? 1 : 0;
+
+	if (FAILED(hr = _initCommandQueue(type, nodeMask)))
+	{		
 		return hr;
 	}
+	if (FAILED(hr = _initCommandList(type, nodeMask)))
+	{		
+		return hr;
+	}
+
 	if (FAILED(hr = _initID3D12RootSignature()))
 	{
 		return hr;
@@ -51,9 +61,14 @@ HRESULT ParticlePass::Init()
 	{
 		return hr;
 	}
-	if (FAILED(hr = m_particleBuffer->CreateBuffer(L"Particle buffer", nullptr, 0, 4096 * 4096)))
-	{		
-		return hr;
+
+
+	if (FAILED(hr = m_particleBuffer->CreateSharedBuffer(L"Particle buffer", sizeof(ParticleBuffer), 4096 * 4096)))
+	{
+		if (FAILED(hr = m_particleBuffer->CreateBuffer(L"Particle buffer", nullptr, 0, 4096 * 4096)))
+		{		
+			return hr;
+		}		
 	}
 	if (FAILED(hr = m_particleInfoBuffer->CreateBuffer(L"Particle info buffer", nullptr, 0, 256)))
 	{
@@ -64,10 +79,7 @@ HRESULT ParticlePass::Init()
 		return hr;
 	}
 
-	if (FAILED(hr = p_renderingManager->SignalGPU(p_commandList[p_renderingManager->GetFrameIndex()])))
-	{
-		return hr;
-	}	
+
 
 	return hr;
 }
@@ -123,20 +135,25 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), static_cast<UINT>(i) * sizeof(ParticleInfoBuffer));
 	}
 
-	OpenCommandList();
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();
+	if (FAILED(m_commandAllocator[frameIndex]->Reset()))
+	{
+		throw;
+	}
+	if (FAILED(m_commandList[frameIndex]->Reset(m_commandAllocator[frameIndex], m_computePipelineState)))
+	{
+		throw;
+	}
 
 	ParticleEmitter * emitter = nullptr;
 	for (size_t i = 0; i < m_emitters->size(); i++)
 	{
 		emitter = m_emitters->at(i);
 
-		const UINT frameIndex = p_renderingManager->GetFrameIndex();
-		ID3D12GraphicsCommandList * commandList = p_commandList[frameIndex];
-
+		ID3D12GraphicsCommandList * commandList = m_commandList[frameIndex];
 
 		emitter->SwitchToUAVState(commandList);
 
-		commandList->SetPipelineState(m_computePipelineState);
 		commandList->SetComputeRootSignature(m_rootSignature);
 		
 		m_particleInfoBuffer->SetComputeRootConstantBufferView(PARTICLE_INFO, 0, commandList);
@@ -153,21 +170,32 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
 
 
-		if (!emitter->GetPositions().empty())
-			m_geometryPass->AddEmitter(emitter);
+		//if (!emitter->GetPositions().empty())
+		//	m_geometryPass->AddEmitter(emitter);
 	}
-	ExecuteCommandList();
 
-	if (SUCCEEDED(m_fence->Signal(p_renderingManager->GetCommandQueue())))
+	if (FAILED(m_commandList[frameIndex]->Close()))
 	{
-		//TODO:: Remove
-		m_fence->WaitCpu();
+		throw;
 	}
-	for (size_t i = 0; i < m_emitters->size(); i++)
-	{
-		emitter = m_emitters->at(i);
-		emitter->UpdateData();
-	}
+
+	ID3D12CommandList * ppCommandLists[] = { m_commandList[frameIndex] };
+	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+
+
+		if (SUCCEEDED(m_fence->Signal(m_commandQueue)))
+		{
+			if (SUCCEEDED(m_fence->WaitCpu()))
+			{
+				for (size_t i = 0; i < m_emitters->size(); i++)
+				{
+					emitter = m_emitters->at(i);
+					emitter->UpdateData();
+				}
+			}
+		}
+	
 }
 
 void ParticlePass::Draw()
@@ -204,6 +232,45 @@ void ParticlePass::AddEmitter(ParticleEmitter* particleEmitter) const
 	m_emitters->push_back(particleEmitter);
 }
 
+HRESULT ParticlePass::_initCommandQueue(const D3D12_COMMAND_LIST_TYPE& type, const UINT & nodeMask)
+{
+	HRESULT hr = 0;
+
+	D3D12_COMMAND_QUEUE_DESC desc{ type, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, D3D12_COMMAND_QUEUE_FLAG_NONE, nodeMask };
+
+	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue))))
+	{
+		return hr;
+	}
+
+	return hr;
+}
+
+HRESULT ParticlePass::_initCommandList(const D3D12_COMMAND_LIST_TYPE& type, const UINT& nodeMask)
+{
+	HRESULT hr = 0;
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandAllocator(
+			type, 
+			IID_PPV_ARGS(&m_commandAllocator[i]))))
+		{
+			return hr;
+		}
+		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandList(
+			nodeMask, 
+			type, 
+			m_commandAllocator[i], 
+			nullptr, 
+			IID_PPV_ARGS(&m_commandList[i]))))
+		{			
+			return hr;
+		}
+		m_commandList[i]->Close();
+	}
+	return hr;
+}
 
 
 HRESULT ParticlePass::_initID3D12RootSignature()

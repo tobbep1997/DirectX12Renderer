@@ -21,10 +21,9 @@ HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* d
 	const UINT bufferSize = preAllocData ? preAllocData : 1024 * 64;
 	const D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
 	const D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-
+	   
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-
 		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
@@ -56,6 +55,56 @@ HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* d
 		{
 			if (data)
 				memcpy(m_constantBufferGPUAddress[i], data, sizeOf);
+		}
+	}
+	return hr;
+}
+
+HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UINT& sizeOf,
+	const UINT& preAllocData)
+{
+	HRESULT hr = 0;
+
+	const UINT bufferSize = preAllocData ? preAllocData : 1024 * 64;
+	const D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
+	const D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+	ID3D12Device * device = p_renderingManager->GetSecondDevice();
+	if (!device)
+		return E_FAIL;
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (FAILED(hr = device->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_constantBuffer[i]))))
+		{
+			return hr;
+		}
+		SET_NAME(m_constantBuffer[i], name + L" ConstantBuffer : " + std::to_wstring(i));
+
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
+		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
+		m_descriptorHeapOffset = p_renderingManager->GetResourceCurrentIndex() * p_renderingManager->GetResourceIncrementalSize();
+
+
+		m_handle = { p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
+		p_renderingManager->GetDevice()->CreateConstantBufferView(
+			&cbvDesc,
+			m_handle);
+		p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+
+		CD3DX12_RANGE readRange(0, 0);
+		if (FAILED(hr = m_constantBuffer[i]->Map(
+			0, &readRange,
+			reinterpret_cast<void **>(&m_constantBufferGPUAddress[i]))))
+		{
+			return hr;
 		}
 	}
 	return hr;
