@@ -232,7 +232,9 @@ HRESULT ParticleEmitter::_createBuffer()
 	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
 	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
 
-	if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
+	
+
+	if (SUCCEEDED(hr = m_renderingManager->GetSecondDevice()->CreateCommittedResource(
 		&heapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&resourceDesc,
@@ -255,23 +257,23 @@ HRESULT ParticleEmitter::_createBuffer()
 		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 		unorderedAccessViewDesc.Buffer = uav;
 
-		m_vertexOutputOffset = m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
+		m_vertexOutputOffset = m_renderingManager->GetSecondResourceCurrentIndex() * m_renderingManager->GetSecondResourceIncrementalSize();
 		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-		{ m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
+		{ m_renderingManager->GetSecondCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
 
-		m_renderingManager->GetDevice()->CreateUnorderedAccessView(
+		m_renderingManager->GetSecondDevice()->CreateUnorderedAccessView(
 			m_vertexOutputResource,
 			nullptr,
 			&unorderedAccessViewDesc,
 			handle);
-		m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+		m_renderingManager->IterateSecondCbvSrvUavDescriptorHeapIndex();
 	}
 	
 	if (FAILED(hr))
 		return hr;
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (SUCCEEDED(hr = m_renderingManager->GetDevice()->CreateCommittedResource(
+		if (SUCCEEDED(hr = m_renderingManager->GetSecondDevice()->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
@@ -294,16 +296,16 @@ HRESULT ParticleEmitter::_createBuffer()
 			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 			unorderedAccessViewDesc.Buffer = uav;
 
-			m_calculationsOutputOffset = m_renderingManager->GetResourceCurrentIndex() * m_renderingManager->GetResourceIncrementalSize();
+			m_calculationsOutputOffset = m_renderingManager->GetSecondResourceCurrentIndex() * m_renderingManager->GetSecondResourceIncrementalSize();
 			const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-			{ m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
+			{ m_renderingManager->GetSecondCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
 
-			m_renderingManager->GetDevice()->CreateUnorderedAccessView(
+			m_renderingManager->GetSecondDevice()->CreateUnorderedAccessView(
 				m_calculationsOutputResource[i],
 				nullptr,
 				&unorderedAccessViewDesc,
 				handle);
-			m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+			m_renderingManager->IterateSecondCbvSrvUavDescriptorHeapIndex();
 		}
 
 	}

@@ -39,12 +39,13 @@ HRESULT ParticlePass::Init()
 
 	const D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
 	const UINT nodeMask = p_renderingManager->GetSecondDevice() ? 1 : 0;
+	ID3D12Device * device = p_renderingManager->GetSecondDevice() ? p_renderingManager->GetSecondDevice() : p_renderingManager->GetDevice();
 
-	if (FAILED(hr = _initCommandQueue(type, nodeMask)))
+	if (FAILED(hr = _initCommandQueue(device, type, nodeMask)))
 	{		
 		return hr;
 	}
-	if (FAILED(hr = _initCommandList(type, nodeMask)))
+	if (FAILED(hr = _initCommandList(device, type, nodeMask)))
 	{		
 		return hr;
 	}
@@ -70,10 +71,14 @@ HRESULT ParticlePass::Init()
 			return hr;
 		}		
 	}
-	if (FAILED(hr = m_particleInfoBuffer->CreateBuffer(L"Particle info buffer", nullptr, 0, 256)))
+	if (FAILED(hr = m_particleInfoBuffer->CreateSharedBuffer(L"Particle info buffer", 0, 256)))
 	{
-		return hr;
+		if (FAILED(hr = m_particleInfoBuffer->CreateBuffer(L"Particle info buffer", nullptr, 0, 256)))
+		{
+			return hr;
+		}	
 	}
+
 	if (FAILED(hr = m_fence->CreateFence(L"Particle fence")))
 	{		
 		return hr;
@@ -170,8 +175,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(emitter->GetCalcResource()));
 
 
-		//if (!emitter->GetPositions().empty())
-		//	m_geometryPass->AddEmitter(emitter);
+	
 	}
 
 	if (FAILED(m_commandList[frameIndex]->Close()))
@@ -181,21 +185,25 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 	ID3D12CommandList * ppCommandLists[] = { m_commandList[frameIndex] };
 	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-
-
-		if (SUCCEEDED(m_fence->Signal(m_commandQueue)))
+	   
+	if (SUCCEEDED(m_fence->Signal(m_commandQueue)))
+	{
+		if (SUCCEEDED(m_fence->WaitCpu()))
 		{
-			if (SUCCEEDED(m_fence->WaitCpu()))
+			for (size_t i = 0; i < m_emitters->size(); i++)
 			{
-				for (size_t i = 0; i < m_emitters->size(); i++)
-				{
-					emitter = m_emitters->at(i);
-					emitter->UpdateData();
-				}
+				emitter = m_emitters->at(i);
+				emitter->UpdateData();
 			}
 		}
-	
+	}
+	for (size_t i = 0; i < m_emitters->size(); i++)
+	{
+		emitter = m_emitters->at(i);
+		if (!emitter->GetPositions().empty())
+			m_geometryPass->AddEmitter(emitter);
+	}
+
 }
 
 void ParticlePass::Draw()
@@ -225,6 +233,14 @@ void ParticlePass::Release()
 
 	m_fence->Release();
 	SAFE_DELETE(m_fence);
+
+	SAFE_RELEASE(m_commandQueue);
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		SAFE_RELEASE(m_commandAllocator[i]);
+		SAFE_RELEASE(m_commandList[i]);
+	}
+
 }
 
 void ParticlePass::AddEmitter(ParticleEmitter* particleEmitter) const
@@ -232,13 +248,13 @@ void ParticlePass::AddEmitter(ParticleEmitter* particleEmitter) const
 	m_emitters->push_back(particleEmitter);
 }
 
-HRESULT ParticlePass::_initCommandQueue(const D3D12_COMMAND_LIST_TYPE& type, const UINT & nodeMask)
+HRESULT ParticlePass::_initCommandQueue(ID3D12Device * device, const D3D12_COMMAND_LIST_TYPE& type, const UINT & nodeMask)
 {
 	HRESULT hr = 0;
 
 	D3D12_COMMAND_QUEUE_DESC desc{ type, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, D3D12_COMMAND_QUEUE_FLAG_NONE, nodeMask };
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue))))
+	if (FAILED(hr = device->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue))))
 	{
 		return hr;
 	}
@@ -246,19 +262,19 @@ HRESULT ParticlePass::_initCommandQueue(const D3D12_COMMAND_LIST_TYPE& type, con
 	return hr;
 }
 
-HRESULT ParticlePass::_initCommandList(const D3D12_COMMAND_LIST_TYPE& type, const UINT& nodeMask)
+HRESULT ParticlePass::_initCommandList(ID3D12Device * device, const D3D12_COMMAND_LIST_TYPE& type, const UINT& nodeMask)
 {
 	HRESULT hr = 0;
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandAllocator(
+		if (FAILED(hr = device->CreateCommandAllocator(
 			type, 
 			IID_PPV_ARGS(&m_commandAllocator[i]))))
 		{
 			return hr;
 		}
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandList(
+		if (FAILED(hr = device->CreateCommandList(
 			nodeMask, 
 			type, 
 			m_commandAllocator[i], 

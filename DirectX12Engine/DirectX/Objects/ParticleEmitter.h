@@ -33,7 +33,7 @@ private:
 		float ParticleMaxLife = 0.35f;
 		float ParticleMinLife = 0.15f;
 		
-		UINT MaxParticles = 256;
+		UINT MaxParticles = 1024;
 
 
 	};

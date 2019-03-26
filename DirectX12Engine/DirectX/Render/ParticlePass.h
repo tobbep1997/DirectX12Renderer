@@ -34,8 +34,8 @@ public:
 	void AddEmitter(ParticleEmitter * particleEmitter) const;
 
 private:
-	HRESULT _initCommandQueue(const D3D12_COMMAND_LIST_TYPE& type, const UINT& nodeMask);
-	HRESULT _initCommandList(const D3D12_COMMAND_LIST_TYPE & type, const UINT& nodeMask);
+	HRESULT _initCommandQueue(ID3D12Device * device, const D3D12_COMMAND_LIST_TYPE& type, const UINT& nodeMask);
+	HRESULT _initCommandList(ID3D12Device * device, const D3D12_COMMAND_LIST_TYPE & type, const UINT& nodeMask);
 	HRESULT _initID3D12RootSignature();
 	HRESULT _initShaders();
 	HRESULT _initPipelineState();

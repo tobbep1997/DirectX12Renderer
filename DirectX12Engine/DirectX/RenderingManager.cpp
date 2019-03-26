@@ -62,6 +62,7 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 				{
 					return hr;
 				}
+				
 			}
 			else
 				return hr;
@@ -167,7 +168,7 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 {
 	HRESULT hr = S_OK;
 
-	if (FAILED(hr = _waitForPreviousFrame()))
+	if (FAILED(hr = _waitForPreviousFrame(TRUE, TRUE)))
 	{
 		return hr;
 	}
@@ -189,10 +190,10 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 
 	ResourceDescriptorHeap(m_commandList[m_frameIndex]);
 
-	//m_particlePass->ThreadUpdate(camera, deltaTime);
+	m_particlePass->ThreadUpdate(camera, deltaTime);
 	m_shadowPass->ThreadUpdate(camera, deltaTime);
 	
-	//m_particlePass->ThreadJoin();
+	m_particlePass->ThreadJoin();
 	
 	m_geometryPass->ThreadUpdate(camera, deltaTime);
 	m_geometryPass->ThreadJoin();
@@ -304,6 +305,7 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	SAFE_RELEASE(m_debugLayer);
 	SAFE_RELEASE(m_gpuDescriptorHeap);
 	SAFE_RELEASE(m_cpuDescriptorHeap);
+	SAFE_RELEASE(m_secondCpuDescriptorHeap);
 
 
 
@@ -516,6 +518,26 @@ ID3D12DescriptorHeap* RenderingManager::GetCpuDescriptorHeap() const
 	return this->m_cpuDescriptorHeap;
 }
 
+void RenderingManager::IterateSecondCbvSrvUavDescriptorHeapIndex()
+{
+	m_secondResourceCurrentIndex++;
+}
+
+const SIZE_T& RenderingManager::GetSecondResourceCurrentIndex() const
+{
+	return m_secondResourceCurrentIndex;
+}
+
+const SIZE_T& RenderingManager::GetSecondResourceIncrementalSize() const
+{
+	return m_secondResourceIncrementalSize;
+}
+
+ID3D12DescriptorHeap* RenderingManager::GetSecondCpuDescriptorHeap() const
+{
+	return m_secondCpuDescriptorHeap;
+}
+
 void RenderingManager::ResourceDescriptorHeap(ID3D12GraphicsCommandList* commandList) const
 {
 	ID3D12DescriptorHeap* DescriptorHeaps[] = { m_gpuDescriptorHeap };
@@ -645,8 +667,9 @@ HRESULT RenderingManager::_createSecondAdapter(IDXGIAdapter1 *& adapter, IDXGIFa
 		{
 			if (adapterCount > 0)
 				return S_OK;
-			else
-				adapterCount++;
+			
+			adapterIndex++;
+			adapterCount++;			
 		}
 		SAFE_RELEASE(adapter);
 	}
@@ -798,7 +821,15 @@ HRESULT RenderingManager::_createCpuDescriptorHeap()
 	{		
 		return hr;
 	}
-	
+
+
+	const D3D12_DESCRIPTOR_HEAP_DESC desc2 = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_DESCRIPTOR_SIZE, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 1 };
+	if (FAILED(hr = m_secondDevice->CreateDescriptorHeap(&desc2, IID_PPV_ARGS(&m_secondCpuDescriptorHeap))))
+	{
+		return hr;
+	}
+	m_secondResourceIncrementalSize = m_secondDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 	return hr;
 }
 
@@ -819,7 +850,6 @@ HRESULT RenderingManager::_createCbvSrvUavDescriptorHeap()
 	}
 
 	m_resourceIncrementalSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
 
 	return hr;
 }

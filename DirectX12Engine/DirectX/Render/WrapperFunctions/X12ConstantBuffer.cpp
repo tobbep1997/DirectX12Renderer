@@ -67,7 +67,9 @@ HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UI
 
 	const UINT bufferSize = preAllocData ? preAllocData : 1024 * 64;
 	const D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
-	const D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	heapProperties.CreationNodeMask = 1;
+	heapProperties.VisibleNodeMask = 1;
 
 	ID3D12Device * device = p_renderingManager->GetSecondDevice();
 	if (!device)
@@ -90,14 +92,14 @@ HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UI
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
-		m_descriptorHeapOffset = p_renderingManager->GetResourceCurrentIndex() * p_renderingManager->GetResourceIncrementalSize();
+		m_descriptorHeapOffset = p_renderingManager->GetSecondResourceCurrentIndex() * p_renderingManager->GetSecondResourceIncrementalSize();
 
 
-		m_handle = { p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
-		p_renderingManager->GetDevice()->CreateConstantBufferView(
+		m_handle = { p_renderingManager->GetSecondCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
+		device->CreateConstantBufferView(
 			&cbvDesc,
 			m_handle);
-		p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+		p_renderingManager->IterateSecondCbvSrvUavDescriptorHeapIndex();
 
 		CD3DX12_RANGE readRange(0, 0);
 		if (FAILED(hr = m_constantBuffer[i]->Map(

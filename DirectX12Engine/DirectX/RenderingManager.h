@@ -66,6 +66,11 @@ public:
 	const SIZE_T & GetResourceIncrementalSize() const;
 	ID3D12DescriptorHeap * GetCpuDescriptorHeap() const;
 
+	void IterateSecondCbvSrvUavDescriptorHeapIndex();
+	const SIZE_T & GetSecondResourceCurrentIndex() const;
+	const SIZE_T & GetSecondResourceIncrementalSize() const;
+	ID3D12DescriptorHeap * GetSecondCpuDescriptorHeap() const;
+
 	void ResourceDescriptorHeap(ID3D12GraphicsCommandList * commandList) const;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE CopyToGpuDescriptorHeap(const D3D12_CPU_DESCRIPTOR_HANDLE & descriptorHandle, const UINT & numDescriptors = 1);
@@ -119,6 +124,13 @@ private:
 	SIZE_T m_resourceIncrementalSize = 0;
 	ID3D12DescriptorHeap * m_gpuDescriptorHeap = nullptr;
 	ID3D12DescriptorHeap * m_cpuDescriptorHeap = nullptr;
+
+
+
+	SIZE_T m_secondCopyOffset = 0;
+	SIZE_T m_secondResourceCurrentIndex = 0;
+	SIZE_T m_secondResourceIncrementalSize = 0;
+	ID3D12DescriptorHeap * m_secondCpuDescriptorHeap = nullptr;
 
 	HRESULT _createCbvSrvUavDescriptorHeap();
 
