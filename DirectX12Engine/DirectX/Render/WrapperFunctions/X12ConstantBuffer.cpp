@@ -24,7 +24,7 @@ HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* d
 	   
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
@@ -39,14 +39,14 @@ HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* d
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
-		m_descriptorHeapOffset = p_renderingManager->GetResourceCurrentIndex() * p_renderingManager->GetResourceIncrementalSize();
 		
 		
-		m_handle = { p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
-		p_renderingManager->GetDevice()->CreateConstantBufferView(
+		
+		m_handle[i] = p_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
+		p_renderingManager->GetMainAdapter()->GetDevice()->CreateConstantBufferView(
 			&cbvDesc,
-			m_handle);
-		p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+			m_handle[i]);
+		
 
 		CD3DX12_RANGE readRange(0, 0);
 		if (SUCCEEDED(hr = m_constantBuffer[i]->Map(
@@ -70,7 +70,7 @@ HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UI
 	const D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	
 
-	ID3D12Device * device = p_renderingManager->GetSecondDevice();
+	ID3D12Device * device = p_renderingManager->GetSecondAdapter()->GetDevice();
 	if (!device)
 		return E_FAIL;
 
@@ -92,14 +92,13 @@ HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UI
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = m_constantBuffer[i]->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = (sizeof(m_constantBuffer) + 255) & ~255;
-		m_descriptorHeapOffset = p_renderingManager->GetSecondResourceCurrentIndex() * p_renderingManager->GetSecondResourceIncrementalSize();
+		
 
 
-		m_handle = { p_renderingManager->GetSecondCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_descriptorHeapOffset };
+		m_handle[i] = p_renderingManager->GetSecondAdapter()->GetNextHandle().DescriptorHandle;
 		device->CreateConstantBufferView(
 			&cbvDesc,
-			m_handle);
-		p_renderingManager->IterateSecondCbvSrvUavDescriptorHeapIndex();
+			m_handle[i]);
 
 		CD3DX12_RANGE readRange(0, 0);
 		if (FAILED(hr = m_constantBuffer[i]->Map(

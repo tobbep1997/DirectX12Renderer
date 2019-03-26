@@ -48,17 +48,13 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 	}
 	if (SUCCEEDED(hr = this->_checkD3D12Support(adapter, dxgiFactory)))
 	{	
-		if (SUCCEEDED(hr = D3D12CreateDevice(
-			adapter,
-			D3D_FEATURE_LEVEL_12_0,
-			IID_PPV_ARGS(&m_device))))
+		SAFE_NEW(m_main, new X12Adapter());
+		if (SUCCEEDED(hr = m_main->CreateDevice(adapter)))
 		{
 			if (SUCCEEDED(hr = this->_createSecondAdapter(adapter1, dxgiFactory)))
 			{
-				if (FAILED(hr = D3D12CreateDevice(
-					adapter1,
-					D3D_FEATURE_LEVEL_12_0,
-					IID_PPV_ARGS(&m_secondDevice))))
+				SAFE_NEW(m_secondary, new X12Adapter());
+				if (FAILED(hr = m_secondary->CreateDevice(adapter1)))
 				{
 					return hr;
 				}
@@ -95,10 +91,7 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 			{
 				return Window::CreateError(hr);
 			}
-			if (FAILED(hr = _createCpuDescriptorHeap()))
-			{
-				return Window::CreateError(hr);
-			}
+			
 			SAFE_NEW(m_geometryPass, new GeometryPass(this, *window));
 			if (FAILED(hr = m_geometryPass->Init()))
 			{
@@ -304,8 +297,6 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	};
 	SAFE_RELEASE(m_debugLayer);
 	SAFE_RELEASE(m_gpuDescriptorHeap);
-	SAFE_RELEASE(m_cpuDescriptorHeap);
-	SAFE_RELEASE(m_secondCpuDescriptorHeap);
 
 
 
@@ -336,19 +327,22 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_ssaoPass->Release();
 	SAFE_DELETE(m_ssaoPass);
 
-	SAFE_RELEASE(m_secondDevice);
-	if (m_device->Release())
+	
+	m_secondary->Release();
+	SAFE_DELETE(m_secondary);
+	if (m_main->Release())
 	{
 		if (m_debugLayerEnabled && reportMemoryLeaks)
 		{
 			ID3D12DebugDevice * dbgDevice = nullptr;
-			if (SUCCEEDED(m_device->QueryInterface(IID_PPV_ARGS(&dbgDevice))))
+			if (SUCCEEDED(m_main->GetDevice()->QueryInterface(IID_PPV_ARGS(&dbgDevice))))
 			{
 				dbgDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
 				SAFE_RELEASE(dbgDevice);
 			}
 		}
 	}
+	SAFE_DELETE(m_main);
 
 }
 
@@ -366,14 +360,14 @@ void RenderingManager::UnsafeInit(const Window* window, const bool& enableDebugT
 	this->Init(window, enableDebugTools);
 }
 
-ID3D12Device* RenderingManager::GetSecondDevice() const
+X12Adapter* RenderingManager::GetSecondAdapter() const
 {
-	return this->m_secondDevice;
+	return m_secondary;
 }
 
-ID3D12Device* RenderingManager::GetDevice() const
+X12Adapter* RenderingManager::GetMainAdapter() const
 {
-	return this->m_device;
+	return m_main;
 }
 
 IDXGISwapChain4* RenderingManager::GetSwapChain() const
@@ -498,45 +492,6 @@ HRESULT RenderingManager::SignalGPU(ID3D12GraphicsCommandList* commandList)
 	return hr;
 }
 
-void RenderingManager::IterateCbvSrvUavDescriptorHeapIndex()
-{
-	m_resourceCurrentIndex++;
-}
-
-const SIZE_T & RenderingManager::GetResourceCurrentIndex() const
-{
-	return m_resourceCurrentIndex;
-}
-
-const SIZE_T & RenderingManager::GetResourceIncrementalSize() const
-{
-	return m_resourceIncrementalSize;
-}
-
-ID3D12DescriptorHeap* RenderingManager::GetCpuDescriptorHeap() const
-{
-	return this->m_cpuDescriptorHeap;
-}
-
-void RenderingManager::IterateSecondCbvSrvUavDescriptorHeapIndex()
-{
-	m_secondResourceCurrentIndex++;
-}
-
-const SIZE_T& RenderingManager::GetSecondResourceCurrentIndex() const
-{
-	return m_secondResourceCurrentIndex;
-}
-
-const SIZE_T& RenderingManager::GetSecondResourceIncrementalSize() const
-{
-	return m_secondResourceIncrementalSize;
-}
-
-ID3D12DescriptorHeap* RenderingManager::GetSecondCpuDescriptorHeap() const
-{
-	return m_secondCpuDescriptorHeap;
-}
 
 void RenderingManager::ResourceDescriptorHeap(ID3D12GraphicsCommandList* commandList) const
 {
@@ -550,12 +505,12 @@ D3D12_GPU_DESCRIPTOR_HANDLE RenderingManager::CopyToGpuDescriptorHeap(
 	const SIZE_T offset = m_copyOffset;
 	const D3D12_CPU_DESCRIPTOR_HANDLE destHandle = { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_copyOffset };
 
-	m_device->CopyDescriptorsSimple(
+	m_main->GetDevice()->CopyDescriptorsSimple(
 		numDescriptors,
 		destHandle,
 		descriptorHandle,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
+	
 	m_copyOffset += m_resourceIncrementalSize * numDescriptors;
 
 	return { m_gpuDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + offset };
@@ -683,7 +638,7 @@ HRESULT RenderingManager::_createCommandQueue()
 
 	D3D12_COMMAND_QUEUE_DESC desc = {};
 
-	if (FAILED(hr = this->m_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue))))
+	if (FAILED(hr = this->m_main->GetDevice()->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue))))
 	{
 		SAFE_RELEASE(this->m_commandQueue);
 	}
@@ -740,11 +695,11 @@ HRESULT RenderingManager::_createRenderTargetDescriptorHeap()
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	if (SUCCEEDED(hr = m_device->CreateDescriptorHeap(
+	if (SUCCEEDED(hr = m_main->GetDevice()->CreateDescriptorHeap(
 		&rtvHeapDesc,
 		IID_PPV_ARGS(&m_rtvDescriptorHeap))))
 	{
-		m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		m_rtvDescriptorSize = m_main->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 		for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
@@ -753,7 +708,7 @@ HRESULT RenderingManager::_createRenderTargetDescriptorHeap()
 			{
 				break;
 			}
-			m_device->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
+			m_main->GetDevice()->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
 			rtvHandle.Offset(1, m_rtvDescriptorSize);
 		}
 
@@ -767,7 +722,7 @@ HRESULT RenderingManager::_createCommandAllocators()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator[i]))))
+		if (FAILED(hr = m_main->GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator[i]))))
 		{
 			break;
 		}
@@ -784,7 +739,7 @@ HRESULT RenderingManager::_createCommandList()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList[i]));
+		hr = m_main->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList[i]));
 		m_commandList[i]->Close();
 		SET_NAME(m_commandList[i], L"Default commandList " + std::to_wstring(i));
 
@@ -798,7 +753,7 @@ HRESULT RenderingManager::_createFenceAndFenceEvent()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence[i]))))
+		if (FAILED(hr = m_main->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence[i]))))
 		{
 			break;
 		}
@@ -812,27 +767,6 @@ HRESULT RenderingManager::_createFenceAndFenceEvent()
 	return hr;
 }
 
-HRESULT RenderingManager::_createCpuDescriptorHeap()
-{
-	HRESULT hr = 0;
-	
-	const D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_DESCRIPTOR_SIZE, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0 };
-	if (FAILED(hr = m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_cpuDescriptorHeap))))
-	{		
-		return hr;
-	}
-
-
-	const D3D12_DESCRIPTOR_HEAP_DESC desc2 = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_DESCRIPTOR_SIZE, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 1 };
-	if (FAILED(hr = m_secondDevice->CreateDescriptorHeap(&desc2, IID_PPV_ARGS(&m_secondCpuDescriptorHeap))))
-	{
-		return hr;
-	}
-	m_secondResourceIncrementalSize = m_secondDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	return hr;
-}
-
 HRESULT RenderingManager::_createCbvSrvUavDescriptorHeap()
 {
 	HRESULT hr = 0;
@@ -842,14 +776,14 @@ HRESULT RenderingManager::_createCbvSrvUavDescriptorHeap()
 	descriptorHeap.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	descriptorHeap.NumDescriptors = MAX_DESCRIPTOR_SIZE;
 	   
-	if (FAILED(hr = m_device->CreateDescriptorHeap(
+	if (FAILED(hr = m_main->GetDevice()->CreateDescriptorHeap(
 		&descriptorHeap, 
 		IID_PPV_ARGS(&m_gpuDescriptorHeap))))
 	{
 		return hr;
 	}
 
-	m_resourceIncrementalSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_resourceIncrementalSize = m_main->GetDescriptorHandleIncrementSize();
 
 	return hr;
 }

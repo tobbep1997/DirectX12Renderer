@@ -28,7 +28,7 @@ HRESULT X12StructuredBuffer::Create(const std::wstring & name, const UINT& size)
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&heapProperties, 
 			D3D12_HEAP_FLAG_NONE, 
 			&resourceDesc,
@@ -49,16 +49,9 @@ HRESULT X12StructuredBuffer::Create(const std::wstring & name, const UINT& size)
 		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 		unorderedAccessViewDesc.Buffer = uav;
 			
-		m_cpuHandle[i] = 
-		{ 
-			p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
-			p_renderingManager->GetResourceCurrentIndex() * 
-			p_renderingManager->GetResourceIncrementalSize()
-		};
-
-		p_renderingManager->GetDevice()->CreateUnorderedAccessView(m_resource[i], nullptr, &unorderedAccessViewDesc, m_cpuHandle[i]);
-
-		p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+		m_cpuHandle[i] = p_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
+		p_renderingManager->GetMainAdapter()->GetDevice()->CreateUnorderedAccessView(m_resource[i], nullptr, &unorderedAccessViewDesc, m_cpuHandle[i]);
+		
 
 		D3D12_RANGE readRange{ 0,0 };
 		if (FAILED(hr = m_resource[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_resourceAddress[i]))))

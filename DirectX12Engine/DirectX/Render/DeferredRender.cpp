@@ -409,7 +409,7 @@ HRESULT DeferredRender::_initID3D12RootSignature()
 		&signature,
 		nullptr)))
 	{
-		if (			FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateRootSignature(
 			0,
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -483,7 +483,7 @@ HRESULT DeferredRender::_initID3D12PipelineState()
 	else
 		return hr;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateGraphicsPipelineState(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateGraphicsPipelineState(
 			&graphicsPipelineStateDesc,
 			IID_PPV_ARGS(&m_pipelineState))))
 	{
@@ -514,7 +514,7 @@ HRESULT DeferredRender::_createQuadBuffer()
 	m_vertexBufferSize = sizeof(m_vertexList);
 
 	HRESULT hr = 0;
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+	if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),
@@ -522,7 +522,7 @@ HRESULT DeferredRender::_createQuadBuffer()
 		nullptr,
 		IID_PPV_ARGS(&m_vertexBuffer))))
 	{
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),

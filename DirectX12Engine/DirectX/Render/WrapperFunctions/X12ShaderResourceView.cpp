@@ -33,7 +33,7 @@ HRESULT X12ShaderResourceView::CreateShaderResourceView(const UINT& width, const
 		arraySize, 1, 1, 0,
 		D3D12_RESOURCE_FLAG_NONE);
 	
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+	if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&resourceDesc,
@@ -57,20 +57,12 @@ HRESULT X12ShaderResourceView::CreateShaderResourceView(const UINT& width, const
 			srvDesc.Texture2DArray.MostDetailedMip = 0;
 		}
 
-		m_cpuHandle =
-		{ 
-			p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
-			p_renderingManager->GetResourceCurrentIndex() * 
-			p_renderingManager->GetResourceIncrementalSize() 
-		};
+		m_cpuHandle = p_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
 
-		p_renderingManager->GetDevice()->CreateShaderResourceView(
+		p_renderingManager->GetMainAdapter()->GetDevice()->CreateShaderResourceView(
 			m_resource,
 			&srvDesc,
 			m_cpuHandle);
-
-		p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
-
 	}
 	
 

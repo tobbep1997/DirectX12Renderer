@@ -38,8 +38,8 @@ HRESULT ParticlePass::Init()
 	}
 
 	const D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-	const UINT nodeMask = p_renderingManager->GetSecondDevice() ? 1 : 0;
-	ID3D12Device * device = p_renderingManager->GetSecondDevice() ? p_renderingManager->GetSecondDevice() : p_renderingManager->GetDevice();
+	const UINT nodeMask = p_renderingManager->GetSecondAdapter()->GetDevice() ? 1 : 0;
+	ID3D12Device * device = p_renderingManager->GetSecondAdapter()->GetDevice() ? p_renderingManager->GetSecondAdapter()->GetDevice() : p_renderingManager->GetMainAdapter()->GetDevice();
 
 	if (FAILED(hr = _initCommandQueue(device, type, 0)))
 	{		
@@ -79,7 +79,7 @@ HRESULT ParticlePass::Init()
 		}	
 	}
 
-	if (FAILED(hr = m_fence->CreateFence(L"Particle fence", p_renderingManager->GetSecondDevice())))
+	if (FAILED(hr = m_fence->CreateFence(L"Particle fence", p_renderingManager->GetSecondAdapter()->GetDevice())))
 	{		
 		return hr;
 	}
@@ -341,7 +341,7 @@ HRESULT ParticlePass::_initID3D12RootSignature()
 		&signature,
 		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetSecondDevice()->CreateRootSignature(
+		if (FAILED(hr = p_renderingManager->GetSecondAdapter()->GetDevice()->CreateRootSignature(
 			0,
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -379,7 +379,7 @@ HRESULT ParticlePass::_initPipelineState()
 	computePipelineStateDesc.pRootSignature = m_rootSignature;
 	computePipelineStateDesc.CS = m_computeShader;
 
-	if (FAILED(hr = p_renderingManager->GetSecondDevice()->CreateComputePipelineState(
+	if (FAILED(hr = p_renderingManager->GetSecondAdapter()->GetDevice()->CreateComputePipelineState(
 		&computePipelineStateDesc,
 		IID_PPV_ARGS(&m_computePipelineState))))
 	{

@@ -120,6 +120,9 @@
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12Fence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="X12Adapter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -252,6 +255,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12BindlessTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="X12Adapter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

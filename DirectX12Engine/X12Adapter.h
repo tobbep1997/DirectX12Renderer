@@ -1,5 +1,7 @@
 #pragma once
 
+#define MAX_DESCRIPTOR_SIZE 100000
+
 class X12Adapter
 {
 struct Handle
@@ -18,6 +20,8 @@ public:
 
 	ID3D12Device * GetDevice() const;
 	ID3D12DescriptorHeap * GetCpuDescriptorHeap() const;
+
+	const SIZE_T & GetDescriptorHandleIncrementSize() const;
 
 	Handle GetNextHandle();
 	

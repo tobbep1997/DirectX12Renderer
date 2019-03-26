@@ -94,7 +94,7 @@ HRESULT IRender::p_createCommandList(const std::wstring & name, const D3D12_COMM
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandAllocator(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommandAllocator(
 			type,
 			IID_PPV_ARGS(&p_commandAllocator[i]))))
 		{
@@ -103,7 +103,7 @@ HRESULT IRender::p_createCommandList(const std::wstring & name, const D3D12_COMM
 
 		SET_NAME(p_commandAllocator[i], name + L" Command allocator " + std::to_wstring(i));
 
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommandList(
+		if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommandList(
 			0, 
 			type,
 			p_commandAllocator[i], 
@@ -140,9 +140,9 @@ void IRender::p_setResourceDescriptorHeap(ID3D12GraphicsCommandList* commandList
 HRESULT IRender::p_createDescriptorHeap()
 {
 	p_releaseDescriptorHeap();
-	m_resourceIncrementalSize = p_renderingManager->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_resourceIncrementalSize = p_renderingManager->GetMainAdapter()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	const D3D12_DESCRIPTOR_HEAP_DESC desc{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_DESCRIPTOR_SIZE, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 };
-	const HRESULT hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_gpuDescriptorHeap));
+	const HRESULT hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_gpuDescriptorHeap));
 	if (FAILED(hr))
 	{
 		return hr;
@@ -163,7 +163,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE IRender::p_copyToDescriptorHeap(const D3D12_CPU_DESC
 	const SIZE_T offset = m_copyOffset;
 	const D3D12_CPU_DESCRIPTOR_HANDLE destHandle = { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_copyOffset };
 
-	p_renderingManager->GetDevice()->CopyDescriptorsSimple(
+	p_renderingManager->GetMainAdapter()->GetDevice()->CopyDescriptorsSimple(
 		numDescriptors,
 		destHandle,
 		descriptorHandle,
@@ -178,7 +178,7 @@ HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & 
 {
 	HRESULT hr = 0;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
@@ -190,7 +190,7 @@ HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & 
 
 	}
 	SET_NAME(p_instanceBuffer, name + L" intermediate INSTANCE BUFFER");
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),

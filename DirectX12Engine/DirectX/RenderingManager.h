@@ -2,8 +2,8 @@
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxgi1_5.h>
+#include "X12Adapter.h"
 
-#define MAX_DESCRIPTOR_SIZE 100000
 
 class SSAOPass;
 class DeferredRender;
@@ -33,8 +33,8 @@ public:
 
 	void UnsafeInit(const Window * window, const bool & enableDebugTools);
 
-	ID3D12Device * GetSecondDevice() const;
-	ID3D12Device * GetDevice() const;
+	X12Adapter * GetMainAdapter() const;
+	X12Adapter * GetSecondAdapter() const;
 	IDXGISwapChain4 * GetSwapChain() const;
 	ID3D12GraphicsCommandList * GetCommandList() const;
 	ID3D12CommandQueue * GetCommandQueue() const;
@@ -60,25 +60,19 @@ public:
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
 	HRESULT SignalGPU(ID3D12GraphicsCommandList * commandList);
-
-	void IterateCbvSrvUavDescriptorHeapIndex();
-	const SIZE_T & GetResourceCurrentIndex() const;
-	const SIZE_T & GetResourceIncrementalSize() const;
-	ID3D12DescriptorHeap * GetCpuDescriptorHeap() const;
-
-	void IterateSecondCbvSrvUavDescriptorHeapIndex();
-	const SIZE_T & GetSecondResourceCurrentIndex() const;
-	const SIZE_T & GetSecondResourceIncrementalSize() const;
-	ID3D12DescriptorHeap * GetSecondCpuDescriptorHeap() const;
-
+	   
 	void ResourceDescriptorHeap(ID3D12GraphicsCommandList * commandList) const;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE CopyToGpuDescriptorHeap(const D3D12_CPU_DESCRIPTOR_HANDLE & descriptorHandle, const UINT & numDescriptors = 1);
 
 private:
 
-	ID3D12Device *				m_device = nullptr;
-	ID3D12Device *				m_secondDevice = nullptr;
+	//ID3D12Device *				m_device = nullptr;
+	//ID3D12Device *				m_secondDevice = nullptr;
+
+	X12Adapter	*				m_main = nullptr;
+	X12Adapter	*				m_secondary = nullptr;
+
 	IDXGISwapChain4 *			m_swapChain = nullptr;
 	
 	ID3D12CommandQueue *		m_commandQueue = nullptr;
@@ -110,7 +104,6 @@ private:
 	HRESULT _createCommandAllocators();
 	HRESULT _createCommandList();
 	HRESULT _createFenceAndFenceEvent();
-	HRESULT _createCpuDescriptorHeap();
 
 	GeometryPass *	m_geometryPass = nullptr;
 	ShadowPass *	m_shadowPass = nullptr;
@@ -120,17 +113,8 @@ private:
 	ReflectionPass * m_reflectionPass = nullptr;
 
 	SIZE_T m_copyOffset = 0;
-	SIZE_T m_resourceCurrentIndex = 0;
 	SIZE_T m_resourceIncrementalSize = 0;
 	ID3D12DescriptorHeap * m_gpuDescriptorHeap = nullptr;
-	ID3D12DescriptorHeap * m_cpuDescriptorHeap = nullptr;
-
-
-
-	SIZE_T m_secondCopyOffset = 0;
-	SIZE_T m_secondResourceCurrentIndex = 0;
-	SIZE_T m_secondResourceIncrementalSize = 0;
-	ID3D12DescriptorHeap * m_secondCpuDescriptorHeap = nullptr;
 
 	HRESULT _createCbvSrvUavDescriptorHeap();
 

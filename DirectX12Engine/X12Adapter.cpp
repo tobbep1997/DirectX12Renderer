@@ -44,6 +44,11 @@ ID3D12DescriptorHeap* X12Adapter::GetCpuDescriptorHeap() const
 	return m_cpuDescriptorHeap;
 }
 
+const SIZE_T& X12Adapter::GetDescriptorHandleIncrementSize() const
+{
+	return m_incrementalSize;
+}
+
 X12Adapter::Handle X12Adapter::GetNextHandle()
 {
 	const SIZE_T offset = m_currentIndex * m_incrementalSize;

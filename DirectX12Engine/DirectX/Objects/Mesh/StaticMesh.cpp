@@ -114,7 +114,7 @@ HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 	HRESULT hr = 0;
 	m_vertexBufferSize = static_cast<UINT>(sizeof(StaticVertex) * this->m_staticMesh.size());
 
-	if (SUCCEEDED(hr = renderingManager->GetDevice()->CreateCommittedResource(
+	if (SUCCEEDED(hr = renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),
@@ -126,7 +126,7 @@ HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 			std::wstring(m_name.begin(), m_name.end()) +
 			std::wstring(L": vertexBuffer"));
 
-		if (SUCCEEDED(hr = renderingManager->GetDevice()->CreateCommittedResource(
+		if (SUCCEEDED(hr = renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),

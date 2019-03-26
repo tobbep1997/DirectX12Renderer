@@ -213,7 +213,7 @@ HRESULT ShadowPass::_initRootSignature()
 		&signature,
 		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateRootSignature(
 			0,
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -305,7 +305,7 @@ HRESULT ShadowPass::_initPipelineState()
 	else
 		return hr;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateGraphicsPipelineState(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateGraphicsPipelineState(
 		&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&m_pipelineState))))
 	{

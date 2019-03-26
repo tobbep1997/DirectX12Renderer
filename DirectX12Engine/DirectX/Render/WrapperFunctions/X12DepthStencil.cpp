@@ -35,7 +35,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	   
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
+	if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateDescriptorHeap(
 		&dsvHeapDesc, IID_PPV_ARGS(&m_depthStencilDescriptorHeap))))
 	{
 		SET_NAME(m_depthStencilDescriptorHeap, name + L" DepthStencil DescriptorHeap");
@@ -57,7 +57,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 
 		D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);;
 		
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Tex2D(
@@ -87,22 +87,17 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 					srvDesc.Texture2DArray.MostDetailedMip = 0;
 				}
 				
-				m_cpuHandle = { 
-					p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
-					p_renderingManager->GetResourceCurrentIndex() * 
-					p_renderingManager->GetResourceIncrementalSize() 
-				};
+				m_cpuHandle = p_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
 				
-				p_renderingManager->GetDevice()->CreateShaderResourceView(
+				p_renderingManager->GetMainAdapter()->GetDevice()->CreateShaderResourceView(
 					m_depthStencilBuffer,
 					&srvDesc,
 					m_cpuHandle
-				);
-				p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();				
+				);				
 			}
 
 			SET_NAME(m_depthStencilBuffer, name + L" DepthStencil Resource");
-			p_renderingManager->GetDevice()->CreateDepthStencilView(
+			p_renderingManager->GetMainAdapter()->GetDevice()->CreateDepthStencilView(
 				m_depthStencilBuffer,
 				&depthStencilDesc,
 				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());

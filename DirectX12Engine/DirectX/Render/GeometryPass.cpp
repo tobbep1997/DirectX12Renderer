@@ -323,7 +323,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 		&signature, 
 		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateRootSignature(
 			0, 
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -365,7 +365,7 @@ HRESULT GeometryPass::_initID3D12RootSignature()
 		&signature,
 		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateRootSignature(
 			0,
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -428,7 +428,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	else
 		return hr;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateGraphicsPipelineState(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateGraphicsPipelineState(
 		&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&m_pipelineState))))
 	{
@@ -464,7 +464,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 	particleGraphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	particleGraphicsPipelineStateDesc.SampleDesc = desc.SampleDesc;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateGraphicsPipelineState(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateGraphicsPipelineState(
 		&particleGraphicsPipelineStateDesc,
 		IID_PPV_ARGS(&m_particlePipelineState))))
 	{
@@ -562,7 +562,7 @@ HRESULT GeometryPass::_createBundle()
 {
 	HRESULT hr = 0;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandAllocator(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_BUNDLE,
 		IID_PPV_ARGS(&m_bundleCommandAllocator))))
 	{
@@ -572,7 +572,7 @@ HRESULT GeometryPass::_createBundle()
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
 	
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandList(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommandList(
 			0, 
 			D3D12_COMMAND_LIST_TYPE_BUNDLE, 
 			m_bundleCommandAllocator,
