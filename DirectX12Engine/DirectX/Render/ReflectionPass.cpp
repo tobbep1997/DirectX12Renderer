@@ -60,15 +60,15 @@ void ReflectionPass::Update(const Camera& camera, const float& deltaTime)
 	commandList->RSSetScissorRects(1, &m_rect);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(0, 0, commandList);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(commandList, 0, 0);
 
 	for (UINT i = 0; i < m_renderTargetSize; i++)
 	{
 		m_geometryRenderTargetView[i]->CopyDescriptorHeap();
-		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i + 1, commandList);
+		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(commandList, i + 1);
 	}
 	m_depthStencil->CopyDescriptorHeap();
-	m_depthStencil->SetGraphicsRootDescriptorTable(5, commandList);
+	m_depthStencil->SetGraphicsRootDescriptorTable(commandList, 5);
 	
 
 }
@@ -156,13 +156,13 @@ HRESULT ReflectionPass::_preInit()
 	m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
 
 	_createViewPort();
-	SAFE_NEW(m_renderTargetView, new X12RenderTargetView(p_renderingManager, *p_window));
+	SAFE_NEW(m_renderTargetView, new X12RenderTargetView());
 	if (FAILED(hr = m_renderTargetView->CreateRenderTarget(0, 0, 1, TRUE, DXGI_FORMAT_R32G32B32A32_FLOAT)))
 	{
 		return hr;
 	}
 
-	SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+	SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer());
 	if (FAILED(hr = m_cameraBuffer->CreateBuffer(
 		L"Reflection Camera", 
 		nullptr, 

@@ -4,8 +4,8 @@
 class X12Fence : public IX12Object
 {
 public:
-	X12Fence(RenderingManager * renderingManager, const Window & window, ID3D12GraphicsCommandList * commandList = nullptr);
-	~X12Fence();
+	X12Fence() = default;
+	~X12Fence() = default;
 
 	HRESULT CreateFence(const std::wstring & name, ID3D12Device * device, const D3D12_FENCE_FLAGS & flag = D3D12_FENCE_FLAG_NONE);
 

@@ -1,19 +1,6 @@
 #include "DirectX12EnginePCH.h"
 #include "X12StructuredBuffer.h"
 
-
-
-
-X12StructuredBuffer::X12StructuredBuffer(RenderingManager* renderingManager, const Window& window,
-	ID3D12GraphicsCommandList* commandList) : IX12Object(renderingManager, window, commandList)
-{
-
-}
-
-X12StructuredBuffer::~X12StructuredBuffer()
-{
-}
-
 HRESULT X12StructuredBuffer::Create(const std::wstring & name, const UINT& size)
 {
 	HRESULT hr = 0;
@@ -68,10 +55,10 @@ void X12StructuredBuffer::Copy(void* data, const UINT& size, const UINT& offset)
 	memcpy(m_resourceAddress[p_renderingManager->GetFrameIndex()] + offset, data, size);
 }
 
-void X12StructuredBuffer::SetGraphicsRootShaderResourceView(const UINT& rootParameterIndex, ID3D12GraphicsCommandList* commandList)
+void X12StructuredBuffer::SetGraphicsRootShaderResourceView(ID3D12GraphicsCommandList* commandList,
+	const UINT& rootParameterIndex)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	gcl->SetGraphicsRootShaderResourceView(rootParameterIndex, m_resource[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootShaderResourceView(rootParameterIndex, m_resource[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
 }
 
 void X12StructuredBuffer::Release()

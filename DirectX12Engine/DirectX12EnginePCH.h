@@ -35,10 +35,7 @@ constexpr UINT SHADOW_MAP_SIZE = 512;
 
 inline HRESULT SET_NAME(ID3D12Object * object, const std::wstring & name)
 {
-#ifdef _DEBUG
 	return object->SetName(name.c_str());
-#endif
-	return S_OK;
 }
 
 namespace DEBUG

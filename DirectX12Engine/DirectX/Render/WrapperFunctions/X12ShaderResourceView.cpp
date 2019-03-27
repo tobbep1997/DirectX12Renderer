@@ -3,14 +3,7 @@
 #include "Functions/DXGIFunctions.h"
 
 
-X12ShaderResourceView::X12ShaderResourceView(RenderingManager* renderingManager, const Window& window, ID3D12GraphicsCommandList * commandList)
-	: IX12Object(renderingManager, window, commandList)
-{
-}
 
-X12ShaderResourceView::~X12ShaderResourceView()
-{
-}
 
 HRESULT X12ShaderResourceView::CreateShaderResourceView(const UINT& width, const UINT& height, const UINT& arraySize, const DXGI_FORMAT& format)
 {
@@ -69,25 +62,20 @@ HRESULT X12ShaderResourceView::CreateShaderResourceView(const UINT& width, const
 	return hr;
 }
 
-void X12ShaderResourceView::BeginCopy(ID3D12GraphicsCommandList * commandList)
+void X12ShaderResourceView::BeginCopy(ID3D12GraphicsCommandList * commandList) const
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
 }
 
-void X12ShaderResourceView::EndCopy(ID3D12GraphicsCommandList * commandList)
+void X12ShaderResourceView::EndCopy(ID3D12GraphicsCommandList * commandList) const
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 }
 
-void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resource* resource, ID3D12GraphicsCommandList * commandList) const
+void X12ShaderResourceView::CopySubresource(ID3D12GraphicsCommandList * commandList, const UINT & dstIndex, ID3D12Resource* resource) const
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-
-	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE));
-
-	
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE));
+		
 	UINT counter = 0;
 	const D3D12_RESOURCE_DESC desc = resource->GetDesc();
 	for (UINT i = dstIndex; i < desc.DepthOrArraySize + dstIndex; i++)
@@ -102,7 +90,7 @@ void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resourc
 		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		srcLocation.SubresourceIndex = counter++;
 		
-		gcl->CopyTextureRegion(
+		commandList->CopyTextureRegion(
 			&dstLocation, 
 			0, 
 			0, 
@@ -111,8 +99,7 @@ void X12ShaderResourceView::CopySubresource(const UINT & dstIndex, ID3D12Resourc
 			nullptr);
 	}
 	
-	gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 }
 
 void X12ShaderResourceView::CopyDescriptorHeap()
@@ -120,14 +107,13 @@ void X12ShaderResourceView::CopyDescriptorHeap()
 	m_gpuHandle = p_renderingManager->CopyToGpuDescriptorHeap(m_cpuHandle, m_arraySize);
 }
 
-void X12ShaderResourceView::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex, ID3D12GraphicsCommandList * commandList)
+void X12ShaderResourceView::SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList * commandList,
+	const UINT& rootParameterIndex)
 {
 	if (m_gpuHandle.ptr == 0)
 		throw "GPU handle null";
 
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-
-	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
+	commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
 }
 
 

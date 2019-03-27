@@ -33,11 +33,11 @@ DeferredRender::DeferredRender(RenderingManager* renderingManager, const Window&
 	m_vertexList[2] = Vertex(DirectX::XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(1, 1, 0, 0));
 	m_vertexList[3] = Vertex(DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(1, 0, 0, 0));
 
-	SAFE_NEW(m_lightBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
-	SAFE_NEW(m_lightTable, new X12ConstantBuffer(p_renderingManager, *p_window));
-	SAFE_NEW(m_shadowBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
-	SAFE_NEW(m_shaderResourceView, new X12ShaderResourceView(p_renderingManager, *p_window));
-	SAFE_NEW(m_shadowStructuredBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+	SAFE_NEW(m_lightBuffer, new X12ConstantBuffer());
+	SAFE_NEW(m_lightTable, new X12ConstantBuffer());
+	SAFE_NEW(m_shadowBuffer, new X12ConstantBuffer());
+	SAFE_NEW(m_shaderResourceView, new X12ShaderResourceView());
+	SAFE_NEW(m_shadowStructuredBuffer, new X12ConstantBuffer());
 
 
 	SAFE_NEW(m_shadowMaps, new std::vector<ShadowMap*>());
@@ -81,13 +81,13 @@ void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 	
 
 	_copyLightData(camera);
-	m_lightBuffer->SetGraphicsRootConstantBufferView(LIGHT_BUFFER, 0, commandList);
-	m_lightTable->SetGraphicsRootShaderResourceView(LIGHT_TABLE, 0, commandList);
+	m_lightBuffer->SetGraphicsRootConstantBufferView(commandList, LIGHT_BUFFER, 0);
+	m_lightTable->SetGraphicsRootShaderResourceView(commandList, LIGHT_TABLE, 0);
 
 	for (UINT i = 0; i < this->m_renderTargetSize; i++)
 	{
 		m_geometryRenderTargetView[i]->CopyDescriptorHeap();
-		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(i, commandList);
+		m_geometryRenderTargetView[i]->SetGraphicsRootDescriptorTable(commandList, i);
 	}
 
 	struct Uint4
@@ -113,24 +113,23 @@ void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 
 	shadowValues.X = static_cast<UINT>(m_shadowMaps->size());
 	m_shadowBuffer->Copy(&shadowValues, sizeof(Uint4));
-	m_shadowBuffer->SetGraphicsRootConstantBufferView(SHADOW_BUFFER, 0, commandList);
-	m_shadowStructuredBuffer->SetGraphicsRootShaderResourceView(SHADOW_STRUCTURED_BUFFER, 0, commandList);
+	m_shadowBuffer->SetGraphicsRootConstantBufferView(commandList, SHADOW_BUFFER, 0);
+	m_shadowStructuredBuffer->SetGraphicsRootShaderResourceView(commandList, SHADOW_STRUCTURED_BUFFER, 0);
 
-	//m_shaderResourceView->CopyDescriptorHeap();
-	//m_shaderResourceView->SetGraphicsRootDescriptorTable(SHADOW_TEXTURE, commandList);
+
 	m_bindlessTexture->SetGraphicsRootDescriptorTable(commandList, SHADOW_TEXTURE);
 	m_bindlessTexture->ResetDescriptorHandle();
 
 	if (m_ssao)
 	{
 		m_ssao->CopyDescriptorHeap();
-		m_ssao->SetGraphicsRootDescriptorTable(SSAO_TEXTURE, commandList);
+		m_ssao->SetGraphicsRootDescriptorTable(commandList, SSAO_TEXTURE);
 	}
 	
 	if (m_reflection)
 	{
 		m_reflection->CopyDescriptorHeap();
-		m_reflection->SetGraphicsRootDescriptorTable(REFLECTION_TEXTURE, commandList);
+		m_reflection->SetGraphicsRootDescriptorTable(commandList, REFLECTION_TEXTURE);
 	}
 }
 
@@ -163,20 +162,26 @@ void DeferredRender::Release()
 	SAFE_RELEASE(m_vertexBuffer);
 	SAFE_RELEASE(m_vertexHeapBuffer);
 
-	m_lightBuffer->Release();
+	if (m_lightBuffer)
+		m_lightBuffer->Release();
 	SAFE_DELETE(m_lightBuffer);
+
 	SAFE_DELETE(m_shadowMaps);
 
-	m_lightTable->Release();
+	if (m_lightTable)
+		m_lightTable->Release();
 	SAFE_DELETE(m_lightTable);
 
-	m_shaderResourceView->Release();
+	if (m_shaderResourceView)
+		m_shaderResourceView->Release();
 	SAFE_DELETE(m_shaderResourceView);
 
-	m_shadowStructuredBuffer->Release();
+	if (m_shadowStructuredBuffer)
+		m_shadowStructuredBuffer->Release();
 	SAFE_DELETE(m_shadowStructuredBuffer);
 
-	m_shadowBuffer->Release();
+	if (m_shadowBuffer)
+		m_shadowBuffer->Release();
 	SAFE_DELETE(m_shadowBuffer);
 
 	SAFE_DELETE(m_bindlessTexture);

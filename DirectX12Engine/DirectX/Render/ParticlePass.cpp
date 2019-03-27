@@ -16,10 +16,10 @@ ParticlePass::ParticlePass(RenderingManager* renderingManager, const Window& win
 	: IRender(renderingManager, window)
 {
 	SAFE_NEW(m_emitters, new std::vector<ParticleEmitter*>());
-	SAFE_NEW(m_particleBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
-	SAFE_NEW(m_particleInfoBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+	SAFE_NEW(m_particleBuffer, new X12ConstantBuffer());
+	SAFE_NEW(m_particleInfoBuffer, new X12ConstantBuffer());
+	SAFE_NEW(m_fence, new X12Fence());
 
-	SAFE_NEW(m_fence, new X12Fence(p_renderingManager, *p_window));
 	this->m_geometryPass = renderingManager->GetGeometryPass();
 }
 
@@ -38,7 +38,6 @@ HRESULT ParticlePass::Init()
 	}
 
 	const D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-	const UINT nodeMask = p_renderingManager->GetSecondAdapter()->GetDevice() ? 1 : 0;
 	ID3D12Device * device = p_renderingManager->GetSecondAdapter()->GetDevice() ? p_renderingManager->GetSecondAdapter()->GetDevice() : p_renderingManager->GetMainAdapter()->GetDevice();
 
 	if (FAILED(hr = _initCommandQueue(device, type, 0)))
@@ -143,11 +142,11 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 	if (FAILED(m_commandAllocator[frameIndex]->Reset()))
 	{
-		throw;
+		return;
 	}
 	if (FAILED(m_commandList[frameIndex]->Reset(m_commandAllocator[frameIndex], m_computePipelineState)))
 	{
-		throw;
+		return;
 	}
 
 	ParticleEmitter * emitter = nullptr;
@@ -161,8 +160,8 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 		commandList->SetComputeRootSignature(m_rootSignature);
 		
-		m_particleInfoBuffer->SetComputeRootConstantBufferView(PARTICLE_INFO, 0, commandList);
-		m_particleBuffer->SetComputeRootShaderResourceView(PARTICLE_BUFFER, 0, commandList);
+		m_particleInfoBuffer->SetComputeRootConstantBufferView(commandList, PARTICLE_INFO, 0);
+		m_particleBuffer->SetComputeRootShaderResourceView(commandList, PARTICLE_BUFFER, 0);
 
 		commandList->SetComputeRootUnorderedAccessView(VERTEX_OUTPUT, emitter->GetVertexResource()->GetGPUVirtualAddress());
 		commandList->SetComputeRootUnorderedAccessView(CALC_OUTPUT, emitter->GetCalcResource()->GetGPUVirtualAddress());
@@ -179,7 +178,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 	if (FAILED(m_commandList[frameIndex]->Close()))
 	{
-		throw;
+		return;
 	}
 
 	ID3D12CommandList * ppCommandLists[] = { m_commandList[frameIndex] };
@@ -196,12 +195,12 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 			}
 		}
 	}
-	for (size_t i = 0; i < m_emitters->size(); i++)
-	{
-		emitter = m_emitters->at(i);
-		//if (!emitter->GetPositions().empty())
-		//	m_geometryPass->AddEmitter(emitter);
-	}
+	//for (size_t i = 0; i < m_emitters->size(); i++)
+	//{
+	//	emitter = m_emitters->at(i);
+	//	//if (!emitter->GetPositions().empty())
+	//	//	m_geometryPass->AddEmitter(emitter);
+	//}
 
 }
 
@@ -224,13 +223,16 @@ void ParticlePass::Release()
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_computePipelineState);
 
-	m_particleBuffer->Release();
+	if (m_particleBuffer)
+		m_particleBuffer->Release();
 	SAFE_DELETE(m_particleBuffer);
 
-	m_particleInfoBuffer->Release();
+	if (m_particleInfoBuffer)
+		m_particleInfoBuffer->Release();
 	SAFE_DELETE(m_particleInfoBuffer);
 
-	m_fence->Release();
+	if (m_fence)
+		m_fence->Release();
 	SAFE_DELETE(m_fence);
 
 	SAFE_RELEASE(m_commandQueue);
@@ -257,7 +259,7 @@ HRESULT ParticlePass::_initCommandQueue(ID3D12Device * device, const D3D12_COMMA
 	{
 		return hr;
 	}
-
+	SET_NAME(m_commandQueue, L"Particle CommandQueue");
 	return hr;
 }
 
@@ -283,6 +285,8 @@ HRESULT ParticlePass::_initCommandList(ID3D12Device * device, const D3D12_COMMAN
 			return hr;
 		}
 		m_commandList[i]->Close();
+		SET_NAME(m_commandAllocator[i], L"Particle CommandAllocator" + std::to_wstring(i));
+		SET_NAME(m_commandList[i], L"Particle CommandList" + std::to_wstring(i));
 	}
 	return hr;
 }

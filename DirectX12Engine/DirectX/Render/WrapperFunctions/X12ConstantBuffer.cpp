@@ -2,18 +2,6 @@
 #include "X12ConstantBuffer.h"
 
 
-
-
-
-X12ConstantBuffer::X12ConstantBuffer(RenderingManager* renderingManager, const Window& window, ID3D12GraphicsCommandList * commandList)
-	: IX12Object(renderingManager, window, commandList)
-{
-}
-
-X12ConstantBuffer::~X12ConstantBuffer()
-{
-}
-
 HRESULT X12ConstantBuffer::CreateBuffer(const std::wstring & name, void const* data, const UINT& sizeOf, const UINT & preAllocData)
 {
 	HRESULT hr = 0;
@@ -70,7 +58,7 @@ HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UI
 	const D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	
 
-	ID3D12Device * device = p_renderingManager->GetSecondAdapter()->GetDevice();
+	ID3D12Device * device = p_renderingManager->GetSecondAdapter() ? p_renderingManager->GetSecondAdapter()->GetDevice() : nullptr;
 	if (!device)
 		return E_FAIL;
 
@@ -111,41 +99,36 @@ HRESULT X12ConstantBuffer::CreateSharedBuffer(const std::wstring& name, const UI
 	return hr;
 }
 
-void X12ConstantBuffer::SetComputeRootConstantBufferView(const UINT& rootParameterIndex,
-	const UINT & offset, 
-	ID3D12GraphicsCommandList* commandList)
+void X12ConstantBuffer::SetComputeRootConstantBufferView(ID3D12GraphicsCommandList* commandList,
+	const UINT& rootParameterIndex,
+	const UINT & offset)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
 	
-	gcl->SetComputeRootConstantBufferView(rootParameterIndex,
+	commandList->SetComputeRootConstantBufferView(rootParameterIndex,
 		m_constantBuffer[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
 }
 
-void X12ConstantBuffer::SetComputeRootShaderResourceView(const UINT& rootParameterIndex, const UINT& offset,
-	ID3D12GraphicsCommandList* commandList)
+void X12ConstantBuffer::SetComputeRootShaderResourceView(ID3D12GraphicsCommandList* commandList,
+	const UINT& rootParameterIndex,
+	const UINT & offset)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-
-	gcl->SetComputeRootShaderResourceView(rootParameterIndex,
+	commandList->SetComputeRootShaderResourceView(rootParameterIndex,
 		m_constantBuffer[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
 }
 
-void X12ConstantBuffer::SetGraphicsRootConstantBufferView(const UINT& rootParameterIndex, 
-	const UINT & offset, 
-	ID3D12GraphicsCommandList * commandList)
+void X12ConstantBuffer::SetGraphicsRootConstantBufferView(ID3D12GraphicsCommandList* commandList,
+	const UINT& rootParameterIndex,
+	const UINT & offset)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-
-	gcl->SetGraphicsRootConstantBufferView(rootParameterIndex,
+	commandList->SetGraphicsRootConstantBufferView(rootParameterIndex,
 		m_constantBuffer[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
 }
 
-void X12ConstantBuffer::SetGraphicsRootShaderResourceView(const UINT& rootParameterIndex, const UINT& offset,
-	ID3D12GraphicsCommandList* commandList)
+void X12ConstantBuffer::SetGraphicsRootShaderResourceView(ID3D12GraphicsCommandList* commandList,
+	const UINT& rootParameterIndex,
+	const UINT & offset)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-
-	gcl->SetGraphicsRootShaderResourceView(rootParameterIndex,
+	commandList->SetGraphicsRootShaderResourceView(rootParameterIndex,
 		m_constantBuffer[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress() + offset);
 }
 

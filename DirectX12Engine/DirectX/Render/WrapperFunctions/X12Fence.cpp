@@ -1,17 +1,6 @@
 #include "DirectX12EnginePCH.h"
 #include "X12Fence.h"
 
-
-
-X12Fence::X12Fence(RenderingManager* renderingManager, const Window& window, ID3D12GraphicsCommandList* commandList) 
-	: IX12Object(renderingManager, window, commandList)
-{
-}
-
-X12Fence::~X12Fence()
-{
-}
-
 HRESULT X12Fence::CreateFence(const std::wstring& name, ID3D12Device* device, const D3D12_FENCE_FLAGS& flag)
 {
 	HRESULT hr = 0;

@@ -35,7 +35,7 @@ BOOL ParticleEmitter::Init()
 	{
 		if (SUCCEEDED(hr = _createBuffer()))
 		{			
-			SAFE_NEW(m_shaderResourceView, new X12ShaderResourceView(m_renderingManager, *m_window));
+			SAFE_NEW(m_shaderResourceView, new X12ShaderResourceView());
 			if (SUCCEEDED(hr = m_shaderResourceView->CreateShaderResourceView(
 				m_width,
 				m_height,
@@ -48,8 +48,8 @@ BOOL ParticleEmitter::Init()
 					{
 						m_shaderResourceView->BeginCopy(m_commandList[m_renderingManager->GetFrameIndex()]);
 
-						m_shaderResourceView->CopySubresource(i,
-							m_textures[i]->GetResource(), m_commandList[m_renderingManager->GetFrameIndex()]);
+						m_shaderResourceView->CopySubresource(m_commandList[m_renderingManager->GetFrameIndex()], i,
+							m_textures[i]->GetResource());
 
 						m_shaderResourceView->EndCopy(m_commandList[m_renderingManager->GetFrameIndex()]);
 					}
@@ -75,12 +75,12 @@ void ParticleEmitter::Release()
 {
 	SAFE_RELEASE(m_vertexOutputResource);
 
-
-
-	m_particles->clear();
+	if (m_particles)
+		m_particles->clear();
 	SAFE_DELETE(m_particles);
 
-	m_shaderResourceView->Release();
+	if (m_shaderResourceView)
+		m_shaderResourceView->Release();
 	SAFE_DELETE(m_shaderResourceView);
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
@@ -232,9 +232,10 @@ HRESULT ParticleEmitter::_createBuffer()
 	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
 	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
 
-	
 
-	if (SUCCEEDED(hr = m_renderingManager->GetSecondAdapter()->GetDevice()->CreateCommittedResource(
+	ID3D12Device * device = m_renderingManager->GetSecondAdapter() ? m_renderingManager->GetSecondAdapter()->GetDevice() : m_renderingManager->GetMainAdapter()->GetDevice();
+
+	if (SUCCEEDED(hr = device->CreateCommittedResource(
 		&heapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&resourceDesc,
@@ -261,7 +262,7 @@ HRESULT ParticleEmitter::_createBuffer()
 		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
 		{ m_renderingManager->GetSecondAdapter()->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
 
-		m_renderingManager->GetSecondAdapter()->GetDevice()->CreateUnorderedAccessView(
+		device->CreateUnorderedAccessView(
 			m_vertexOutputResource,
 			nullptr,
 			&unorderedAccessViewDesc,
@@ -272,7 +273,7 @@ HRESULT ParticleEmitter::_createBuffer()
 		return hr;
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (SUCCEEDED(hr = m_renderingManager->GetSecondAdapter()->GetDevice()->CreateCommittedResource(
+		if (SUCCEEDED(hr = device->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
@@ -299,7 +300,7 @@ HRESULT ParticleEmitter::_createBuffer()
 			const D3D12_CPU_DESCRIPTOR_HANDLE handle =
 			{ m_renderingManager->GetSecondAdapter()->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
 
-			m_renderingManager->GetSecondAdapter()->GetDevice()->CreateUnorderedAccessView(
+			device->CreateUnorderedAccessView(
 				m_calculationsOutputResource[i],
 				nullptr,
 				&unorderedAccessViewDesc,
@@ -367,7 +368,6 @@ void ParticleEmitter::Draw()
 void ParticleEmitter::UpdateEmitter(const float & deltaTime)
 {
 	_updateParticles(deltaTime);
-
 }
 
 void ParticleEmitter::UpdateData()

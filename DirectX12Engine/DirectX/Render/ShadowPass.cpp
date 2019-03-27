@@ -71,6 +71,8 @@ void ShadowPass::Draw()
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
 	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 
+	ID3D12GraphicsCommandList * commandList = p_commandList[frameIndex];
+
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
 	{
@@ -83,11 +85,11 @@ void ShadowPass::Draw()
 			p_lightQueue->at(i)->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
 			frameIndex,
 			p_lightQueue->at(i)->GetRenderTargetView()->GetDescriptorSize());
-		p_lightQueue->at(i)->GetRenderTargetView()->Clear(rtvHandle, p_commandList[frameIndex]);
+		p_lightQueue->at(i)->GetRenderTargetView()->Clear(commandList, rtvHandle);
 		
 		p_commandList[frameIndex]->OMSetRenderTargets(p_lightQueue->at(i)->GetNumRenderTargets(), &rtvHandle, TRUE, &dsvHandle);
 
-		m_constantLightBuffer->SetGraphicsRootConstantBufferView(0, counter * m_constantLightBufferPerObjectAlignedSize, p_commandList[frameIndex]);
+		m_constantLightBuffer->SetGraphicsRootConstantBufferView(commandList, 0, counter * m_constantLightBufferPerObjectAlignedSize);
 		
 		p_drawInstance();
 
@@ -138,9 +140,11 @@ void ShadowPass::Release()
 {
 	SAFE_RELEASE(m_rootSignature);
 	SAFE_RELEASE(m_pipelineState);
-	   
-	m_constantLightBuffer->Release();
+
+	if (m_constantLightBuffer)
+		m_constantLightBuffer->Release();
 	SAFE_DELETE(m_constantLightBuffer);
+
 	p_releaseInstanceBuffer();
 	p_releaseCommandList();
 }
@@ -319,7 +323,7 @@ HRESULT ShadowPass::_createConstantBuffer()
 {
 	HRESULT hr = 0;
 	   
-	SAFE_NEW(m_constantLightBuffer, new X12ConstantBuffer(p_renderingManager, *p_window));
+	SAFE_NEW(m_constantLightBuffer, new X12ConstantBuffer());
 	if (FAILED(hr = m_constantLightBuffer->CreateBuffer(L"Shadow matrix", &m_lightValues, sizeof(LightBuffer))))
 	{
 		return hr;

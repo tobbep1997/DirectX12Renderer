@@ -65,7 +65,7 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 			p_renderingManager->GetFrameIndex(),
 			m_renderTarget[i]->GetDescriptorSize());
 
-		m_renderTarget[i]->Clear(rtvHandle, commandList);
+		m_renderTarget[i]->Clear(commandList, rtvHandle);
 		d12CpuDescriptorHandle[i] = rtvHandle;
 	}
 
@@ -79,8 +79,8 @@ void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 	m_cameraBuffer->Copy(&m_cameraValues, sizeof(m_cameraValues));
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(0,0, commandList);
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(1, 0, commandList);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(commandList, 0, 0);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(commandList, 1, 0);
 }
 
 void GeometryPass::Draw()
@@ -95,7 +95,7 @@ void GeometryPass::Draw()
 		commandList->SetPipelineState(m_particlePipelineState);
 		commandList->SetGraphicsRootSignature(m_particleRootSignature);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_cameraBuffer->SetGraphicsRootConstantBufferView(0, 0, commandList);
+		m_cameraBuffer->SetGraphicsRootConstantBufferView(commandList, 0, 0);
 		
 		ParticleEmitter * emitter = nullptr;
 		for (size_t i = 0; i < emitterSize; i++)
@@ -148,7 +148,8 @@ void GeometryPass::Release()
 	SAFE_RELEASE(m_particlePipelineState);
 	SAFE_RELEASE(m_particleRootSignature);
 
-	m_depthStencil->Release();
+	if (m_depthStencil)
+		m_depthStencil->Release();
 	SAFE_DELETE(m_depthStencil);
 
 	SAFE_RELEASE(m_bundleCommandAllocator);
@@ -160,7 +161,8 @@ void GeometryPass::Release()
 
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
-		m_renderTarget[i]->Release();
+		if (m_renderTarget[i])
+			m_renderTarget[i]->Release();
 		SAFE_DELETE(m_renderTarget[i]);
 	}
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
@@ -169,8 +171,8 @@ void GeometryPass::Release()
 		SAFE_RELEASE(m_bundleCommandList[i]);
 	}
 
-
-	m_cameraBuffer->Release();
+	if (m_cameraBuffer)
+		m_cameraBuffer->Release();
 	SAFE_DELETE(m_cameraBuffer);
 }
 
@@ -208,7 +210,7 @@ HRESULT GeometryPass::_preInit()
 		return hr;
 	}
 	
-	SAFE_NEW(m_depthStencil, new X12DepthStencil(p_renderingManager, *p_window, nullptr));
+	SAFE_NEW(m_depthStencil, new X12DepthStencil());
 	if (FAILED(hr = m_depthStencil->CreateDepthStencil(L"Geometry",
 		0, 0,
 		1, TRUE)))
@@ -217,7 +219,7 @@ HRESULT GeometryPass::_preInit()
 	}
 
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
-		SAFE_NEW(m_renderTarget[i], new X12RenderTargetView(p_renderingManager, *p_window, nullptr));
+		SAFE_NEW(m_renderTarget[i], new X12RenderTargetView());
 	for (UINT i = 0; i < RENDER_TARGETS; i++)
 	{
 		if (FAILED(hr = m_renderTarget[i]->CreateRenderTarget(
@@ -234,7 +236,7 @@ HRESULT GeometryPass::_preInit()
 		return hr;
 	}
 
-	SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, nullptr));
+	SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer());
 	if (FAILED(hr = m_cameraBuffer->CreateBuffer(
 		L"Geometry camera",
 		&m_cameraValues,

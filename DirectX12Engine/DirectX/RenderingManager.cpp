@@ -30,7 +30,7 @@ RenderingManager* RenderingManager::GetPointerInstance()
 	return thisRenderingManager;
 }
 
-HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLayer)
+HRESULT RenderingManager::Init(const Window * window, const BOOL & enableDebugLayer)
 {
 	HRESULT hr;
 	IDXGIAdapter1 * adapter = nullptr, * adapter1 = nullptr;
@@ -38,7 +38,7 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 
 
 
-	if (EnableDebugLayer)
+	if (enableDebugLayer)
 	{
 		m_debugLayerEnabled = TRUE;
 		if (SUCCEEDED(hr = D3D12GetDebugInterface(IID_PPV_ARGS(&m_debugLayer))))
@@ -46,22 +46,20 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & EnableDebugLa
 			m_debugLayer->EnableDebugLayer();
 		}
 	}
-	if (SUCCEEDED(hr = this->_checkD3D12Support(adapter, dxgiFactory)))
+	if (SUCCEEDED(hr = this->_checkAdapterSupport(adapter, dxgiFactory, 0)))
 	{	
-		SAFE_NEW(m_main, new X12Adapter());
-		if (SUCCEEDED(hr = m_main->CreateDevice(adapter)))
+		SAFE_NEW(m_mainAdapter, new X12Adapter());
+		if (SUCCEEDED(hr = m_mainAdapter->CreateDevice(adapter)))
 		{
-			if (SUCCEEDED(hr = this->_createSecondAdapter(adapter1, dxgiFactory)))
+			if (SUCCEEDED(hr = this->_checkAdapterSupport(adapter1, dxgiFactory, 1)))
 			{
-				SAFE_NEW(m_secondary, new X12Adapter());
-				if (FAILED(hr = m_secondary->CreateDevice(adapter1)))
+				SAFE_NEW(m_secondaryAdapter, new X12Adapter());
+				if (FAILED(hr = m_secondaryAdapter->CreateDevice(adapter1)))
 				{
 					return hr;
 				}
-				
-			}
-			else
-				return hr;
+
+			}				
 
 			if (FAILED(hr = _createCbvSrvUavDescriptorHeap()))
 			{
@@ -328,21 +326,21 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	SAFE_DELETE(m_ssaoPass);
 
 	
-	m_secondary->Release();
-	SAFE_DELETE(m_secondary);
-	if (m_main->Release())
+	m_secondaryAdapter->Release();
+	SAFE_DELETE(m_secondaryAdapter);
+	if (m_mainAdapter->Release())
 	{
 		if (m_debugLayerEnabled && reportMemoryLeaks)
 		{
 			ID3D12DebugDevice * dbgDevice = nullptr;
-			if (SUCCEEDED(m_main->GetDevice()->QueryInterface(IID_PPV_ARGS(&dbgDevice))))
+			if (SUCCEEDED(m_mainAdapter->GetDevice()->QueryInterface(IID_PPV_ARGS(&dbgDevice))))
 			{
 				dbgDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
 				SAFE_RELEASE(dbgDevice);
 			}
 		}
 	}
-	SAFE_DELETE(m_main);
+	SAFE_DELETE(m_mainAdapter);
 
 }
 
@@ -362,12 +360,12 @@ void RenderingManager::UnsafeInit(const Window* window, const bool& enableDebugT
 
 X12Adapter* RenderingManager::GetSecondAdapter() const
 {
-	return m_secondary;
+	return m_secondaryAdapter;
 }
 
 X12Adapter* RenderingManager::GetMainAdapter() const
 {
-	return m_main;
+	return m_mainAdapter;
 }
 
 IDXGISwapChain4* RenderingManager::GetSwapChain() const
@@ -505,7 +503,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE RenderingManager::CopyToGpuDescriptorHeap(
 	const SIZE_T offset = m_copyOffset;
 	const D3D12_CPU_DESCRIPTOR_HANDLE destHandle = { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_copyOffset };
 
-	m_main->GetDevice()->CopyDescriptorsSimple(
+	m_mainAdapter->GetDevice()->CopyDescriptorsSimple(
 		numDescriptors,
 		destHandle,
 		descriptorHandle,
@@ -552,83 +550,39 @@ HRESULT RenderingManager::_waitForPreviousFrame(const BOOL & updateFrame, const 
 	return hr;
 }
 
-HRESULT RenderingManager::_checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const
+HRESULT RenderingManager::_checkAdapterSupport(IDXGIAdapter1*& adapter, IDXGIFactory4*& dxgiFactory,
+	const UINT& adapterIndex) const
 {
 	HRESULT hr = 0;
-	if (adapter || dxgiFactory)
-		return E_INVALIDARG;
-
-	if (SUCCEEDED(hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory))))
-	{
-		hr = E_FAIL;
-
-		UINT adapterIndex = 0;
-		while (dxgiFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
-		{
-			DXGI_ADAPTER_DESC1 desc;
-			adapter->GetDesc1(&desc);
-
-			if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
-			{
-				adapterIndex++;
-				continue;
-			}
-
-			if (SUCCEEDED(hr = D3D12CreateDevice(adapter, 
-				D3D_FEATURE_LEVEL_12_0,
-				_uuidof(ID3D12Device),
-				nullptr)))
-			{
-				return S_OK;
-			}
-			SAFE_RELEASE(adapter);
-		}
-
-	}
-	else
-	{
-		SAFE_RELEASE(dxgiFactory);
-	}
-
-
-	return hr;
-}
-
-HRESULT RenderingManager::_createSecondAdapter(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const
-{
-	HRESULT	hr = 0;
-
 	if (adapter)
 		return E_INVALIDARG;
 
-	 
-	UINT adapterCount = 0;
-	UINT adapterIndex = 0;
-	while (dxgiFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
+	if (!dxgiFactory)
+		if (FAILED(hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory))))
+			return hr;
+
+
+	hr = E_FAIL;
+	if (dxgiFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
 	{
 		DXGI_ADAPTER_DESC1 desc;
 		adapter->GetDesc1(&desc);
 
 		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
-		{
-			adapterIndex++;
-			continue;
+		{				
+			return E_FAIL;
 		}
 
 		if (SUCCEEDED(hr = D3D12CreateDevice(adapter,
 			D3D_FEATURE_LEVEL_12_0,
 			_uuidof(ID3D12Device),
 			nullptr)))
-		{
-			if (adapterCount > 0)
-				return S_OK;
-			
-			adapterIndex++;
-			adapterCount++;			
+		{				
+			return S_OK;				
 		}
-		SAFE_RELEASE(adapter);
+		
+		SAFE_RELEASE(adapter);		
 	}
-
 	return hr;
 }
 
@@ -638,7 +592,7 @@ HRESULT RenderingManager::_createCommandQueue()
 
 	D3D12_COMMAND_QUEUE_DESC desc = {};
 
-	if (FAILED(hr = this->m_main->GetDevice()->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue))))
+	if (FAILED(hr = this->m_mainAdapter->GetDevice()->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue))))
 	{
 		SAFE_RELEASE(this->m_commandQueue);
 	}
@@ -695,11 +649,11 @@ HRESULT RenderingManager::_createRenderTargetDescriptorHeap()
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	if (SUCCEEDED(hr = m_main->GetDevice()->CreateDescriptorHeap(
+	if (SUCCEEDED(hr = m_mainAdapter->GetDevice()->CreateDescriptorHeap(
 		&rtvHeapDesc,
 		IID_PPV_ARGS(&m_rtvDescriptorHeap))))
 	{
-		m_rtvDescriptorSize = m_main->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		m_rtvDescriptorSize = m_mainAdapter->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 		for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
@@ -708,7 +662,7 @@ HRESULT RenderingManager::_createRenderTargetDescriptorHeap()
 			{
 				break;
 			}
-			m_main->GetDevice()->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
+			m_mainAdapter->GetDevice()->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
 			rtvHandle.Offset(1, m_rtvDescriptorSize);
 		}
 
@@ -722,7 +676,7 @@ HRESULT RenderingManager::_createCommandAllocators()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = m_main->GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator[i]))))
+		if (FAILED(hr = m_mainAdapter->GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator[i]))))
 		{
 			break;
 		}
@@ -739,7 +693,7 @@ HRESULT RenderingManager::_createCommandList()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		hr = m_main->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList[i]));
+		hr = m_mainAdapter->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator[0], nullptr, IID_PPV_ARGS(&m_commandList[i]));
 		m_commandList[i]->Close();
 		SET_NAME(m_commandList[i], L"Default commandList " + std::to_wstring(i));
 
@@ -753,7 +707,7 @@ HRESULT RenderingManager::_createFenceAndFenceEvent()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = m_main->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence[i]))))
+		if (FAILED(hr = m_mainAdapter->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence[i]))))
 		{
 			break;
 		}
@@ -776,14 +730,14 @@ HRESULT RenderingManager::_createCbvSrvUavDescriptorHeap()
 	descriptorHeap.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	descriptorHeap.NumDescriptors = MAX_DESCRIPTOR_SIZE;
 	   
-	if (FAILED(hr = m_main->GetDevice()->CreateDescriptorHeap(
+	if (FAILED(hr = m_mainAdapter->GetDevice()->CreateDescriptorHeap(
 		&descriptorHeap, 
 		IID_PPV_ARGS(&m_gpuDescriptorHeap))))
 	{
 		return hr;
 	}
 
-	m_resourceIncrementalSize = m_main->GetDescriptorHandleIncrementSize();
+	m_resourceIncrementalSize = m_mainAdapter->GetDescriptorHandleIncrementSize();
 
 	return hr;
 }

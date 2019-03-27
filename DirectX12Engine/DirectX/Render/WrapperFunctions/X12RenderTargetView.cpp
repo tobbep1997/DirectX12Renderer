@@ -1,18 +1,6 @@
 #include "DirectX12EnginePCH.h"
 #include "X12RenderTargetView.h"
 
-X12RenderTargetView::X12RenderTargetView(
-	RenderingManager* renderingManager, 
-	const Window& window, 
-	ID3D12GraphicsCommandList * commandList)
-	: IX12Object(renderingManager, window, commandList)
-{
-}
-
-X12RenderTargetView::~X12RenderTargetView()
-{
-}
-
 HRESULT X12RenderTargetView::CreateRenderTarget(const UINT& width, const UINT& height, 
 	const UINT & arraySize, const BOOL & createTexture,
 	const DXGI_FORMAT & format)
@@ -170,24 +158,20 @@ const UINT& X12RenderTargetView::GetDescriptorSize() const
 
 void X12RenderTargetView::SwitchToRTV(ID3D12GraphicsCommandList * commandList)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-
 	const UINT frameIndex = p_renderingManager->GetFrameIndex();;
 
 	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState[frameIndex])
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	
 }
 
 void X12RenderTargetView::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-
 	const UINT frameIndex = p_renderingManager->GetFrameIndex();;
 
 	if (D3D12_RESOURCE_STATE_RENDER_TARGET == m_currentState[frameIndex])
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
@@ -197,22 +181,20 @@ void X12RenderTargetView::CopyDescriptorHeap()
 	m_gpuHandle[frameIndex] = p_renderingManager->CopyToGpuDescriptorHeap(m_cpuHandle[frameIndex], m_arraySize);
 }
 
-void X12RenderTargetView::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex,
-	ID3D12GraphicsCommandList* commandList)
+void X12RenderTargetView::SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList* commandList,
+	const UINT& rootParameterIndex)
 {
 	const UINT & frameIndex = p_renderingManager->GetFrameIndex();
 	if (m_gpuHandle[frameIndex].ptr == 0)
 		throw "GPU handle null";
-
-
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;	
-	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle[frameIndex]);
+	
+	commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle[frameIndex]);
 }
 
-void X12RenderTargetView::Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList) const
+void X12RenderTargetView::Clear(ID3D12GraphicsCommandList* commandList,
+	const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle) const
 {	
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	gcl->ClearRenderTargetView(rtvHandle, m_clearColor, 0, nullptr);
+	commandList->ClearRenderTargetView(rtvHandle, m_clearColor, 0, nullptr);
 }
 
 void X12RenderTargetView::Release()

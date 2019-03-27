@@ -2,7 +2,7 @@
 #include "X12BindlessTexture.h"
 
 
-X12BindlessTexture::X12BindlessTexture() : IX12Object(RenderingManager::GetInstance(), *Window::GetInstance())
+X12BindlessTexture::X12BindlessTexture() : IX12Object()
 {
 }
 

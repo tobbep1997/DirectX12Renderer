@@ -2,7 +2,7 @@
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxgi1_5.h>
-#include "X12Adapter.h"
+#include "Render/WrapperFunctions/X12Adapter.h"
 
 
 class SSAOPass;
@@ -25,7 +25,7 @@ public:
 	static RenderingManager * GetInstance();
 	static RenderingManager * GetPointerInstance();
 
-	HRESULT Init(const Window * window, const BOOL & EnableDebugLayer = FALSE);
+	HRESULT Init(const Window * window, const BOOL & enableDebugLayer = FALSE);
 	void Flush(const Camera * camera, const float & deltaTime, const BOOL & present = TRUE);
 	void Present() const;
 	void Release(const BOOL & waitForFrames = TRUE, const BOOL & reportMemoryLeaks = TRUE);
@@ -66,12 +66,9 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE CopyToGpuDescriptorHeap(const D3D12_CPU_DESCRIPTOR_HANDLE & descriptorHandle, const UINT & numDescriptors = 1);
 
 private:
-
-	//ID3D12Device *				m_device = nullptr;
-	//ID3D12Device *				m_secondDevice = nullptr;
-
-	X12Adapter	*				m_main = nullptr;
-	X12Adapter	*				m_secondary = nullptr;
+	   
+	X12Adapter	*				m_mainAdapter = nullptr;
+	X12Adapter	*				m_secondaryAdapter = nullptr;
 
 	IDXGISwapChain4 *			m_swapChain = nullptr;
 	
@@ -96,8 +93,7 @@ private:
 	HRESULT _updatePipeline(const Camera & camera, const float & deltaTime);
 	HRESULT _waitForPreviousFrame(const BOOL & updateFrame = TRUE, const BOOL & waitOnCpu = FALSE);
 
-	HRESULT _checkD3D12Support(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const;
-	HRESULT _createSecondAdapter(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory) const;
+	HRESULT _checkAdapterSupport(IDXGIAdapter1 *& adapter, IDXGIFactory4 *& dxgiFactory, const UINT & adapterIndex = 0) const;
 	HRESULT _createCommandQueue();
 	HRESULT _createSwapChain(const Window & window, IDXGIFactory4 * dxgiFactory);
 	HRESULT _createRenderTargetDescriptorHeap();
