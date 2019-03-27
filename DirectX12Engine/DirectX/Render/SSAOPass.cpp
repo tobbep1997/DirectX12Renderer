@@ -67,7 +67,7 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 		p_renderingManager->GetFrameIndex(),
 		m_renderTarget->GetDescriptorSize());
 
-	m_renderTarget->Clear(rtvHandle, commandList);
+	m_renderTarget->Clear(commandList, rtvHandle);
 
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
@@ -78,12 +78,12 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	m_worldPos->CopyDescriptorHeap();
-	m_worldPos->SetGraphicsRootDescriptorTable(0, commandList);	   
+	m_worldPos->SetGraphicsRootDescriptorTable(commandList, 0);
 	
 	m_depthStencils->CopyDescriptorHeap();
-	m_depthStencils->SetGraphicsRootDescriptorTable(1, commandList);
+	m_depthStencils->SetGraphicsRootDescriptorTable(commandList, 1);
 		
-	m_cameraBuffer->SetGraphicsRootConstantBufferView(2, 0, commandList);
+	m_cameraBuffer->SetGraphicsRootConstantBufferView(commandList, 2, 0);
 
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->DrawInstanced(4, 1, 0, 0);
@@ -103,7 +103,7 @@ void SSAOPass::Draw()
 		p_renderingManager->GetFrameIndex(),
 		m_blurRenderTarget->GetDescriptorSize());
 
-	m_blurRenderTarget->Clear(rtvHandle, commandList);
+	m_blurRenderTarget->Clear(commandList, rtvHandle);
 
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);	
 	commandList->SetPipelineState(m_blurPipelineState);
@@ -114,7 +114,7 @@ void SSAOPass::Draw()
 
 	
 	m_renderTarget->CopyDescriptorHeap();
-	m_renderTarget->SetGraphicsRootDescriptorTable(0, commandList);
+	m_renderTarget->SetGraphicsRootDescriptorTable(commandList, 0);
 	
 	
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
@@ -132,13 +132,16 @@ void SSAOPass::Clear()
 
 void SSAOPass::Release()
 {
-	m_cameraBuffer->Release();
+	if (m_cameraBuffer)
+		m_cameraBuffer->Release();
 	SAFE_DELETE(m_cameraBuffer);
 
-	m_renderTarget->Release();
+	if (m_renderTarget)
+		m_renderTarget->Release();
 	SAFE_DELETE(m_renderTarget);
 
-	m_blurRenderTarget->Release();
+	if (m_blurRenderTarget)
+		m_blurRenderTarget->Release();
 	SAFE_DELETE(m_blurRenderTarget);
 
 	SAFE_RELEASE(m_vertexBuffer);
@@ -183,7 +186,7 @@ HRESULT SSAOPass::_preInit()
 				{			
 					if (SUCCEEDED(hr = _createQuadBuffer()))
 					{
-						SAFE_NEW(m_renderTarget, new X12RenderTargetView(p_renderingManager, *p_window, nullptr))
+						SAFE_NEW(m_renderTarget, new X12RenderTargetView())
 						if (SUCCEEDED(hr = m_renderTarget->CreateRenderTarget(
 							0,
 							0,
@@ -191,7 +194,7 @@ HRESULT SSAOPass::_preInit()
 							TRUE,
 							RENDER_TARGET_FORMAT)))
 						{
-							SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer(p_renderingManager, *p_window, nullptr));
+							SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer());
 							if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(L"SSAO camera", &m_cameraValues, sizeof(CameraBuffer))))
 							{
 
@@ -267,7 +270,7 @@ HRESULT SSAOPass::_initID3D12RootSignature()
 		&signature,
 		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateRootSignature(
 			0,
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -342,7 +345,7 @@ HRESULT SSAOPass::_initID3D12PipelineState()
 	else
 		return hr;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateGraphicsPipelineState(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateGraphicsPipelineState(
 		&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&m_pipelineState))))
 	{
@@ -398,7 +401,7 @@ HRESULT SSAOPass::_initBlurPass()
 		return hr;
 	}
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateRootSignature(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateRootSignature(
 		0,
 		signature->GetBufferPointer(),
 		signature->GetBufferSize(),
@@ -464,7 +467,7 @@ HRESULT SSAOPass::_initBlurPass()
 	else
 		return hr;
 
-	if (FAILED(hr = p_renderingManager->GetDevice()->CreateGraphicsPipelineState(
+	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateGraphicsPipelineState(
 		&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&m_blurPipelineState))))
 	{
@@ -472,7 +475,7 @@ HRESULT SSAOPass::_initBlurPass()
 		return hr;
 	}
 
-	SAFE_NEW(m_blurRenderTarget, new X12RenderTargetView(p_renderingManager, *p_window));
+	SAFE_NEW(m_blurRenderTarget, new X12RenderTargetView());
 
 	if (FAILED(hr = m_blurRenderTarget->CreateRenderTarget(
 		0,
@@ -493,14 +496,14 @@ HRESULT SSAOPass::_createLocalCommandList()
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommandAllocator(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommandAllocator(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(&m_blurCommandAllocator[i]))))
 		{
 			SET_NAME(m_blurCommandAllocator[i], L"SSAO blur Command allocator");
 			return hr;
 		}
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommandList(
+		if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			m_blurCommandAllocator[0],
@@ -560,7 +563,7 @@ HRESULT SSAOPass::_createQuadBuffer()
 
 	m_vertexBufferSize = sizeof(m_vertexList);
 
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+	if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),
@@ -569,7 +572,7 @@ HRESULT SSAOPass::_createQuadBuffer()
 		IID_PPV_ARGS(&m_vertexBuffer))))
 	{
 
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),

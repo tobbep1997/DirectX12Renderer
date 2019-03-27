@@ -52,13 +52,13 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 		}
 		init = TRUE;
 	}
-	DirectX::ResourceUploadBatch resourceUpload(m_renderingManager->GetDevice());
+	DirectX::ResourceUploadBatch resourceUpload(m_renderingManager->GetMainAdapter()->GetDevice());
 
 	resourceUpload.Begin();
 
 	;
 	if (SUCCEEDED(hr = DirectX::CreateWICTextureFromFile(
-		m_renderingManager->GetDevice(),
+		m_renderingManager->GetMainAdapter()->GetDevice(),
 		resourceUpload, 
 		DEBUG::StringToWstring(path).c_str(), 
 		&m_textureBuffer, 
@@ -75,12 +75,6 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-	m_cpuHandle =
-	{
-		m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr +
-		m_renderingManager->GetResourceCurrentIndex() *
-		m_renderingManager->GetResourceIncrementalSize()
-	};
 
 	SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
@@ -92,11 +86,12 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
 
-	m_renderingManager->GetDevice()->CreateShaderResourceView(
+	m_cpuHandle = m_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
+	m_renderingManager->GetMainAdapter()->GetDevice()->CreateShaderResourceView(
 		m_textureBuffer,
 		&srvDesc,
 		m_cpuHandle);
-	m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+
 	
 	return TRUE;	
 }
@@ -119,12 +114,12 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 		}
 		init = TRUE;
 	}
-	DirectX::ResourceUploadBatch resourceUpload(m_renderingManager->GetDevice());
+	DirectX::ResourceUploadBatch resourceUpload(m_renderingManager->GetMainAdapter()->GetDevice());
 
 	resourceUpload.Begin();
 		
 	if (SUCCEEDED(hr = DirectX::CreateDDSTextureFromFile(
-		m_renderingManager->GetDevice(),
+		m_renderingManager->GetMainAdapter()->GetDevice(),
 		resourceUpload,
 		DEBUG::StringToWstring(path).c_str(),
 		&m_textureBuffer,
@@ -145,12 +140,6 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 
 	
 
-	m_cpuHandle =
-	{ 
-		m_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
-		m_renderingManager->GetResourceCurrentIndex() * 
-		m_renderingManager->GetResourceIncrementalSize()
-	};
 	
 	SET_NAME(m_textureBuffer, DEBUG::StringToWstring(path) + L" Texture DescriptorHeap");
 
@@ -162,11 +151,12 @@ BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips,
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
 
-	m_renderingManager->GetDevice()->CreateShaderResourceView(
+	m_cpuHandle = m_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
+	m_renderingManager->GetMainAdapter()->GetDevice()->CreateShaderResourceView(
 		m_textureBuffer,
 		&srvDesc,
 		m_cpuHandle);
-	m_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+
 	
 	return TRUE;
 }

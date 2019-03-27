@@ -34,6 +34,8 @@ public:
 	void AddEmitter(ParticleEmitter * particleEmitter) const;
 
 private:
+	HRESULT _initCommandQueue(ID3D12Device * device, const D3D12_COMMAND_LIST_TYPE& type, const UINT& nodeMask);
+	HRESULT _initCommandList(ID3D12Device * device, const D3D12_COMMAND_LIST_TYPE & type, const UINT& nodeMask);
 	HRESULT _initID3D12RootSignature();
 	HRESULT _initShaders();
 	HRESULT _initPipelineState();
@@ -42,6 +44,10 @@ private:
 	ID3D12RootSignature * m_rootSignature = nullptr;
 	D3D12_SHADER_BYTECODE m_computeShader {};
 	ID3D12PipelineState * m_computePipelineState = nullptr;
+
+	ID3D12CommandQueue * m_commandQueue = nullptr;
+	ID3D12CommandAllocator * m_commandAllocator[FRAME_BUFFER_COUNT]{ nullptr };
+	ID3D12GraphicsCommandList * m_commandList[FRAME_BUFFER_COUNT] {nullptr};
 
 	ParticleBuffer m_particleValues {};
 		

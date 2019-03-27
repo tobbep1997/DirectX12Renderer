@@ -33,7 +33,7 @@ private:
 		float ParticleMaxLife = 0.35f;
 		float ParticleMinLife = 0.15f;
 		
-		UINT MaxParticles = 256;
+		UINT MaxParticles = 1024;
 
 
 	};
@@ -89,12 +89,15 @@ private:
 	float m_spawnTimer = 0;
 	std::vector<Particle> * m_particles = nullptr;
 
-	D3D12_RESOURCE_STATES m_currentState {};
-	ID3D12Resource * m_vertexOutputResource = nullptr;
-	SIZE_T m_vertexOutputOffset = 0;
+	D3D12_RESOURCE_STATES m_currentState[FRAME_BUFFER_COUNT] {};
+	ID3D12Resource * m_vertexOutputResource[FRAME_BUFFER_COUNT]{ nullptr };
+	D3D12_CPU_DESCRIPTOR_HANDLE m_vertexOutputHandle[FRAME_BUFFER_COUNT]{ 0 };
 
-	ID3D12Resource * m_calculationsOutputResource[FRAME_BUFFER_COUNT] = { nullptr };
-	SIZE_T m_calculationsOutputOffset = 0;
+	ID3D12Resource * m_calculationsOutputResource[FRAME_BUFFER_COUNT]{ nullptr };
+	D3D12_CPU_DESCRIPTOR_HANDLE m_calculationsOutputHandle[FRAME_BUFFER_COUNT]{ 0 };
+
+	ID3D12Resource * m_vertexResource[FRAME_BUFFER_COUNT]{ nullptr };
+	D3D12_CPU_DESCRIPTOR_HANDLE m_vertexHandle[FRAME_BUFFER_COUNT]{ 0 };
 
 	ID3D12GraphicsCommandList * m_commandList[FRAME_BUFFER_COUNT] = { nullptr };
 	ID3D12CommandAllocator * m_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };

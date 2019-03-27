@@ -5,8 +5,8 @@ class X12ShaderResourceView :
 	public IX12Object
 {
 public:
-	X12ShaderResourceView(RenderingManager * renderingManager, const Window & window, ID3D12GraphicsCommandList * commandList = nullptr);
-	~X12ShaderResourceView();
+	X12ShaderResourceView() = default;
+	~X12ShaderResourceView() = default;
 
 	HRESULT CreateShaderResourceView(
 		const UINT & width = 0, 
@@ -14,12 +14,12 @@ public:
 		const UINT& arraySize = 1, 
 		const DXGI_FORMAT& format = DXGI_FORMAT_R8G8B8A8_UNORM);
 
-	void BeginCopy(ID3D12GraphicsCommandList * commandList = nullptr);
-	void EndCopy(ID3D12GraphicsCommandList * commandList = nullptr);
-	void CopySubresource(const UINT & dstIndex, ID3D12Resource * resource, ID3D12GraphicsCommandList * commandList = nullptr) const;
+	void BeginCopy(ID3D12GraphicsCommandList * commandList) const;
+	void EndCopy(ID3D12GraphicsCommandList * commandList) const;
+	void CopySubresource(ID3D12GraphicsCommandList * commandList, const UINT & dstIndex, ID3D12Resource * resource) const;
 	void CopyDescriptorHeap();
 
-	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr);
+	void SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList * commandList, const UINT & rootParameterIndex);
 
 	ID3D12Resource * GetResource() const;
 

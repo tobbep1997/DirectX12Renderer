@@ -272,6 +272,7 @@
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12StructuredBuffer.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12BindlessTexture.h" />
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12Fence.h" />
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12Adapter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectX\Render\DeferredRender.cpp" />
@@ -406,6 +407,7 @@
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12StructuredBuffer.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12BindlessTexture.cpp" />
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12Fence.cpp" />
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12Adapter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DirectX\Shaders\DeferredPass\DefaultDeferredPixel.hlsl">

@@ -4,17 +4,19 @@
 class X12ConstantBuffer :
 	public IX12Object
 {
+
 public:
-	X12ConstantBuffer(RenderingManager * renderingManager, const Window & window, ID3D12GraphicsCommandList * commandList = nullptr);
-	~X12ConstantBuffer();
+	X12ConstantBuffer() = default;
+	~X12ConstantBuffer() = default;
 
 	HRESULT CreateBuffer(const std::wstring & name, void const* data, const UINT & sizeOf, const UINT & preAllocData = 0);
+	HRESULT CreateSharedBuffer(const std::wstring & name, const UINT & sizeOf, const UINT & preAllocData = 0);
 
-	void SetComputeRootConstantBufferView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
-	void SetComputeRootShaderResourceView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
+	void SetComputeRootConstantBufferView(ID3D12GraphicsCommandList * commandList, const UINT & rootParameterIndex, const UINT & offset = 0);
+	void SetComputeRootShaderResourceView(ID3D12GraphicsCommandList * commandList, const UINT & rootParameterIndex, const UINT & offset = 0);
 
-	void SetGraphicsRootConstantBufferView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
-	void SetGraphicsRootShaderResourceView(const UINT & rootParameterIndex, const UINT & offset = 0, ID3D12GraphicsCommandList * commandList = nullptr);
+	void SetGraphicsRootConstantBufferView(ID3D12GraphicsCommandList * commandList, const UINT & rootParameterIndex, const UINT & offset = 0);
+	void SetGraphicsRootShaderResourceView(ID3D12GraphicsCommandList * commandList, const UINT & rootParameterIndex, const UINT & offset = 0);
 
 	void Copy(void const* data, const UINT & sizeOf, const UINT & offset = 0);
 	void Release() override;
@@ -22,10 +24,10 @@ public:
 	ID3D12Resource*const* GetResource() const;
 
 private:
-	D3D12_CPU_DESCRIPTOR_HANDLE m_handle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_handle[FRAME_BUFFER_COUNT] {0};
 	ID3D12Resource			* m_constantBuffer[FRAME_BUFFER_COUNT] = { nullptr };
 
 	UINT8* m_constantBufferGPUAddress[FRAME_BUFFER_COUNT] = { nullptr };
-	SIZE_T m_descriptorHeapOffset = 0;
+	
 };
 

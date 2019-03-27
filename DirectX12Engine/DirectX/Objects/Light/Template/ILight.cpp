@@ -26,8 +26,8 @@ BOOL ILight::p_createDirectXContext(const UINT& renderTargets, const BOOL& creat
 		throw "Shit";
 
 	p_renderTargets = renderTargets;
-	SAFE_NEW(p_depthStencil, new X12DepthStencil(p_renderingManager, *p_window));
-	SAFE_NEW(p_renderTarget, new X12RenderTargetView(p_renderingManager, *p_window));
+	SAFE_NEW(p_depthStencil, new X12DepthStencil());
+	SAFE_NEW(p_renderTarget, new X12RenderTargetView());
 
 	if (SUCCEEDED(hr = p_renderingManager->OpenCommandList()))
 	{

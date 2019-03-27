@@ -59,7 +59,7 @@ private:
 
 	UINT m_renderTargetSize = 0;
 	X12RenderTargetView ** m_geometryRenderTargetView = nullptr;
-	X12DepthStencil * m_depthStencil;
+	X12DepthStencil * m_depthStencil = nullptr;
 	struct Vertex
 	{
 		Vertex()

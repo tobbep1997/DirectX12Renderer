@@ -1,19 +1,6 @@
 #include "DirectX12EnginePCH.h"
 #include "X12StructuredBuffer.h"
 
-
-
-
-X12StructuredBuffer::X12StructuredBuffer(RenderingManager* renderingManager, const Window& window,
-	ID3D12GraphicsCommandList* commandList) : IX12Object(renderingManager, window, commandList)
-{
-
-}
-
-X12StructuredBuffer::~X12StructuredBuffer()
-{
-}
-
 HRESULT X12StructuredBuffer::Create(const std::wstring & name, const UINT& size)
 {
 	HRESULT hr = 0;
@@ -28,7 +15,7 @@ HRESULT X12StructuredBuffer::Create(const std::wstring & name, const UINT& size)
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&heapProperties, 
 			D3D12_HEAP_FLAG_NONE, 
 			&resourceDesc,
@@ -49,16 +36,9 @@ HRESULT X12StructuredBuffer::Create(const std::wstring & name, const UINT& size)
 		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 		unorderedAccessViewDesc.Buffer = uav;
 			
-		m_cpuHandle[i] = 
-		{ 
-			p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
-			p_renderingManager->GetResourceCurrentIndex() * 
-			p_renderingManager->GetResourceIncrementalSize()
-		};
-
-		p_renderingManager->GetDevice()->CreateUnorderedAccessView(m_resource[i], nullptr, &unorderedAccessViewDesc, m_cpuHandle[i]);
-
-		p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();
+		m_cpuHandle[i] = p_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
+		p_renderingManager->GetMainAdapter()->GetDevice()->CreateUnorderedAccessView(m_resource[i], nullptr, &unorderedAccessViewDesc, m_cpuHandle[i]);
+		
 
 		D3D12_RANGE readRange{ 0,0 };
 		if (FAILED(hr = m_resource[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_resourceAddress[i]))))
@@ -75,10 +55,10 @@ void X12StructuredBuffer::Copy(void* data, const UINT& size, const UINT& offset)
 	memcpy(m_resourceAddress[p_renderingManager->GetFrameIndex()] + offset, data, size);
 }
 
-void X12StructuredBuffer::SetGraphicsRootShaderResourceView(const UINT& rootParameterIndex, ID3D12GraphicsCommandList* commandList)
+void X12StructuredBuffer::SetGraphicsRootShaderResourceView(ID3D12GraphicsCommandList* commandList,
+	const UINT& rootParameterIndex)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	gcl->SetGraphicsRootShaderResourceView(rootParameterIndex, m_resource[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootShaderResourceView(rootParameterIndex, m_resource[p_renderingManager->GetFrameIndex()]->GetGPUVirtualAddress());
 }
 
 void X12StructuredBuffer::Release()

@@ -5,8 +5,8 @@ class X12RenderTargetView :
 	public IX12Object
 {
 public:
-	X12RenderTargetView(RenderingManager * renderingManager, const Window & window, ID3D12GraphicsCommandList * commandList = nullptr);
-	~X12RenderTargetView();
+	X12RenderTargetView() = default;
+	~X12RenderTargetView() = default;
 
 	HRESULT CreateRenderTarget(const UINT & width = 0, const UINT & height = 0,
 		const UINT & arraySize = 1, 
@@ -18,13 +18,13 @@ public:
 
 	const UINT & GetDescriptorSize() const;
 
-	void SwitchToRTV(ID3D12GraphicsCommandList * commandList = nullptr);
-	void SwitchToSRV(ID3D12GraphicsCommandList * commandList = nullptr);
+	void SwitchToRTV(ID3D12GraphicsCommandList * commandList);
+	void SwitchToSRV(ID3D12GraphicsCommandList * commandList);
 
 	void CopyDescriptorHeap();
-	void SetGraphicsRootDescriptorTable(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList);
+	void SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList * commandList, const UINT & rootParameterIndex);
 
-	void Clear(const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle, ID3D12GraphicsCommandList * commandList = nullptr) const;
+	void Clear(ID3D12GraphicsCommandList * commandList, const CD3DX12_CPU_DESCRIPTOR_HANDLE & rtvHandle) const;
 	void Release() override;
 
 	

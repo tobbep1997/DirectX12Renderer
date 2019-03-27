@@ -2,16 +2,6 @@
 #include "X12DepthStencil.h"
 #include <wincodec.h>
 
-X12DepthStencil::X12DepthStencil(RenderingManager* renderingManager, const Window& window, ID3D12GraphicsCommandList * commandList)
-	: IX12Object(renderingManager, window, commandList)
-{
-	m_currentState = {};
-}
-
-X12DepthStencil::~X12DepthStencil()
-{
-}
-
 HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name, 
 	const UINT & width, const UINT & height,
 	const UINT & arraySize,
@@ -35,7 +25,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	   
-	if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateDescriptorHeap(
+	if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateDescriptorHeap(
 		&dsvHeapDesc, IID_PPV_ARGS(&m_depthStencilDescriptorHeap))))
 	{
 		SET_NAME(m_depthStencilDescriptorHeap, name + L" DepthStencil DescriptorHeap");
@@ -57,7 +47,7 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 
 		D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);;
 		
-		if (SUCCEEDED(hr = p_renderingManager->GetDevice()->CreateCommittedResource(
+		if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Tex2D(
@@ -87,22 +77,17 @@ HRESULT X12DepthStencil::CreateDepthStencil(const std::wstring & name,
 					srvDesc.Texture2DArray.MostDetailedMip = 0;
 				}
 				
-				m_cpuHandle = { 
-					p_renderingManager->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + 
-					p_renderingManager->GetResourceCurrentIndex() * 
-					p_renderingManager->GetResourceIncrementalSize() 
-				};
+				m_cpuHandle = p_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
 				
-				p_renderingManager->GetDevice()->CreateShaderResourceView(
+				p_renderingManager->GetMainAdapter()->GetDevice()->CreateShaderResourceView(
 					m_depthStencilBuffer,
 					&srvDesc,
 					m_cpuHandle
-				);
-				p_renderingManager->IterateCbvSrvUavDescriptorHeapIndex();				
+				);				
 			}
 
 			SET_NAME(m_depthStencilBuffer, name + L" DepthStencil Resource");
-			p_renderingManager->GetDevice()->CreateDepthStencilView(
+			p_renderingManager->GetMainAdapter()->GetDevice()->CreateDepthStencilView(
 				m_depthStencilBuffer,
 				&depthStencilDesc,
 				m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
@@ -126,9 +111,7 @@ ID3D12DescriptorHeap* X12DepthStencil::GetDescriptorHeap() const
 
 void X12DepthStencil::ClearDepthStencil(ID3D12GraphicsCommandList * commandList) const
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-
-	gcl->ClearDepthStencilView(
+	commandList->ClearDepthStencilView(
 		m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		D3D12_CLEAR_FLAG_DEPTH,
 		1.0f, 0, 0,
@@ -137,18 +120,16 @@ void X12DepthStencil::ClearDepthStencil(ID3D12GraphicsCommandList * commandList)
 }
 
 void X12DepthStencil::SwitchToDSV(ID3D12GraphicsCommandList * commandList)
-{
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;	
+{	
 	if (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE == m_currentState)
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 	m_currentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;	
 }
 
 void X12DepthStencil::SwitchToSRV(ID3D12GraphicsCommandList * commandList)
 {
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;	
 	if (D3D12_RESOURCE_STATE_DEPTH_WRITE == m_currentState)
-		gcl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
 }
@@ -158,15 +139,13 @@ void X12DepthStencil::CopyDescriptorHeap()
 	m_gpuHandle = p_renderingManager->CopyToGpuDescriptorHeap(m_cpuHandle, m_arraySize);
 }
 
-void X12DepthStencil::SetGraphicsRootDescriptorTable(const UINT& rootParameterIndex,
-	ID3D12GraphicsCommandList* commandList)
+void X12DepthStencil::SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList* commandList, 
+	const UINT& rootParameterIndex) const
 {
 	if (m_gpuHandle.ptr == 0)
 		throw "GPU handle null";
 
-
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : p_commandList;
-	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
+	commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
 }
 
 const D3D12_CPU_DESCRIPTOR_HANDLE& X12DepthStencil::GetCpuDescriptorHeap() const

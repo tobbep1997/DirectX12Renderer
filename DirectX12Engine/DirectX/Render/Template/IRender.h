@@ -58,7 +58,7 @@ protected:
 public:
 
 	HRESULT OpenCommandList(ID3D12PipelineState * pipelineState = nullptr);
-	HRESULT ExecuteCommandList() const;	
+	HRESULT ExecuteCommandList(ID3D12CommandQueue * commandQueue = nullptr) const;	
 
 	virtual~IRender();
 
