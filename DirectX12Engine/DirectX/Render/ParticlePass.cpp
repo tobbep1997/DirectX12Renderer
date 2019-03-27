@@ -195,12 +195,12 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 			}
 		}
 	}
-	//for (size_t i = 0; i < m_emitters->size(); i++)
-	//{
-	//	emitter = m_emitters->at(i);
-	//	//if (!emitter->GetPositions().empty())
-	//	//	m_geometryPass->AddEmitter(emitter);
-	//}
+	for (size_t i = 0; i < m_emitters->size(); i++)
+	{
+		emitter = m_emitters->at(i);
+		if (!emitter->GetPositions().empty())
+			m_geometryPass->AddEmitter(emitter);
+	}
 
 }
 

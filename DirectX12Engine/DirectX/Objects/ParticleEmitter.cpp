@@ -73,7 +73,6 @@ BOOL ParticleEmitter::Init()
 
 void ParticleEmitter::Release()
 {
-	SAFE_RELEASE(m_vertexOutputResource);
 
 	if (m_particles)
 		m_particles->clear();
@@ -87,6 +86,8 @@ void ParticleEmitter::Release()
 	{
 		SAFE_RELEASE(m_commandList[i]);
 		SAFE_RELEASE(m_commandAllocator[i]);
+		SAFE_RELEASE(m_vertexResource[i]);
+		SAFE_RELEASE(m_vertexOutputResource[i]);
 		SAFE_RELEASE(m_calculationsOutputResource[i]);
 	}
 	Transform::Release();
@@ -99,7 +100,7 @@ void ParticleEmitter::Update()
 
 ID3D12Resource* ParticleEmitter::GetVertexResource() const
 {
-	return this->m_vertexOutputResource;
+	return this->m_vertexOutputResource[m_renderingManager->GetFrameIndex()];
 }
 
 ID3D12Resource* ParticleEmitter::GetCalcResource() const
@@ -149,17 +150,19 @@ const D3D12_VERTEX_BUFFER_VIEW& ParticleEmitter::GetVertexBufferView() const
 
 void ParticleEmitter::SwitchToVertexState(ID3D12GraphicsCommandList * commandList)
 {
-	if (D3D12_RESOURCE_STATE_UNORDERED_ACCESS == m_currentState)
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexOutputResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-	m_currentState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+	const UINT frameIndex = m_renderingManager->GetFrameIndex();
+	if (D3D12_RESOURCE_STATE_UNORDERED_ACCESS == m_currentState[frameIndex])
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexOutputResource[frameIndex], D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 
 }
 
 void ParticleEmitter::SwitchToUAVState(ID3D12GraphicsCommandList * commandList)
 {
-	if (D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER == m_currentState)
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexOutputResource, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-	m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	const UINT frameIndex = m_renderingManager->GetFrameIndex();
+	if (D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER == m_currentState[frameIndex])
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexOutputResource[frameIndex], D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	m_currentState[frameIndex] = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 }
 
 void ParticleEmitter::SetTextures(Texture* const* textures)
@@ -184,13 +187,12 @@ X12ShaderResourceView* ParticleEmitter::GetShaderResourceView() const
 
 D3D12_CPU_DESCRIPTOR_HANDLE ParticleEmitter::GetVertexCpuDescriptorHandle() const
 {
-	return { m_renderingManager->GetSecondAdapter()->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
+	return m_vertexOutputHandle[m_renderingManager->GetFrameIndex()];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE ParticleEmitter::GetCalcCpuDescriptorHandle() const
 {
-	return { m_renderingManager->GetSecondAdapter()->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_calculationsOutputOffset };
-
+	return m_calculationsOutputHandle[m_renderingManager->GetFrameIndex()];
 }
 
 HRESULT ParticleEmitter::_createCommandList()
@@ -234,43 +236,6 @@ HRESULT ParticleEmitter::_createBuffer()
 
 
 	ID3D12Device * device = m_renderingManager->GetSecondAdapter() ? m_renderingManager->GetSecondAdapter()->GetDevice() : m_renderingManager->GetMainAdapter()->GetDevice();
-
-	if (SUCCEEDED(hr = device->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&resourceDesc,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-		nullptr,
-		IID_PPV_ARGS(&m_vertexOutputResource))))
-	{
-		m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		SET_NAME(m_vertexOutputResource, L"Particle UAV output");
-
-		D3D12_BUFFER_UAV uav{};
-		uav.NumElements = 256;
-		uav.FirstElement = 0;
-		uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
-		uav.CounterOffsetInBytes = 0;
-		uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-		D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
-		unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
-		unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-		unorderedAccessViewDesc.Buffer = uav;
-
-		m_vertexOutputOffset = m_renderingManager->GetSecondAdapter()->GetNextHandle().Offset;
-		const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-		{ m_renderingManager->GetSecondAdapter()->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
-
-		device->CreateUnorderedAccessView(
-			m_vertexOutputResource,
-			nullptr,
-			&unorderedAccessViewDesc,
-			handle);
-	}
-	
-	if (FAILED(hr))
-		return hr;
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
 		if (SUCCEEDED(hr = device->CreateCommittedResource(
@@ -279,9 +244,42 @@ HRESULT ParticleEmitter::_createBuffer()
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			nullptr,
+			IID_PPV_ARGS(&m_vertexOutputResource[i]))))
+		{
+			m_currentState[i] = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			SET_NAME(m_vertexOutputResource[i], L"Particle Vertex output");
+
+			D3D12_BUFFER_UAV uav{};
+			uav.NumElements = 256;
+			uav.FirstElement = 0;
+			uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
+			uav.CounterOffsetInBytes = 0;
+			uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
+			unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+			unorderedAccessViewDesc.Buffer = uav;
+
+			m_vertexOutputHandle[i] = m_renderingManager->GetSecondAdapter()->GetNextHandle().DescriptorHandle;
+			
+			device->CreateUnorderedAccessView(
+				m_vertexOutputResource[i],
+				nullptr,
+				&unorderedAccessViewDesc,
+				m_vertexOutputHandle[i]);
+		}
+		else
+			return hr;
+
+		if (SUCCEEDED(hr = device->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
 			IID_PPV_ARGS(&m_calculationsOutputResource[i]))))
 		{
-			m_currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 			SET_NAME(m_calculationsOutputResource[i], L"Particle UAV output");
 
 			D3D12_BUFFER_UAV uav{};
@@ -296,16 +294,49 @@ HRESULT ParticleEmitter::_createBuffer()
 			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 			unorderedAccessViewDesc.Buffer = uav;
 
-			m_calculationsOutputOffset = m_renderingManager->GetSecondAdapter()->GetNextHandle().Offset;
-			const D3D12_CPU_DESCRIPTOR_HANDLE handle =
-			{ m_renderingManager->GetSecondAdapter()->GetCpuDescriptorHeap()->GetCPUDescriptorHandleForHeapStart().ptr + m_vertexOutputOffset };
+			m_calculationsOutputHandle[i] = m_renderingManager->GetSecondAdapter()->GetNextHandle().DescriptorHandle;			
 
 			device->CreateUnorderedAccessView(
 				m_calculationsOutputResource[i],
 				nullptr,
 				&unorderedAccessViewDesc,
-				handle);		
+				m_calculationsOutputHandle[i]);
 		}
+		else
+			return hr;
+
+		if (SUCCEEDED(hr = m_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+			nullptr,
+			IID_PPV_ARGS(&m_vertexResource[i]))))
+		{
+			SET_NAME(m_vertexResource[i], L"Particle Vertex");
+
+			D3D12_BUFFER_UAV uav{};
+			uav.NumElements = 256;
+			uav.FirstElement = 0;
+			uav.StructureByteStride = sizeof(DirectX::XMFLOAT4) * 2;
+			uav.CounterOffsetInBytes = 0;
+			uav.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc{};
+			unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+			unorderedAccessViewDesc.Buffer = uav;
+
+			m_vertexHandle[i] = m_renderingManager->GetMainAdapter()->GetNextHandle().DescriptorHandle;
+
+			m_renderingManager->GetMainAdapter()->GetDevice()->CreateUnorderedAccessView(
+				m_vertexResource[i],
+				nullptr,
+				&unorderedAccessViewDesc,
+				m_vertexHandle[i]);
+		}
+		else
+			return hr;
 	}	
 	return hr;
 }
@@ -373,8 +404,23 @@ void ParticleEmitter::UpdateEmitter(const float & deltaTime)
 void ParticleEmitter::UpdateData()
 {
 	using namespace DirectX;
+	const UINT frameIndex = m_renderingManager->GetFrameIndex();
 
-	m_vertexBufferView.BufferLocation = m_vertexOutputResource->GetGPUVirtualAddress();
+	ParticleVertex * vertexOutputArray = nullptr;
+	CD3DX12_RANGE vertexReadRange(0, sizeof(ParticleVertex) * GetVertexSize());
+	if (SUCCEEDED(m_vertexOutputResource[frameIndex]->Map(0, &vertexReadRange, reinterpret_cast<void**>(&vertexOutputArray))))
+	{
+		UINT8 * targetDest = nullptr;
+		CD3DX12_RANGE readRange(0, 0);
+		if (SUCCEEDED(m_vertexResource[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&targetDest))))
+		{
+			memcpy(targetDest, vertexOutputArray, sizeof(ParticleVertex) * GetVertexSize());
+			m_vertexResource[frameIndex]->Unmap(0, &readRange);
+		}		
+		m_vertexOutputResource[frameIndex]->Unmap(0, &vertexReadRange);
+	}
+
+	m_vertexBufferView.BufferLocation = m_vertexResource[frameIndex]->GetGPUVirtualAddress();
 	m_vertexBufferView.StrideInBytes = sizeof(ParticleVertex);
 	m_vertexBufferView.SizeInBytes = m_vertexBufferView.StrideInBytes * GetVertexSize();
 
@@ -384,7 +430,6 @@ void ParticleEmitter::UpdateData()
 		DirectX::XMFLOAT4 ParticleInfo;
 	};
 
-	const UINT frameIndex = m_renderingManager->GetFrameIndex();
 	if (frameIndex == UINT_MAX)
 		return;
 

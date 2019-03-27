@@ -63,6 +63,7 @@ ULONG X12Adapter::Release()
 	SAFE_RELEASE(m_cpuDescriptorHeap);	
 
 	const ULONG ret = m_device ? m_device->Release() : 0;
-	m_device = nullptr;
+	if (ret == 0)
+		m_device = nullptr;
 	return ret;
 }
