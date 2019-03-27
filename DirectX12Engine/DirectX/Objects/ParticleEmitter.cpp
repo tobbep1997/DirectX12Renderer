@@ -235,10 +235,10 @@ HRESULT ParticleEmitter::_createBuffer()
 	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
 
 
-	ID3D12Device * device = m_renderingManager->GetSecondAdapter() ? m_renderingManager->GetSecondAdapter()->GetDevice() : m_renderingManager->GetMainAdapter()->GetDevice();
+	X12Adapter * device = m_renderingManager->GetSecondAdapter() ? m_renderingManager->GetSecondAdapter() : m_renderingManager->GetMainAdapter();
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (SUCCEEDED(hr = device->CreateCommittedResource(
+		if (SUCCEEDED(hr = device->GetDevice()->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
@@ -261,9 +261,9 @@ HRESULT ParticleEmitter::_createBuffer()
 			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 			unorderedAccessViewDesc.Buffer = uav;
 
-			m_vertexOutputHandle[i] = m_renderingManager->GetSecondAdapter()->GetNextHandle().DescriptorHandle;
+			m_vertexOutputHandle[i] = device->GetNextHandle().DescriptorHandle;
 			
-			device->CreateUnorderedAccessView(
+			device->GetDevice()->CreateUnorderedAccessView(
 				m_vertexOutputResource[i],
 				nullptr,
 				&unorderedAccessViewDesc,
@@ -272,7 +272,7 @@ HRESULT ParticleEmitter::_createBuffer()
 		else
 			return hr;
 
-		if (SUCCEEDED(hr = device->CreateCommittedResource(
+		if (SUCCEEDED(hr = device->GetDevice()->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
@@ -294,9 +294,9 @@ HRESULT ParticleEmitter::_createBuffer()
 			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 			unorderedAccessViewDesc.Buffer = uav;
 
-			m_calculationsOutputHandle[i] = m_renderingManager->GetSecondAdapter()->GetNextHandle().DescriptorHandle;			
+			m_calculationsOutputHandle[i] = device->GetNextHandle().DescriptorHandle;			
 
-			device->CreateUnorderedAccessView(
+			device->GetDevice()->CreateUnorderedAccessView(
 				m_calculationsOutputResource[i],
 				nullptr,
 				&unorderedAccessViewDesc,

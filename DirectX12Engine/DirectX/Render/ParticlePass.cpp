@@ -38,7 +38,7 @@ HRESULT ParticlePass::Init()
 	}
 
 	const D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-	ID3D12Device * device = p_renderingManager->GetSecondAdapter()->GetDevice() ? p_renderingManager->GetSecondAdapter()->GetDevice() : p_renderingManager->GetMainAdapter()->GetDevice();
+	ID3D12Device * device = p_renderingManager->GetSecondAdapter() ? p_renderingManager->GetSecondAdapter()->GetDevice() : p_renderingManager->GetMainAdapter()->GetDevice();
 
 	if (FAILED(hr = _initCommandQueue(device, type, 0)))
 	{		
@@ -78,7 +78,8 @@ HRESULT ParticlePass::Init()
 		}	
 	}
 
-	if (FAILED(hr = m_fence->CreateFence(L"Particle fence", p_renderingManager->GetSecondAdapter()->GetDevice())))
+
+	if (FAILED(hr = m_fence->CreateFence(L"Particle fence", device)))
 	{		
 		return hr;
 	}
@@ -339,13 +340,16 @@ HRESULT ParticlePass::_initID3D12RootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS	|
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS);
 
+	ID3D12Device * device = p_renderingManager->GetSecondAdapter() ? p_renderingManager->GetSecondAdapter()->GetDevice() : p_renderingManager->GetMainAdapter()->GetDevice();
+
+
 	ID3DBlob * signature = nullptr;
 	if (SUCCEEDED(hr = D3D12SerializeRootSignature(&rootSignatureDesc,
 		D3D_ROOT_SIGNATURE_VERSION_1,
 		&signature,
 		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetSecondAdapter()->GetDevice()->CreateRootSignature(
+		if (FAILED(hr = device->CreateRootSignature(
 			0,
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -383,7 +387,9 @@ HRESULT ParticlePass::_initPipelineState()
 	computePipelineStateDesc.pRootSignature = m_rootSignature;
 	computePipelineStateDesc.CS = m_computeShader;
 
-	if (FAILED(hr = p_renderingManager->GetSecondAdapter()->GetDevice()->CreateComputePipelineState(
+
+	ID3D12Device * device = p_renderingManager->GetSecondAdapter() ? p_renderingManager->GetSecondAdapter()->GetDevice() : p_renderingManager->GetMainAdapter()->GetDevice();
+	if (FAILED(hr = device->CreateComputePipelineState(
 		&computePipelineStateDesc,
 		IID_PPV_ARGS(&m_computePipelineState))))
 	{

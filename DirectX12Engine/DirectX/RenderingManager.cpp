@@ -58,7 +58,6 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & enableDebugLa
 				{
 					return hr;
 				}
-
 			}				
 
 			if (FAILED(hr = _createCbvSrvUavDescriptorHeap()))
@@ -325,9 +324,10 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 	m_ssaoPass->Release();
 	SAFE_DELETE(m_ssaoPass);
 
-	
-	m_secondaryAdapter->Release();
+	if (m_secondaryAdapter)
+		m_secondaryAdapter->Release();
 	SAFE_DELETE(m_secondaryAdapter);
+
 	if (m_mainAdapter->Release())
 	{
 		if (m_debugLayerEnabled && reportMemoryLeaks)
