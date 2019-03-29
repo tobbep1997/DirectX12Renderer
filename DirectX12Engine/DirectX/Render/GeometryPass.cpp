@@ -40,6 +40,8 @@ HRESULT GeometryPass::Init()
 
 void GeometryPass::Update(const Camera & camera, const float & deltaTime)
 {	
+	p_renderingManager->GetPassFence(PARTICLE_PASS)->WaitGgu(p_renderingManager->GetCommandQueue());
+
 	OpenCommandList(m_pipelineState);
 	ID3D12GraphicsCommandList * commandList = p_commandList[p_renderingManager->GetFrameIndex()];
 	//p_renderingManager->ResourceDescriptorHeap(commandList);

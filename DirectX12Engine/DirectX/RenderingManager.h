@@ -12,6 +12,12 @@ class GeometryPass;
 class ParticlePass;
 class ReflectionPass;
 class Camera;
+class X12Fence;
+
+#define PASS_FENCES 10
+
+#define SHADOW_PASS 0
+#define PARTICLE_PASS 1
 
 const unsigned int FRAME_BUFFER_COUNT = 3;
 class RenderingManager
@@ -65,6 +71,8 @@ public:
 
 	D3D12_GPU_DESCRIPTOR_HANDLE CopyToGpuDescriptorHeap(const D3D12_CPU_DESCRIPTOR_HANDLE & descriptorHandle, const UINT & numDescriptors = 1);
 
+	X12Fence * GetPassFence(const UINT & index) const;
+
 private:
 	   
 	X12Adapter	*				m_mainAdapter = nullptr;
@@ -100,7 +108,7 @@ private:
 	HRESULT _createCommandAllocators();
 	HRESULT _createCommandList();
 	HRESULT _createFenceAndFenceEvent();
-
+	
 	GeometryPass *	m_geometryPass = nullptr;
 	ShadowPass *	m_shadowPass = nullptr;
 	DeferredRender * m_deferredPass = nullptr;
@@ -113,6 +121,8 @@ private:
 	ID3D12DescriptorHeap * m_gpuDescriptorHeap = nullptr;
 
 	HRESULT _createCbvSrvUavDescriptorHeap();
+
+	X12Fence * m_fences[PASS_FENCES];
 
 private:
 	//DEBUG LAYER

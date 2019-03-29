@@ -127,6 +127,7 @@ void ShadowPass::Draw()
 		}
 	}
 	ExecuteCommandList();
+	p_renderingManager->GetPassFence(SHADOW_PASS)->Signal(p_renderingManager->GetCommandQueue());
 }
 
 void ShadowPass::Clear()
@@ -154,28 +155,40 @@ HRESULT ShadowPass::_preInit()
 	HRESULT hr = 0;
 
 	_createViewport();
-	if (SUCCEEDED(hr = p_createCommandList(L"Shadow")))
+	if (FAILED(hr = p_createCommandList(L"Shadow")))
 	{
-		if (SUCCEEDED(hr = OpenCommandList()))
-		{
-			if (SUCCEEDED(hr = _initRootSignature()))
-			{
-				if (SUCCEEDED(hr = _initShaders()))
-				{
-					if (SUCCEEDED(hr = _initPipelineState()))
-					{
-						if (SUCCEEDED(hr = _createConstantBuffer()))
-						{
-							if (SUCCEEDED(hr = p_createInstanceBuffer(L"Shadow")))
-							{
-								
-							}
-						}
-					}
-				}
-			}
-		}		
+		return hr;
 	}
+	if (FAILED(hr = OpenCommandList()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initRootSignature()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initShaders()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initPipelineState()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _createConstantBuffer()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = p_createInstanceBuffer(L"Shadow")))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = p_renderingManager->GetPassFence(SHADOW_PASS)->CreateFence(L"Shadow", p_renderingManager->GetMainAdapter()->GetDevice())))
+	{
+		return hr;
+	}
+
 	return hr;
 }
 

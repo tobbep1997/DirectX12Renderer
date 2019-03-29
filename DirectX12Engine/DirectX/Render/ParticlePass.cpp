@@ -84,7 +84,10 @@ HRESULT ParticlePass::Init()
 		return hr;
 	}
 
-
+	if (FAILED(hr = p_renderingManager->GetPassFence(PARTICLE_PASS)->CreateFence(L"Particle fence", p_renderingManager->GetSecondAdapter()->GetDevice(), D3D12_FENCE_FLAG_SHARED | D3D12_FENCE_FLAG_SHARED_CROSS_ADAPTER)))
+	{
+		return hr;
+	}
 
 	return hr;
 }
@@ -202,7 +205,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		if (!emitter->GetPositions().empty())
 			m_geometryPass->AddEmitter(emitter);
 	}
-
+	p_renderingManager->GetPassFence(PARTICLE_PASS)->Signal(m_commandQueue);
 }
 
 void ParticlePass::Draw()

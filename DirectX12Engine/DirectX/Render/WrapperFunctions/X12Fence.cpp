@@ -22,7 +22,8 @@ HRESULT X12Fence::CreateFence(const std::wstring& name, ID3D12Device* device, co
 HRESULT X12Fence::Signal(ID3D12CommandQueue* commandQueue)
 {
 	m_fenceValue++;
-	return commandQueue->Signal(m_fence, m_fenceValue);
+	const HRESULT hr = commandQueue->Signal(m_fence, m_fenceValue);
+	return hr;
 }
 
 HRESULT X12Fence::WaitGgu(ID3D12CommandQueue * commandQueue) const

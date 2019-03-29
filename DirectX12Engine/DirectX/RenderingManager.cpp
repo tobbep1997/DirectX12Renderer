@@ -60,6 +60,11 @@ HRESULT RenderingManager::Init(const Window * window, const BOOL & enableDebugLa
 				}
 			}				
 
+			for (UINT i = 0; i < PASS_FENCES; i++)
+			{
+				SAFE_NEW(m_fences[i], new X12Fence());
+			}
+
 			if (FAILED(hr = _createCbvSrvUavDescriptorHeap()))
 			{
 				return Window::CreateError(hr);
@@ -328,6 +333,13 @@ void RenderingManager::Release(const BOOL & waitForFrames, const BOOL & reportMe
 		m_secondaryAdapter->Release();
 	SAFE_DELETE(m_secondaryAdapter);
 
+	for (UINT i = 0; i < PASS_FENCES; i++)
+	{
+		if (m_fences[i])
+			m_fences[i]->Release();
+		SAFE_DELETE(m_fences[i]);
+	}
+
 	if (m_mainAdapter->Release())
 	{
 		if (m_debugLayerEnabled && reportMemoryLeaks)
@@ -512,6 +524,11 @@ D3D12_GPU_DESCRIPTOR_HANDLE RenderingManager::CopyToGpuDescriptorHeap(
 	m_copyOffset += m_resourceIncrementalSize * numDescriptors;
 
 	return { m_gpuDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + offset };
+}
+
+X12Fence* RenderingManager::GetPassFence(const UINT& index) const
+{
+	return m_fences[index];
 }
 
 UINT64 * RenderingManager::GetFenceValues()

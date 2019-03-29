@@ -64,7 +64,8 @@ HRESULT DeferredRender::Init()
 
 void DeferredRender::Update(const Camera& camera, const float& deltaTime)
 {
-
+	if (FAILED(p_renderingManager->GetPassFence(SHADOW_PASS)->WaitGgu(p_renderingManager->GetCommandQueue())))
+		return;
 	ID3D12GraphicsCommandList* commandList = p_renderingManager->GetCommandList();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		p_renderingManager->GetRTVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),

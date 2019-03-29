@@ -1,5 +1,6 @@
 #pragma once
 
+
 class IX12Object
 {
 protected:

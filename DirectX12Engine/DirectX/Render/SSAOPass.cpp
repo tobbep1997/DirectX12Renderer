@@ -237,8 +237,6 @@ HRESULT SSAOPass::_preInit()
 		return hr;
 	}
 
-	if (FAILED(hr))
-		Release();
 	return hr;
 }
 
