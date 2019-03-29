@@ -22,17 +22,16 @@ HRESULT ShadowPass::Init()
 
 	if (SUCCEEDED(hr = _preInit()))
 	{
-		if (SUCCEEDED(hr = _signalGPU()))
-		{
-			
-		}
+		//if (SUCCEEDED(hr = _signalGPU()))
+		//{
+		//	
+		//}
 	}
 	return hr;	
 }
 
 void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 {
-	OpenCommandList();
 
 	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 
@@ -58,7 +57,8 @@ void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 		}
 		m_constantLightBuffer->Copy(&m_lightValues, sizeof(m_lightValues), m_constantLightBufferPerObjectAlignedSize * counter++);
 	}
-	   
+
+	OpenCommandList();
 	p_commandList[frameIndex]->SetPipelineState(m_pipelineState);
 	p_commandList[frameIndex]->SetGraphicsRootSignature(m_rootSignature);
 	p_commandList[frameIndex]->RSSetViewports(1, &m_viewport);
@@ -75,11 +75,11 @@ void ShadowPass::Draw()
 
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
-	{
+	{		
 		p_lightQueue->at(i)->GetDepthStencil()->SwitchToDSV(p_commandList[frameIndex]);
 		p_lightQueue->at(i)->GetDepthStencil()->ClearDepthStencil(p_commandList[frameIndex]);
 
-		const CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(p_lightQueue->at(i)->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+		const CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle (p_lightQueue->at(i)->GetDepthStencil()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 			p_lightQueue->at(i)->GetRenderTargetView()->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
@@ -95,7 +95,6 @@ void ShadowPass::Draw()
 
 		counter++;
 
-		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV(p_commandList[frameIndex]);
 
 		if (dynamic_cast<DirectionalLight*>(p_lightQueue->at(i)))
 		{
@@ -126,7 +125,12 @@ void ShadowPass::Draw()
 					p_lightQueue->at(i));
 		}
 	}
-	ExecuteCommandList();
+	for (UINT i = 0; i < lightQueueSize; i++)
+	{
+		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV(p_commandList[frameIndex]);
+	}
+
+	ExecuteCommandList(p_commandQueue);
 	p_renderingManager->GetPassFence(SHADOW_PASS)->Signal(p_renderingManager->GetCommandQueue());
 }
 
@@ -155,11 +159,12 @@ HRESULT ShadowPass::_preInit()
 	HRESULT hr = 0;
 
 	_createViewport();
-	if (FAILED(hr = p_createCommandList(L"Shadow")))
-	{
-		return hr;
-	}
-	if (FAILED(hr = OpenCommandList()))
+	p_useSecondaryAdapter(false);
+
+	X12Adapter * device = p_getUseSecondaryAdapter() ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
+
+
+	if (FAILED(hr = p_createCommandList(L"Shadow", true, D3D12_COMMAND_LIST_TYPE_DIRECT)))
 	{
 		return hr;
 	}
@@ -184,10 +189,12 @@ HRESULT ShadowPass::_preInit()
 		return hr;
 	}
 
-	if (FAILED(hr = p_renderingManager->GetPassFence(SHADOW_PASS)->CreateFence(L"Shadow", p_renderingManager->GetMainAdapter()->GetDevice())))
+	if (FAILED(hr = p_renderingManager->GetPassFence(SHADOW_PASS)->CreateFence(L"Shadow", device->GetDevice())))
 	{
 		return hr;
 	}
+
+	
 
 	return hr;
 }
@@ -224,13 +231,15 @@ HRESULT ShadowPass::_initRootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS		|				
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS);
 
+	X12Adapter * device = p_getUseSecondaryAdapter() ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
+
 	ID3DBlob * signature = nullptr;
 	if (SUCCEEDED(hr = D3D12SerializeRootSignature(&rootSignatureDesc,
 		D3D_ROOT_SIGNATURE_VERSION_1,
 		&signature,
 		nullptr)))
 	{
-		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateRootSignature(
+		if (FAILED(hr = device->GetDevice()->CreateRootSignature(
 			0,
 			signature->GetBufferPointer(),
 			signature->GetBufferSize(),
@@ -322,7 +331,9 @@ HRESULT ShadowPass::_initPipelineState()
 	else
 		return hr;
 
-	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateGraphicsPipelineState(
+	X12Adapter * device = p_getUseSecondaryAdapter() ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
+	
+	if (FAILED(hr = device->GetDevice()->CreateGraphicsPipelineState(
 		&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&m_pipelineState))))
 	{

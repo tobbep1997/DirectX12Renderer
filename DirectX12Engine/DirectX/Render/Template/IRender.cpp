@@ -88,13 +88,24 @@ void IRender::QueueLight(ILight* light) const
 	p_lightQueue->push_back(light);
 }
 
-HRESULT IRender::p_createCommandList(const std::wstring & name, const D3D12_COMMAND_LIST_TYPE & type)
+HRESULT IRender::p_createCommandList(const std::wstring & name, const bool & createCommandQueue,  const D3D12_COMMAND_LIST_TYPE & type)
 {
 	HRESULT hr = 0;
 
+	X12Adapter * adapter = m_useSecondaryAdapter ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
+
+	if (createCommandQueue)
+	{
+		D3D12_COMMAND_QUEUE_DESC desc{ type, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, D3D12_COMMAND_QUEUE_FLAG_NONE, 0 };
+		if (FAILED(hr = adapter->GetDevice()->CreateCommandQueue(&desc, IID_PPV_ARGS(&p_commandQueue))))
+		{
+			return hr;
+		}
+	}
+
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
-		if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommandAllocator(
+		if (FAILED(hr = adapter->GetDevice()->CreateCommandAllocator(
 			type,
 			IID_PPV_ARGS(&p_commandAllocator[i]))))
 		{
@@ -103,7 +114,7 @@ HRESULT IRender::p_createCommandList(const std::wstring & name, const D3D12_COMM
 
 		SET_NAME(p_commandAllocator[i], name + L" Command allocator " + std::to_wstring(i));
 
-		if (SUCCEEDED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommandList(
+		if (SUCCEEDED(hr = adapter->GetDevice()->CreateCommandList(
 			0, 
 			type,
 			p_commandAllocator[i], 
@@ -119,6 +130,7 @@ HRESULT IRender::p_createCommandList(const std::wstring & name, const D3D12_COMM
 
 void IRender::p_releaseCommandList()
 {
+	SAFE_RELEASE(p_commandQueue);
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
 		SAFE_RELEASE(p_commandList[i]);
@@ -140,9 +152,12 @@ void IRender::p_setResourceDescriptorHeap(ID3D12GraphicsCommandList* commandList
 HRESULT IRender::p_createDescriptorHeap()
 {
 	p_releaseDescriptorHeap();
-	m_resourceIncrementalSize = p_renderingManager->GetMainAdapter()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	X12Adapter * adapter = m_useSecondaryAdapter ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
+
+	m_resourceIncrementalSize = adapter->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	const D3D12_DESCRIPTOR_HEAP_DESC desc{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_DESCRIPTOR_SIZE, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 };
-	const HRESULT hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_gpuDescriptorHeap));
+	const HRESULT hr = adapter->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_gpuDescriptorHeap));
 	if (FAILED(hr))
 	{
 		return hr;
@@ -163,7 +178,10 @@ D3D12_GPU_DESCRIPTOR_HANDLE IRender::p_copyToDescriptorHeap(const D3D12_CPU_DESC
 	const SIZE_T offset = m_copyOffset;
 	const D3D12_CPU_DESCRIPTOR_HANDLE destHandle = { m_gpuDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_copyOffset };
 
-	p_renderingManager->GetMainAdapter()->GetDevice()->CopyDescriptorsSimple(
+	X12Adapter * adapter = m_useSecondaryAdapter ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
+
+
+	adapter->GetDevice()->CopyDescriptorsSimple(
 		numDescriptors,
 		destHandle,
 		descriptorHandle,
@@ -178,7 +196,9 @@ HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & 
 {
 	HRESULT hr = 0;
 
-	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
+	X12Adapter * adapter = m_useSecondaryAdapter ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
+
+	if (FAILED(hr = adapter->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
@@ -190,7 +210,7 @@ HRESULT IRender::p_createInstanceBuffer(const std::wstring & name, const UINT & 
 
 	}
 	SET_NAME(p_instanceBuffer, name + L" intermediate INSTANCE BUFFER");
-	if (FAILED(hr = p_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
+	if (FAILED(hr = adapter->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
@@ -295,6 +315,16 @@ void IRender::p_releaseInstanceBuffer()
 	Instancing::ClearInstanceGroup(p_instanceGroups);
 	SAFE_RELEASE(p_instanceBuffer);
 	SAFE_RELEASE(p_intermediateInstanceBuffer);
+}
+
+void IRender::p_useSecondaryAdapter(const BOOL& value)
+{
+	m_useSecondaryAdapter = value && p_renderingManager->GetSecondAdapter();
+}
+
+const bool& IRender::p_getUseSecondaryAdapter() const
+{
+	return m_useSecondaryAdapter;
 }
 
 HRESULT IRender::OpenCommandList(ID3D12PipelineState * pipelineState)

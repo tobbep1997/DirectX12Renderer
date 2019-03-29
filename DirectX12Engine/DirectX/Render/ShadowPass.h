@@ -11,12 +11,6 @@ class ShadowPass :
 private:
 	static const UINT ROOT_PARAMETERS = 1;
 
-	struct ObjectBuffer
-	{
-		DirectX::XMFLOAT4X4A	WorldMatrix;
-
-		DirectX::XMFLOAT4A		Padding[44];
-	};
 	struct LightBuffer
 	{
 		DirectX::XMUINT4 LightType;

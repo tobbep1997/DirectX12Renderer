@@ -21,6 +21,9 @@ private:
 	SIZE_T m_copyOffset;
 	SIZE_T m_resourceIncrementalSize;
 
+	bool m_useSecondaryAdapter = false;
+
+
 protected:
 	RenderingManager * p_renderingManager;
 	const Window * p_window;
@@ -36,10 +39,11 @@ protected:
 	ID3D12Resource * p_instanceBuffer = nullptr;
 	ID3D12Resource * p_intermediateInstanceBuffer = nullptr;
 
+	ID3D12CommandQueue * p_commandQueue = nullptr;
 	ID3D12CommandAllocator * p_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };
 	ID3D12GraphicsCommandList * p_commandList[FRAME_BUFFER_COUNT] = { nullptr };
 
-	HRESULT p_createCommandList(const std::wstring & name, const D3D12_COMMAND_LIST_TYPE & type = D3D12_COMMAND_LIST_TYPE_DIRECT);
+	HRESULT p_createCommandList(const std::wstring & name, const bool & createCommandQueue = false, const D3D12_COMMAND_LIST_TYPE & type = D3D12_COMMAND_LIST_TYPE_DIRECT);
 	void p_releaseCommandList();
 
 	void p_resetDescriptorHeap();
@@ -54,6 +58,9 @@ protected:
 
 	void p_drawInstance(const UINT & textureStartIndex = 0, const BOOL & mapTextures = FALSE);
 	void p_releaseInstanceBuffer();
+
+	void p_useSecondaryAdapter(const BOOL & value);
+	const bool & p_getUseSecondaryAdapter() const;
 	
 public:
 

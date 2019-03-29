@@ -120,14 +120,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE);
 		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE);
 
-		const int pointLightSize = 1;
+		const int pointLightSize = 32;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
 		for (UINT i = 0; i < pointLightSize; i++)
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
 			pointLights[i]->Init();
-			//pointLights[i]->SetPosition((rand() % 11) - 5, 1, (rand() % 11) - 5);
-			pointLights[i]->SetPosition(0,2,0);
+			pointLights[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 3, (rand() % floorSize) - (floorSize / 2));
+			//pointLights[i]->SetPosition(0,2,0);
 			pointLights[i]->SetIntensity(15.5f);
 			pointLights[i]->SetDropOff(2.0f);
 			pointLights[i]->SetPow(1.5f);
