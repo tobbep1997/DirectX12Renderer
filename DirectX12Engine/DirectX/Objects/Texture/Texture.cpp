@@ -29,20 +29,15 @@ void Texture::Release()
 	SAFE_RELEASE(m_textureBuffer);
 }
 
-void Texture::SetRenderingManager(RenderingManager* renderingManager)
-{
-	this->m_renderingManager = renderingManager;
-}
 
-BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, RenderingManager * renderingManager)
+
+BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips)
 {
-	if (!m_renderingManager && !renderingManager)
-		return FALSE;
-	if (!m_renderingManager && renderingManager)
-		m_renderingManager = renderingManager;
+	if (!m_renderingManager)
+		m_renderingManager = RenderingManager::GetInstance();
+
 
 	HRESULT hr = 0;
-
 	static BOOL init = FALSE;
 	if (!init)
 	{
@@ -55,8 +50,7 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 	DirectX::ResourceUploadBatch resourceUpload(m_renderingManager->GetMainAdapter()->GetDevice());
 
 	resourceUpload.Begin();
-
-	;
+	
 	if (SUCCEEDED(hr = DirectX::CreateWICTextureFromFile(
 		m_renderingManager->GetMainAdapter()->GetDevice(),
 		resourceUpload, 
@@ -96,12 +90,10 @@ BOOL Texture::LoadTexture(const std::string& path, const BOOL & generateMips, Re
 	return TRUE;	
 }
 
-BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips, RenderingManager* renderingManager)
+BOOL Texture::LoadDDSTexture(const std::string& path, const BOOL & generateMips)
 {
-	if (!m_renderingManager && !renderingManager)
-		return FALSE;
-	if (!m_renderingManager && renderingManager)
-		m_renderingManager = renderingManager;
+	if (!m_renderingManager)
+		m_renderingManager = RenderingManager::GetInstance();
 
 	HRESULT hr = 0;
 
@@ -171,12 +163,12 @@ void Texture::CopyDescriptorHeap() const
 	m_gpuHandle = m_renderingManager->CopyToGpuDescriptorHeap(m_cpuHandle, m_textureBuffer->GetDesc().DepthOrArraySize);
 }
 
-void Texture::MapTexture(RenderingManager* renderingManager, const UINT& rootParameterIndex, ID3D12GraphicsCommandList * commandList) const
+void Texture::MapTexture(const UINT& rootParameterIndex, ID3D12GraphicsCommandList * commandList) const
 {
 	if (m_gpuHandle.ptr == 0)
 		throw "GPU handle null";
 
-	ID3D12GraphicsCommandList * gcl = commandList ? commandList : renderingManager->GetCommandList();
+	ID3D12GraphicsCommandList * gcl = commandList ? commandList : m_renderingManager->GetCommandList();
 	
 	gcl->SetGraphicsRootDescriptorTable(rootParameterIndex, m_gpuHandle);
 }

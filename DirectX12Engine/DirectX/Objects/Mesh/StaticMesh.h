@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <d3d12.h>
+#include "DirectX/Render/WrapperFunctions/X12Fence.h"
 
 class RenderingManager;
 struct aiScene;
@@ -21,14 +22,14 @@ public:
 
 	const BOOL & LoadStaticMesh(const std::string & path);
 
-	BOOL CreateBuffer(RenderingManager * renderingManager);
+	BOOL CreateBuffer();
 	
 	const std::vector<StaticVertex> & GetStaticMesh() const;
 
 	const D3D12_VERTEX_BUFFER_VIEW & GetVertexBufferView() const;
 
 private:
-	HRESULT _createBuffer(RenderingManager * renderingManager);
+	HRESULT _createBuffer();
 	void _clearMesh();
 	BOOL _createMesh(const aiScene * scene);
 
@@ -38,6 +39,10 @@ private:
 	ID3D12Resource *				m_vertexBuffer		= nullptr;
 	ID3D12Resource *				m_vertexHeapBuffer	= nullptr;
 	std::vector<StaticVertex>	m_staticMesh;
+
+	RenderingManager * m_renderingManager = nullptr;
+
+	X12Fence * m_fence = nullptr;
 
 	std::string m_name;
 };

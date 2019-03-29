@@ -9,10 +9,13 @@
 
 StaticMesh::StaticMesh()
 {
+	m_renderingManager = RenderingManager::GetInstance();
+	SAFE_NEW(m_fence, new X12Fence());
 }
 
 StaticMesh::~StaticMesh()
 {
+	SAFE_DELETE(m_fence);
 }
 
 void StaticMesh::_clearMesh()
@@ -44,6 +47,7 @@ BOOL StaticMesh::_createMesh(const aiScene* scene)
 BOOL StaticMesh::Init()
 {
 	m_staticMesh = std::vector<StaticVertex>();
+	m_fence->CreateFence(L"Mesh", m_renderingManager->GetMainAdapter()->GetDevice());
 	return TRUE;
 }
 
@@ -54,6 +58,8 @@ void StaticMesh::Update()
 void StaticMesh::Release()
 {
 	_clearMesh();
+	if (m_fence)
+		m_fence->Release();
 	SAFE_RELEASE(m_vertexBuffer);
 	SAFE_RELEASE(m_vertexHeapBuffer);
 }
@@ -77,20 +83,32 @@ const BOOL & StaticMesh::LoadStaticMesh(const std::string& path)
 	return m_meshLoaded;
 }
 
-BOOL StaticMesh::CreateBuffer(RenderingManager* renderingManager)
+BOOL StaticMesh::CreateBuffer()
 {
+	if (!m_renderingManager)
+		m_renderingManager = RenderingManager::GetInstance();
+
 	HRESULT hr = 0;
 	if (!m_meshLoaded)
 		return FALSE;
-	if (SUCCEEDED(hr = renderingManager->OpenCommandList()))
+	if (SUCCEEDED(hr = m_renderingManager->OpenCommandList()))
 	{
-		if (SUCCEEDED(hr = _createBuffer(renderingManager)))
+		if (SUCCEEDED(hr = _createBuffer()))
 		{
-			if (SUCCEEDED(hr = renderingManager->SignalGPU()))
+			if (SUCCEEDED(hr = m_renderingManager->SignalGPU()))
 			{
 				m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 				m_vertexBufferView.StrideInBytes = sizeof(StaticVertex);
 				m_vertexBufferView.SizeInBytes = m_vertexBufferSize;
+
+				if (SUCCEEDED(hr = m_fence->Signal(m_renderingManager->GetCommandQueue())))
+				{
+					if (SUCCEEDED(hr = m_fence->WaitCpu()))
+					{
+						
+					}
+					
+				}
 
 				return TRUE;
 			}			
@@ -109,12 +127,12 @@ const D3D12_VERTEX_BUFFER_VIEW& StaticMesh::GetVertexBufferView() const
 	return this->m_vertexBufferView;
 }
 
-HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
+HRESULT StaticMesh::_createBuffer()
 {
 	HRESULT hr = 0;
 	m_vertexBufferSize = static_cast<UINT>(sizeof(StaticVertex) * this->m_staticMesh.size());
 
-	if (SUCCEEDED(hr = renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
+	if (SUCCEEDED(hr = m_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),
@@ -126,7 +144,7 @@ HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 			std::wstring(m_name.begin(), m_name.end()) +
 			std::wstring(L": vertexBuffer"));
 
-		if (SUCCEEDED(hr = renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
+		if (SUCCEEDED(hr = m_renderingManager->GetMainAdapter()->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize),
@@ -143,9 +161,9 @@ HRESULT StaticMesh::_createBuffer(RenderingManager* renderingManager)
 			vertexData.RowPitch = m_vertexBufferSize;
 			vertexData.SlicePitch = m_vertexBufferSize;
 
-			UpdateSubresources(renderingManager->GetCommandList(), m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
+			UpdateSubresources(m_renderingManager->GetCommandList(), m_vertexBuffer, m_vertexHeapBuffer, 0, 0, 1, &vertexData);
 
-			renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+			m_renderingManager->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 		}
 	}
 

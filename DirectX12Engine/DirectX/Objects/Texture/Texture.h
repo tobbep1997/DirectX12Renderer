@@ -17,27 +17,25 @@ public:
 	void Update() override;
 	void Release() override;
 
-	void SetRenderingManager(RenderingManager * renderingManager);
 
-	BOOL LoadTexture(const std::string & path, const BOOL & generateMips = TRUE, RenderingManager * renderingManager = nullptr);
-	BOOL LoadDDSTexture(const std::string & path, const BOOL & generateMips = TRUE, RenderingManager * renderingManager = nullptr);
+	BOOL LoadTexture(const std::string & path, const BOOL & generateMips = TRUE);
+	BOOL LoadDDSTexture(const std::string & path, const BOOL & generateMips = TRUE);
 
 	ID3D12Resource * GetResource() const;
 
 	void CopyDescriptorHeap() const;
-	void MapTexture(RenderingManager * renderingManager, const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr) const;
+	void MapTexture(const UINT & rootParameterIndex, ID3D12GraphicsCommandList * commandList = nullptr) const;
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE & GetCpuHandle() const;
 
 private:
-	RenderingManager * m_renderingManager;
+	RenderingManager * m_renderingManager = nullptr;
 
-	BYTE* m_imageData;
+	BYTE* m_imageData = nullptr;
 	ID3D12Resource * m_textureBuffer = nullptr;
 
 	HRESULT _uploadTexture();
 
-	//SIZE_T m_descriptorHeapOffset = 0;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{ 0 };
 	mutable D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle{ 0 };
 };

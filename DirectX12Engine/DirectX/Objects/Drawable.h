@@ -20,7 +20,7 @@ public:
 
 	const StaticMesh * GetMesh() const;
 
-	void Draw(RenderingManager * renderingManager);
+	void Draw();
 
 	void SetIsVisible(const BOOL & visible);
 	const BOOL & GetIsVisible() const;
@@ -49,5 +49,7 @@ private:
 
 	BOOL m_isVisible = TRUE;
 	BOOL m_castShadows = TRUE;
+
+	RenderingManager * m_renderingManager = nullptr;
 };
 

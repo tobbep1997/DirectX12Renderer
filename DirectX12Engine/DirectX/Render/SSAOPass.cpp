@@ -14,7 +14,7 @@ SSAOPass::SSAOPass(RenderingManager* renderingManager, const Window& window)
 	m_vertexList[2] = Vertex(DirectX::XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(1, 1, 0, 0));
 	m_vertexList[3] = Vertex(DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), DirectX::XMFLOAT4(1, 0, 0, 0));
 
-
+	
 
 }
 
@@ -88,12 +88,25 @@ void SSAOPass::Update(const Camera& camera, const float& deltaTime)
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->DrawInstanced(4, 1, 0, 0);
 
-	ExecuteCommandList();
+	if (SUCCEEDED(ExecuteCommandList(p_renderingManager->GetCommandQueue())))
+	{
+		if (SUCCEEDED(m_fence->Signal(p_renderingManager->GetCommandQueue())))
+		{
+			
+		}
+	}
 }
 
 void SSAOPass::Draw()
 {
-	_openCommandList();
+	if (FAILED(m_fence->WaitGgu(p_renderingManager->GetCommandQueue())))
+	{
+		return;
+	}
+	if (FAILED(_openCommandList()))
+	{
+		return;
+	}
 
 	ID3D12GraphicsCommandList * commandList = m_blurCommandList[p_renderingManager->GetFrameIndex()];
 
@@ -120,7 +133,8 @@ void SSAOPass::Draw()
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->DrawInstanced(4, 1, 0, 0);
 
-	_executeCommandList();
+	if (FAILED(_executeCommandList()))
+		return;
 	p_renderingManager->GetDeferredRender()->SetSSAO(m_blurRenderTarget);
 }
 
@@ -143,6 +157,10 @@ void SSAOPass::Release()
 	if (m_blurRenderTarget)
 		m_blurRenderTarget->Release();
 	SAFE_DELETE(m_blurRenderTarget);
+
+	if (m_fence)
+		m_fence->Release();
+	SAFE_DELETE(m_fence);
 
 	SAFE_RELEASE(m_vertexBuffer);
 	SAFE_RELEASE(m_vertexHeapBuffer);
@@ -176,34 +194,47 @@ HRESULT SSAOPass::_preInit()
 	HRESULT hr = 0;
 
 	_createViewport();
-	if (SUCCEEDED(hr = OpenCommandList()))
+	if (FAILED(hr = OpenCommandList()))
 	{
-		if (SUCCEEDED(hr = _initID3D12RootSignature()))
-		{
-			if (SUCCEEDED(hr = _initShaders()))
-			{
-				if (SUCCEEDED(hr = _initID3D12PipelineState()))
-				{			
-					if (SUCCEEDED(hr = _createQuadBuffer()))
-					{
-						SAFE_NEW(m_renderTarget, new X12RenderTargetView())
-						if (SUCCEEDED(hr = m_renderTarget->CreateRenderTarget(
-							0,
-							0,
-							1,
-							TRUE,
-							RENDER_TARGET_FORMAT)))
-						{
-							SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer());
-							if (SUCCEEDED(hr = m_cameraBuffer->CreateBuffer(L"SSAO camera", &m_cameraValues, sizeof(CameraBuffer))))
-							{
+		return hr;
+	}
+	if (FAILED(hr = _initID3D12RootSignature()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initShaders()))
+	{
+		return hr;
+	}
+	if (FAILED(hr = _initID3D12PipelineState()))
+	{			
+		return hr;
+	}
+	if (FAILED(hr = _createQuadBuffer()))
+	{
+		return hr;
+	}
 
-							}
-						}
-					}					
-				}
-			}
-		}
+	SAFE_NEW(m_renderTarget, new X12RenderTargetView())
+	if (FAILED(hr = m_renderTarget->CreateRenderTarget(
+		0,
+		0,
+		1,
+		TRUE,
+		RENDER_TARGET_FORMAT)))
+	{
+		return hr;
+	}
+	SAFE_NEW(m_cameraBuffer, new X12ConstantBuffer());
+	if (FAILED(hr = m_cameraBuffer->CreateBuffer(L"SSAO camera", &m_cameraValues, sizeof(CameraBuffer))))
+	{
+		return hr;
+	}
+
+	SAFE_NEW(m_fence, new X12Fence());
+	if (FAILED(hr = m_fence->CreateFence(L"SSAO", p_renderingManager->GetMainAdapter()->GetDevice())))
+	{
+		return hr;
 	}
 
 	if (FAILED(hr))

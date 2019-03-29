@@ -39,8 +39,7 @@ private:
 	};
 
 public:
-	ParticleEmitter(
-		RenderingManager * renderingManager, 
+	ParticleEmitter(		
 		const Window & window, 
 		const UINT & textureWidth, 
 		const UINT & textureHeight,
@@ -91,13 +90,13 @@ private:
 
 	D3D12_RESOURCE_STATES m_currentState[FRAME_BUFFER_COUNT] {};
 	ID3D12Resource * m_vertexOutputResource[FRAME_BUFFER_COUNT]{ nullptr };
-	D3D12_CPU_DESCRIPTOR_HANDLE m_vertexOutputHandle[FRAME_BUFFER_COUNT]{ 0 };
+	D3D12_CPU_DESCRIPTOR_HANDLE m_vertexOutputHandle[FRAME_BUFFER_COUNT]{{0}};
 
 	ID3D12Resource * m_calculationsOutputResource[FRAME_BUFFER_COUNT]{ nullptr };
-	D3D12_CPU_DESCRIPTOR_HANDLE m_calculationsOutputHandle[FRAME_BUFFER_COUNT]{ 0 };
+	D3D12_CPU_DESCRIPTOR_HANDLE m_calculationsOutputHandle[FRAME_BUFFER_COUNT]{{0}};
 
 	ID3D12Resource * m_vertexResource[FRAME_BUFFER_COUNT]{ nullptr };
-	D3D12_CPU_DESCRIPTOR_HANDLE m_vertexHandle[FRAME_BUFFER_COUNT]{ 0 };
+	D3D12_CPU_DESCRIPTOR_HANDLE m_vertexHandle[FRAME_BUFFER_COUNT]{{0}};
 
 	ID3D12GraphicsCommandList * m_commandList[FRAME_BUFFER_COUNT] = { nullptr };
 	ID3D12CommandAllocator * m_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };

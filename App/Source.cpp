@@ -41,7 +41,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	if(InitDirectX12Engine(window,
 		renderingManager, 
 		hInstance, 
-		"Victor is Gay",
+		"DirectX Renderer",
 		1280, 
 		720, 
 		FALSE,
@@ -69,8 +69,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 		Drawable * drawable = new Drawable();
 		drawable->SetPosition(0, 0, 0);
-		drawable->SetScale(1, 1, 1);
-		drawable->SetMesh(*staticCubeMesh);
+		drawable->SetScale(1, .2, 1);
+		drawable->SetMesh(*staticCylinderMesh);
 		drawable->Update();
 		drawable->SetTexture(texture);
 		drawable->SetNormalMap(normal);
@@ -109,15 +109,16 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		Texture * fire2 = new Texture();
 		Texture * fire3 = new Texture();
 
-		staticCubeMesh->CreateBuffer(renderingManager);
-		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE, renderingManager);
-		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE, renderingManager);
-		metallic->LoadDDSTexture("../Texture/Brick/Brick_metallic.DDS", TRUE, renderingManager);
-		displacement->LoadDDSTexture("../Texture/Brick/Brick_height.DDS", TRUE, renderingManager);
+		staticCubeMesh->CreateBuffer();
+		staticCylinderMesh->CreateBuffer();
+		texture->LoadDDSTexture("../Texture/Brick/Brick_diffuse.DDS", TRUE);
+		normal->LoadDDSTexture("../Texture/Brick/Brick_normal.DDS", TRUE);
+		metallic->LoadDDSTexture("../Texture/Brick/Brick_metallic.DDS", TRUE);
+		displacement->LoadDDSTexture("../Texture/Brick/Brick_height.DDS", TRUE);
 
-		fire1->LoadTexture("../Texture/Fire/Fire1.bmp", FALSE, renderingManager);
-		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE, renderingManager);
-		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE, renderingManager);
+		fire1->LoadTexture("../Texture/Fire/Fire1.bmp", FALSE);
+		fire2->LoadTexture("../Texture/Fire/Fire2.bmp", FALSE);
+		fire3->LoadTexture("../Texture/Fire/Fire3.bmp", FALSE);
 
 		const int pointLightSize = 1;
 		std::vector<PointLight*> pointLights = std::vector<PointLight*>(pointLightSize);
@@ -145,8 +146,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->GetCamera()->Update();
 		directionalLight->SetIntensity(0.4f);
 				
-		ParticleEmitter * emitter = new ParticleEmitter(
-			renderingManager, 
+		ParticleEmitter * emitter = new ParticleEmitter(			 
 			*window, 
 			256, 
 			256, 
@@ -172,14 +172,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 			drawable->SetRotation(0, drawable->GetRotation().y + deltaTime * 0.25f, 0);
 			drawable->Update();
-			drawable->Draw(renderingManager);
-			floor->Draw(renderingManager);
+			drawable->Draw();
+			floor->Draw();
 
 			for (UINT i = 0; i < cubesSize; i++)
 			{
 				cubes[i]->SetRotation(0, cubes[i]->GetRotation().y + deltaTime * 0.25f, 0);
 				cubes[i]->Update();
-				cubes[i]->Draw(renderingManager);
+				cubes[i]->Draw();
 			}
 
 

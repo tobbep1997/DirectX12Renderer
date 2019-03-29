@@ -261,7 +261,7 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 	if (!p_updateInstanceBuffer(instanceBufferView))
 		throw "FAILED TO UPDATE INSTANCE BUFFER";
 	
-
+	UINT instanceOffset = 0;
 	ID3D12GraphicsCommandList * commandList = p_commandList[p_renderingManager->GetFrameIndex()];
 	for (size_t i = 0; i < instanceGroupSize; i++)
 	{		
@@ -277,15 +277,15 @@ void IRender::p_drawInstance(const UINT & textureStartIndex, const BOOL& mapText
 				p_instanceGroups->at(i).StaticMesh->GetVertexBufferView(),
 				instanceBufferView
 			};
-
+		
 		gcl->IASetVertexBuffers(0, 2, bufferArr);
 
 		gcl->DrawInstanced(
 			static_cast<UINT>(p_instanceGroups->at(i).StaticMesh->GetStaticMesh().size()),
 			p_instanceGroups->at(i).GetSize(),
 			0,
-			static_cast<UINT>(i));
-
+			instanceOffset);
+		instanceOffset += p_instanceGroups->at(i).GetSize();
 	}
 
 }

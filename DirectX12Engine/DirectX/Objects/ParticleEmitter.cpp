@@ -4,15 +4,14 @@
 #include "DirectX/Structs.h"
 #include "DirectX/Render/WrapperFunctions/X12ShaderResourceView.h"
 
-ParticleEmitter::ParticleEmitter(
-	RenderingManager* renderingManager, 
+ParticleEmitter::ParticleEmitter(	
 	const Window & window,
 	const UINT & textureWidth, 
 	const UINT & textureHeight,
 	const UINT & arraySize,
 	const DXGI_FORMAT& textureFormat)
 {
-	this->m_renderingManager = renderingManager;
+	this->m_renderingManager = RenderingManager::GetInstance();
 	this->m_window = &window;
 
 	this->m_width = textureWidth;

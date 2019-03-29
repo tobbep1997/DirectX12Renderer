@@ -82,6 +82,9 @@ private:
 
 	X12DepthStencil * m_depthStencils = nullptr;
 	X12RenderTargetView * m_worldPos = nullptr;
+
+	X12Fence * m_fence = nullptr;
+
 	struct Vertex
 	{
 		Vertex()

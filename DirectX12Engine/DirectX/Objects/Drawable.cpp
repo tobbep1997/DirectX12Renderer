@@ -44,18 +44,21 @@ const StaticMesh * Drawable::GetMesh() const
 	return this->m_mesh;
 }
 
-void Drawable::Draw(RenderingManager * renderingManager)
+void Drawable::Draw()
 {
+	if (!m_renderingManager)
+		m_renderingManager = RenderingManager::GetInstance();
+
 	if (this->m_isVisible)
 	{
-		IRender * pass = reinterpret_cast<IRender*>(renderingManager->GetGeometryPass());
+		IRender * pass = reinterpret_cast<IRender*>(m_renderingManager->GetGeometryPass());
 		if (pass)
 			pass->Queue(this);
 	}
 
 	if (this->m_castShadows)
 	{
-		IRender * pass = reinterpret_cast<IRender*>(renderingManager->GetShadowPass());
+		IRender * pass = reinterpret_cast<IRender*>(m_renderingManager->GetShadowPass());
 		if (pass)
 			pass->Queue(this);
 	}
