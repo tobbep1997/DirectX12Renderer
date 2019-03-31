@@ -130,7 +130,7 @@ void ShadowPass::Draw()
 		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV(p_commandList[frameIndex]);
 	}
 
-	ExecuteCommandList(p_commandQueue);
+	ExecuteCommandList();
 	p_renderingManager->GetPassFence(SHADOW_PASS)->Signal(p_renderingManager->GetCommandQueue());
 }
 
@@ -164,7 +164,7 @@ HRESULT ShadowPass::_preInit()
 	X12Adapter * device = p_getUseSecondaryAdapter() ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
 
 
-	if (FAILED(hr = p_createCommandList(L"Shadow", true, D3D12_COMMAND_LIST_TYPE_DIRECT)))
+	if (FAILED(hr = p_createCommandList(L"Shadow", false, D3D12_COMMAND_LIST_TYPE_DIRECT)))
 	{
 		return hr;
 	}
