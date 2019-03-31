@@ -33,9 +33,7 @@ HRESULT ShadowPass::Init()
 void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 {
 
-	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 
-	p_renderingManager->ResourceDescriptorHeap(p_commandList[frameIndex]);
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
@@ -58,7 +56,9 @@ void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 		m_constantLightBuffer->Copy(&m_lightValues, sizeof(m_lightValues), m_constantLightBufferPerObjectAlignedSize * counter++);
 	}
 
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 	OpenCommandList();
+	p_renderingManager->ResourceDescriptorHeap(p_commandList[frameIndex]);
 	p_commandList[frameIndex]->SetPipelineState(m_pipelineState);
 	p_commandList[frameIndex]->SetGraphicsRootSignature(m_rootSignature);
 	p_commandList[frameIndex]->RSSetViewports(1, &m_viewport);
@@ -130,7 +130,7 @@ void ShadowPass::Draw()
 		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV(p_commandList[frameIndex]);
 	}
 
-	ExecuteCommandList(p_commandQueue);
+	ExecuteCommandList();
 	p_renderingManager->GetPassFence(SHADOW_PASS)->Signal(p_renderingManager->GetCommandQueue());
 }
 
@@ -164,7 +164,7 @@ HRESULT ShadowPass::_preInit()
 	X12Adapter * device = p_getUseSecondaryAdapter() ? p_renderingManager->GetSecondAdapter() : p_renderingManager->GetMainAdapter();
 
 
-	if (FAILED(hr = p_createCommandList(L"Shadow", true, D3D12_COMMAND_LIST_TYPE_DIRECT)))
+	if (FAILED(hr = p_createCommandList(L"Shadow", false, D3D12_COMMAND_LIST_TYPE_DIRECT)))
 	{
 		return hr;
 	}

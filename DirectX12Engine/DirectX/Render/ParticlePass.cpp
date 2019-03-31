@@ -70,9 +70,9 @@ HRESULT ParticlePass::Init()
 			return hr;
 		}		
 	}
-	if (FAILED(hr = m_particleInfoBuffer->CreateSharedBuffer(L"Particle info buffer", 0, 256)))
+	if (FAILED(hr = m_particleInfoBuffer->CreateSharedBuffer(L"Particle info buffer", 0, 4096 * 4096)))
 	{
-		if (FAILED(hr = m_particleInfoBuffer->CreateBuffer(L"Particle info buffer", nullptr, 0, 256)))
+		if (FAILED(hr = m_particleInfoBuffer->CreateBuffer(L"Particle info buffer", nullptr, 0, 4096 * 4096)))
 		{
 			return hr;
 		}	
@@ -107,11 +107,11 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		camera.GetPosition().z,
 		camera.GetPosition().w);
 
-	UINT offset = 0;	
+	UINT offset = 0;
+	std::vector<UINT> offsets = std::vector<UINT>(m_emitters->size());
 	for (size_t i = 0; i < m_emitters->size() && i < MAX_EMITTERS; i++)
 	{
 		m_emitters->at(i)->UpdateEmitter(deltaTime);
-
 		particleInfoBuffer.WorldMatrix = m_emitters->at(i)->GetWorldMatrix();
 		for (size_t j = 0; j < m_emitters->at(i)->GetPositions().size(); j++)
 		{
@@ -140,9 +140,10 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 			m_particleBuffer->Copy(&m_particleValues, sizeof(ParticleBuffer), offset);
 			offset += sizeof(ParticleBuffer);
 		}
-		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), static_cast<UINT>(i) * sizeof(ParticleInfoBuffer));
+		offsets[i] = offset;
+		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), static_cast<UINT>(i) * 256);
 	}
-
+	
 	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 	if (FAILED(m_commandAllocator[frameIndex]->Reset()))
 	{
@@ -164,7 +165,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 
 		commandList->SetComputeRootSignature(m_rootSignature);
 		
-		m_particleInfoBuffer->SetComputeRootConstantBufferView(commandList, PARTICLE_INFO, 0);
+		m_particleInfoBuffer->SetComputeRootConstantBufferView(commandList, PARTICLE_INFO, static_cast<UINT>(i) * 256);
 		m_particleBuffer->SetComputeRootShaderResourceView(commandList, PARTICLE_BUFFER, 0);
 
 		commandList->SetComputeRootUnorderedAccessView(VERTEX_OUTPUT, emitter->GetVertexResource()->GetGPUVirtualAddress());

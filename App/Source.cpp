@@ -145,19 +145,28 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->GetCamera()->SetUp(1, 0, 0);
 		directionalLight->GetCamera()->Update();
 		directionalLight->SetIntensity(0.4f);
-				
-		ParticleEmitter * emitter = new ParticleEmitter(			 
-			*window, 
-			256, 
-			256, 
-			3, 
-			DXGI_FORMAT_B8G8R8X8_UNORM);
 
+
+		const UINT MAX_EMITTERS = 64;
+		ParticleEmitter * emitter[MAX_EMITTERS];
+		
 		Texture* emitterTextures[3] = { fire1, fire2, fire3 };
-		emitter->SetTextures(emitterTextures);
-		emitter->Init();
-		emitter->SetPosition(0, .25f, 0);
-		emitter->Update();
+		
+		for (UINT i = 0; i < MAX_EMITTERS; i++)
+		{
+			emitter[i] = new ParticleEmitter(
+				*window,
+				256,
+				256,
+				3,
+				DXGI_FORMAT_B8G8R8X8_UNORM);
+
+			emitter[i]->SetTextures(emitterTextures);
+			emitter[i]->Init();
+			emitter[i]->SetPosition(0, .25f, 0);
+			emitter[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 3, (rand() % floorSize) - (floorSize / 2));
+			emitter[i]->Update();
+		}
 
 		deltaTimer.Init();
 		while (Window::IsOpen())
@@ -190,7 +199,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 			//directionalLight2->Queue();
 
-			emitter->Draw();
+			for (UINT i = 0; i < MAX_EMITTERS; i++)
+			{
+				emitter[i]->Draw();
+			}
 
 			if (Input::IsKeyPressed(97))
 				directionalLight->SetPosition(5, 5, 5);
@@ -226,8 +238,11 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		for (UINT i = 0; i < pointLightSize; i++)
 			delete pointLights[i];
 
-		emitter->Release();
-		SAFE_DELETE(emitter);
+		for (UINT i = 0; i < MAX_EMITTERS; i++)
+		{
+			emitter[i]->Release();
+			SAFE_DELETE(emitter[i]);
+		}
 
 		staticCylinderMesh->Release();
 		staticCubeMesh->Release();
