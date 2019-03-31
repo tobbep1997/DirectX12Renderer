@@ -33,9 +33,7 @@ HRESULT ShadowPass::Init()
 void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 {
 
-	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 
-	p_renderingManager->ResourceDescriptorHeap(p_commandList[frameIndex]);
 	const UINT lightQueueSize = static_cast<UINT>(p_lightQueue->size());
 	UINT counter = 0;
 	for (UINT i = 0; i < lightQueueSize; i++)
@@ -58,7 +56,9 @@ void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 		m_constantLightBuffer->Copy(&m_lightValues, sizeof(m_lightValues), m_constantLightBufferPerObjectAlignedSize * counter++);
 	}
 
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 	OpenCommandList();
+	p_renderingManager->ResourceDescriptorHeap(p_commandList[frameIndex]);
 	p_commandList[frameIndex]->SetPipelineState(m_pipelineState);
 	p_commandList[frameIndex]->SetGraphicsRootSignature(m_rootSignature);
 	p_commandList[frameIndex]->RSSetViewports(1, &m_viewport);

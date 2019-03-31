@@ -45,7 +45,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		true,
+		FALSE,
 		FALSE))
 	{
 		Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);
@@ -147,7 +147,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->SetIntensity(0.4f);
 
 
-		const UINT MAX_EMITTERS = 1;
+		const UINT MAX_EMITTERS = 64;
 		ParticleEmitter * emitter[MAX_EMITTERS];
 		
 		Texture* emitterTextures[3] = { fire1, fire2, fire3 };
