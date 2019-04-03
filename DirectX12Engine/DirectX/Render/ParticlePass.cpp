@@ -84,7 +84,7 @@ HRESULT ParticlePass::Init()
 		return hr;
 	}
 
-	if (FAILED(hr = p_renderingManager->GetPassFence(PARTICLE_PASS)->CreateFence(L"Particle fence", p_renderingManager->GetSecondAdapter()->GetDevice(), D3D12_FENCE_FLAG_SHARED | D3D12_FENCE_FLAG_SHARED_CROSS_ADAPTER)))
+	if (FAILED(hr = p_renderingManager->GetPassFence(PARTICLE_PASS)->CreateFence(L"Particle fence", p_renderingManager->GetMainAdapter()->GetDevice(), D3D12_FENCE_FLAG_SHARED | D3D12_FENCE_FLAG_SHARED_CROSS_ADAPTER)))
 	{
 		return hr;
 	}

@@ -405,21 +405,27 @@ void ParticleEmitter::UpdateData()
 	using namespace DirectX;
 	const UINT frameIndex = m_renderingManager->GetFrameIndex();
 
-	ParticleVertex * vertexOutputArray = nullptr;
-	CD3DX12_RANGE vertexReadRange(0, sizeof(ParticleVertex) * GetVertexSize());
-	if (SUCCEEDED(m_vertexOutputResource[frameIndex]->Map(0, &vertexReadRange, reinterpret_cast<void**>(&vertexOutputArray))))
-	{
-		UINT8 * targetDest = nullptr;
-		CD3DX12_RANGE readRange(0, 0);
-		if (SUCCEEDED(m_vertexResource[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&targetDest))))
+	const bool copyData = m_renderingManager->GetSecondAdapter();
+
+	if (copyData)
+	{		
+		ParticleVertex * vertexOutputArray = nullptr;
+		CD3DX12_RANGE vertexReadRange(0, sizeof(ParticleVertex) * GetVertexSize());
+		if (SUCCEEDED(m_vertexOutputResource[frameIndex]->Map(0, &vertexReadRange, reinterpret_cast<void**>(&vertexOutputArray))))
 		{
-			memcpy(targetDest, vertexOutputArray, sizeof(ParticleVertex) * GetVertexSize());
-			m_vertexResource[frameIndex]->Unmap(0, &readRange);
-		}		
-		m_vertexOutputResource[frameIndex]->Unmap(0, &vertexReadRange);
+			UINT8 * targetDest = nullptr;
+			CD3DX12_RANGE readRange(0, 0);
+			if (SUCCEEDED(m_vertexResource[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&targetDest))))
+			{
+				memcpy(targetDest, vertexOutputArray, sizeof(ParticleVertex) * GetVertexSize());
+				m_vertexResource[frameIndex]->Unmap(0, &readRange);
+			}
+		
+			m_vertexOutputResource[frameIndex]->Unmap(0, &vertexReadRange);
+		}
 	}
 
-	m_vertexBufferView.BufferLocation = m_vertexResource[frameIndex]->GetGPUVirtualAddress();
+	m_vertexBufferView.BufferLocation = copyData ? m_vertexResource[frameIndex]->GetGPUVirtualAddress() : m_vertexOutputResource[frameIndex]->GetGPUVirtualAddress();
 	m_vertexBufferView.StrideInBytes = sizeof(ParticleVertex);
 	m_vertexBufferView.SizeInBytes = m_vertexBufferView.StrideInBytes * GetVertexSize();
 
