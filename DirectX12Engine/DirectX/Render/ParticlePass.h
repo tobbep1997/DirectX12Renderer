@@ -14,10 +14,10 @@ private:
 
 	struct ParticleBuffer
 	{
-		DirectX::XMFLOAT4A ParticleInfo;
-		DirectX::XMFLOAT4A ParticlePosition;
-		DirectX::XMFLOAT4A ParticleSpeed;
-		DirectX::XMFLOAT4A ParticleSize;
+		DirectX::XMFLOAT4 ParticleInfo;
+		DirectX::XMFLOAT4 ParticlePosition;
+		DirectX::XMFLOAT4 ParticleSpeed;
+		DirectX::XMFLOAT4 ParticleSize;
 	};
 
 

@@ -2,6 +2,9 @@
 #include "Transform.h"
 
 class X12ShaderResourceView;
+class X12ConstantBuffer;
+
+#define MAX_PARTICLES 65536
 
 class ParticleEmitter :
 	public Transform
@@ -57,6 +60,8 @@ public:
 	ID3D12Resource * GetVertexResource() const;
 	ID3D12Resource * GetCalcResource() const;
 
+	X12ConstantBuffer * GetParticleBuffer() const;
+
 	ID3D12GraphicsCommandList * GetCommandList() const;
 	const std::vector<Particle> & GetPositions() const;
 
@@ -111,6 +116,8 @@ private:
 	UINT m_height;
 	UINT m_arraySize;
 	DXGI_FORMAT m_format;
+
+	X12ConstantBuffer * m_particleBuffer = nullptr;
 
 	Texture *const* m_textures = nullptr;
 };

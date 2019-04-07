@@ -3,6 +3,8 @@
 #include "DirectX/Render/ParticlePass.h"
 #include "DirectX/Structs.h"
 #include "DirectX/Render/WrapperFunctions/X12ShaderResourceView.h"
+#include "DirectX/Render/WrapperFunctions/X12ConstantBuffer.h"
+
 
 ParticleEmitter::ParticleEmitter(	
 	const Window & window,
@@ -65,6 +67,14 @@ BOOL ParticleEmitter::Init()
 		this->Release();
 		return FALSE;
 	}
+	SAFE_NEW(m_particleBuffer, new X12ConstantBuffer());
+	if (FAILED(hr = m_particleBuffer->CreateSharedBuffer(L"Particle buffer", 0, MAX_PARTICLES * sizeof(DirectX::XMFLOAT4) * 4)))
+	{
+		if (FAILED(hr = m_particleBuffer->CreateBuffer(L"Particle buffer", nullptr, 0, MAX_PARTICLES * sizeof(DirectX::XMFLOAT4) * 4)))
+		{
+			return hr;
+		}
+	}
 
 	SAFE_NEW(m_particles, new std::vector<Particle>());
 	return TRUE;
@@ -76,6 +86,10 @@ void ParticleEmitter::Release()
 	if (m_particles)
 		m_particles->clear();
 	SAFE_DELETE(m_particles);
+
+	if (m_particleBuffer)
+		m_particleBuffer->Release();
+	SAFE_DELETE(m_particleBuffer);
 
 	if (m_shaderResourceView)
 		m_shaderResourceView->Release();
@@ -105,6 +119,11 @@ ID3D12Resource* ParticleEmitter::GetVertexResource() const
 ID3D12Resource* ParticleEmitter::GetCalcResource() const
 {
 	return this->m_calculationsOutputResource[m_renderingManager->GetFrameIndex()];
+}
+
+X12ConstantBuffer* ParticleEmitter::GetParticleBuffer() const
+{
+	return this->m_particleBuffer;
 }
 
 ID3D12GraphicsCommandList* ParticleEmitter::GetCommandList() const
@@ -444,6 +463,10 @@ void ParticleEmitter::UpdateData()
 	{
 		for (size_t i = 0; i < m_particles->size(); i++)
 		{
+			if (outputArray[i].Position.x == 0 &&
+				outputArray[i].Position.y == 0 &&	//Not quite sure but sometimes the particle position ain't written to in the GPU 
+				outputArray[i].Position.z == 0)
+				continue;
 			m_particles->at(i).Position = outputArray[i].Position;
 			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;	
 		}

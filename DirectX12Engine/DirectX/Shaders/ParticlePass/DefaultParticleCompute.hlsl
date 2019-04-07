@@ -24,9 +24,12 @@ RWStructuredBuffer<float4> CalcBufferOut : register(u1);
 
 void ParticleCalculations(inout float4 position, inout float4 info, in float4 direction)
 {
-    position = float4(position.xyz + (direction.xyz * direction.w * info.x), 1);
-    position.w = 1;
-    info.y += info.x;
+    if (info.x > 0)
+    {
+        position = float4(position.xyz + (direction.xyz * direction.w * info.x), 1);
+        position.w = 1;
+        info.y += info.x;
+    }
 }
 
 
@@ -42,8 +45,8 @@ void main( uint3 DTid : SV_DispatchThreadID )
     ParticleCalculations(particlePos, particleInfo, ParticleBuffer[DTid.x].ParticleDirection);
     
     
-    float4 particleWorldPos = mul(particlePos, WorldMatrix);
-    float4 cameraPos = float4(CameraPosition.x * 2.0f, CameraPosition.y * 2.0f, CameraPosition.z * 2.0f, 1);
+    float4 particleWorldPos = particlePos; //mul(particlePos, WorldMatrix);
+    float4 cameraPos = float4(CameraPosition.xyz, 1); //float4(CameraPosition.x * 2.0f, CameraPosition.y * 2.0f, CameraPosition.z * 2.0f, 1);
     
     float3 dir = normalize(particleWorldPos.xyz - cameraPos.xyz);
     float3 right = normalize(cross(dir.xyz, float3(0, 1, 0)));
@@ -70,32 +73,31 @@ void main( uint3 DTid : SV_DispatchThreadID )
     float4 lowerLeftUV = float4(0, 1, textureIndex, 0);
     float4 lowerRightUV = float4(1, 1, textureIndex, 0);
     
-    if (ParticleBuffer[DTid.x].ParticleInfo.x > 0)
-    {
-        const uint baseVertexIndex = DTid.x * 12;
+ 
+    const uint baseVertexIndex = DTid.x * 12;
         
-        VertexBufferOut[baseVertexIndex + 0] = lowerLeft;
-        VertexBufferOut[baseVertexIndex + 1] = lowerLeftUV;
+    VertexBufferOut[baseVertexIndex + 0] = lowerLeft;
+    VertexBufferOut[baseVertexIndex + 1] = lowerLeftUV;
     
-        VertexBufferOut[baseVertexIndex + 2] = upperLeft;
-        VertexBufferOut[baseVertexIndex + 3] = upperLeftUV;
+    VertexBufferOut[baseVertexIndex + 2] = upperLeft;
+    VertexBufferOut[baseVertexIndex + 3] = upperLeftUV;
     
-        VertexBufferOut[baseVertexIndex + 4] = upperRight;
-        VertexBufferOut[baseVertexIndex + 5] = upperRightUV;
+    VertexBufferOut[baseVertexIndex + 4] = upperRight;
+    VertexBufferOut[baseVertexIndex + 5] = upperRightUV;
     
-        VertexBufferOut[baseVertexIndex + 6] = lowerRight;
-        VertexBufferOut[baseVertexIndex + 7] = lowerRightUV;
+    VertexBufferOut[baseVertexIndex + 6] = lowerRight;
+    VertexBufferOut[baseVertexIndex + 7] = lowerRightUV;
     
-        VertexBufferOut[baseVertexIndex + 8] = lowerLeft;
-        VertexBufferOut[baseVertexIndex + 9] = lowerLeftUV;
+    VertexBufferOut[baseVertexIndex + 8] = lowerLeft;
+    VertexBufferOut[baseVertexIndex + 9] = lowerLeftUV;
     
-        VertexBufferOut[baseVertexIndex + 10] = upperRight;
-        VertexBufferOut[baseVertexIndex + 11] = upperRightUV;
+    VertexBufferOut[baseVertexIndex + 10] = upperRight;
+    VertexBufferOut[baseVertexIndex + 11] = upperRightUV;
     
-        const uint baseCalcIndex = DTid.x * 2;
+    const uint baseCalcIndex = DTid.x * 2;
     
-        CalcBufferOut[baseCalcIndex + 0] = particlePos;
-        CalcBufferOut[baseCalcIndex + 1] = particleInfo;
-    }
+    CalcBufferOut[baseCalcIndex + 0] = particlePos;
+    CalcBufferOut[baseCalcIndex + 1] = particleInfo;
+    
 
 }
