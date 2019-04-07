@@ -4,7 +4,7 @@
 class X12ShaderResourceView;
 class X12ConstantBuffer;
 
-#define MAX_PARTICLES 65536
+#define MAX_PARTICLES 1024
 
 class ParticleEmitter :
 	public Transform
@@ -25,18 +25,18 @@ private:
 
 	struct EmitterSettings
 	{
-		float Speed = 5.0f;
+		float Speed = 1.0f;
 		float Spread = 0.0f;
 		float SpawnSpread = 0.2f;
 		DirectX::XMFLOAT4 Direction = DirectX::XMFLOAT4(0,1,0,0);
-		DirectX::XMFLOAT4 Size = DirectX::XMFLOAT4(.15f, .15f, 0, 0);
+		DirectX::XMFLOAT4 Size = DirectX::XMFLOAT4(.05f, .05f, 0, 0);
 
-		float SpawnRate = 0.02f;
+		float SpawnRate = 0.0001f;
 
-		float ParticleMaxLife = 0.35f;
-		float ParticleMinLife = 0.15f;
+		float ParticleMaxLife = 3.75f;
+		float ParticleMinLife = 2.55f;
 		
-		UINT MaxParticles = 1024;
+		UINT MaxParticles = MAX_PARTICLES;
 
 
 	};
@@ -63,7 +63,7 @@ public:
 	X12ConstantBuffer * GetParticleBuffer() const;
 
 	ID3D12GraphicsCommandList * GetCommandList() const;
-	const std::vector<Particle> & GetPositions() const;
+	const std::vector<Particle> & GetParticles() const;
 
 	HRESULT OpenCommandList();
 	HRESULT ExecuteCommandList() const;
@@ -80,6 +80,8 @@ public:
 	const EmitterSettings & GetSettings() const;
 
 	X12ShaderResourceView * GetShaderResourceView() const;
+
+	const Texture *const* GetTextures() const;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetVertexCpuDescriptorHandle() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCalcCpuDescriptorHandle() const;

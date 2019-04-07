@@ -5,8 +5,6 @@
 #include "GeometryPass.h"
 #include <stdlib.h>
 
-#define MAX_EMITTERS 256
-
 #define PARTICLE_INFO	0
 #define PARTICLE_BUFFER 1
 #define VERTEX_OUTPUT	2
@@ -107,22 +105,22 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		camera.GetPosition().z,
 		camera.GetPosition().w);
 
-	for (size_t i = 0; i < m_emitters->size() && i < MAX_EMITTERS; i++)
+	for (size_t i = 0; i < m_emitters->size(); i++)
 	{
 		UINT offset = 0;
 		m_emitters->at(i)->UpdateEmitter(deltaTime);
 		particleInfoBuffer.WorldMatrix = m_emitters->at(i)->GetWorldMatrix();
-		for (size_t j = 0; j < m_emitters->at(i)->GetPositions().size(); j++)
+		for (size_t j = 0; j < m_emitters->at(i)->GetParticles().size(); j++)
 		{
 			m_particleValues.ParticleInfo.x = deltaTime;
-			m_particleValues.ParticleInfo.y = m_emitters->at(i)->GetPositions()[j].TimeAlive;
-			m_particleValues.ParticleInfo.z = m_emitters->at(i)->GetPositions()[j].TimeToLive;
+			m_particleValues.ParticleInfo.y = m_emitters->at(i)->GetParticles()[j].TimeAlive;
+			m_particleValues.ParticleInfo.z = m_emitters->at(i)->GetParticles()[j].TimeToLive;
 			
 			m_particleValues.ParticlePosition = DirectX::XMFLOAT4A(
-				m_emitters->at(i)->GetPositions()[j].Position.x,
-				m_emitters->at(i)->GetPositions()[j].Position.y,
-				m_emitters->at(i)->GetPositions()[j].Position.z,
-				m_emitters->at(i)->GetPositions()[j].Position.w
+				m_emitters->at(i)->GetParticles()[j].Position.x,
+				m_emitters->at(i)->GetParticles()[j].Position.y,
+				m_emitters->at(i)->GetParticles()[j].Position.z,
+				m_emitters->at(i)->GetParticles()[j].Position.w
 			);
 			m_particleValues.ParticleSpeed = DirectX::XMFLOAT4A(
 				m_emitters->at(i)->GetSettings().Direction.x,
@@ -136,7 +134,8 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 				m_emitters->at(i)->GetSettings().Size.z,
 				m_emitters->at(i)->GetSettings().Size.w
 				);
-			m_emitters->at(i)->GetParticleBuffer()->Copy(&m_particleValues, sizeof(ParticleBuffer), offset += sizeof(ParticleBuffer));
+			m_emitters->at(i)->GetParticleBuffer()->Copy(&m_particleValues, sizeof(ParticleBuffer), offset);
+			offset += sizeof(ParticleBuffer);
 		}
 		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), static_cast<UINT>(i) * 256);
 	}
@@ -168,7 +167,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		commandList->SetComputeRootUnorderedAccessView(VERTEX_OUTPUT, emitter->GetVertexResource()->GetGPUVirtualAddress());
 		commandList->SetComputeRootUnorderedAccessView(CALC_OUTPUT, emitter->GetCalcResource()->GetGPUVirtualAddress());
 		
-		commandList->Dispatch(static_cast<UINT>(m_emitters->at(i)->GetPositions().size()), 1, 1);
+		commandList->Dispatch(static_cast<UINT>(m_emitters->at(i)->GetParticles().size()), 1, 1);
 
 		emitter->SwitchToVertexState(commandList);
 
@@ -200,7 +199,7 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 	for (size_t i = 0; i < m_emitters->size(); i++)
 	{
 		emitter = m_emitters->at(i);
-		if (!emitter->GetPositions().empty())
+		if (!emitter->GetParticles().empty())
 			m_geometryPass->AddEmitter(emitter);
 	}
 	p_renderingManager->GetPassFence(PARTICLE_PASS)->Signal(m_commandQueue);

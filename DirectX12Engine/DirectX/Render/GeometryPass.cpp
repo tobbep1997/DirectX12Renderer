@@ -104,6 +104,10 @@ void GeometryPass::Draw()
 		{
 			emitter = m_emitters->at(i);
 			const D3D12_GPU_DESCRIPTOR_HANDLE handle = p_copyToDescriptorHeap(emitter->GetShaderResourceView()->GetCpuDescriptorHandle(), emitter->GetShaderResourceView()->GetResource()->GetDesc().DepthOrArraySize);
+			//p_copyToDescriptorHeap(emitter->GetTextures()[1]->GetCpuHandle());
+			//p_copyToDescriptorHeap(emitter->GetTextures()[2]->GetCpuHandle());
+
+			
 
 			commandList->SetGraphicsRootDescriptorTable(1, handle);
 			commandList->IASetVertexBuffers(0, 1, &emitter->GetVertexBufferView());
@@ -460,6 +464,7 @@ HRESULT GeometryPass::_initID3D12PipelineState()
 		particleGraphicsPipelineStateDesc.RTVFormats[i] = RENDER_TARGET_FORMAT;
 
 	}
+	
 	particleGraphicsPipelineStateDesc.SampleMask = 0xffffffff;
 	particleGraphicsPipelineStateDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	CD3DX12_RASTERIZER_DESC(D3D12_FILL_MODE_WIREFRAME, D3D12_CULL_MODE_NONE, FALSE, 0, 0.0f, 0.0f, TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);

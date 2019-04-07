@@ -48,10 +48,10 @@ BOOL ParticleEmitter::Init()
 					for (UINT i = 0; i < m_arraySize; i++)
 					{
 						m_shaderResourceView->BeginCopy(m_commandList[m_renderingManager->GetFrameIndex()]);
-
+				
 						m_shaderResourceView->CopySubresource(m_commandList[m_renderingManager->GetFrameIndex()], i,
 							m_textures[i]->GetResource());
-
+				
 						m_shaderResourceView->EndCopy(m_commandList[m_renderingManager->GetFrameIndex()]);
 					}
 					if (SUCCEEDED(hr = m_renderingManager->SignalGPU(m_commandList[m_renderingManager->GetFrameIndex()])))
@@ -131,7 +131,7 @@ ID3D12GraphicsCommandList* ParticleEmitter::GetCommandList() const
 	return this->m_commandList[m_renderingManager->GetFrameIndex()];
 }
 
-const std::vector<ParticleEmitter::Particle>& ParticleEmitter::GetPositions() const
+const std::vector<ParticleEmitter::Particle>& ParticleEmitter::GetParticles() const
 {
 	return *m_particles;
 }
@@ -203,6 +203,11 @@ X12ShaderResourceView* ParticleEmitter::GetShaderResourceView() const
 	return this->m_shaderResourceView;
 }
 
+const Texture* const* ParticleEmitter::GetTextures() const
+{
+	return m_textures;
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE ParticleEmitter::GetVertexCpuDescriptorHandle() const
 {
 	return m_vertexOutputHandle[m_renderingManager->GetFrameIndex()];
@@ -245,7 +250,7 @@ HRESULT ParticleEmitter::_createBuffer()
 {
 	HRESULT hr = 0;
 
-	D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(4096 * 4096);
+	D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(MAX_PARTICLES * 6 * sizeof(ParticleVertex));
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_CUSTOM);
@@ -373,10 +378,10 @@ void ParticleEmitter::_updateParticles(const float & deltaTime)
 					0,
 					cosf(static_cast<float>(rand()))* m_emitterSettings.SpawnSpread,
 					0)));
-
+	
 			XMFLOAT4 position; XMStoreFloat4(&position, baseSpawn);
 			position.w = 1;
-
+	
 			float timeToLive = (static_cast<float>(rand() % 1000) / 1000.f);
 			timeToLive *= m_emitterSettings.ParticleMaxLife;
 			if (timeToLive <= m_emitterSettings.ParticleMinLife)
@@ -470,6 +475,7 @@ void ParticleEmitter::UpdateData()
 			m_particles->at(i).Position = outputArray[i].Position;
 			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;	
 		}
+		
 		m_calculationsOutputResource[frameIndex]->Unmap(0, &readRange);
 	}
 }

@@ -45,7 +45,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		1280, 
 		720, 
 		FALSE,
-		TRUE,
+		FALSE,
 		FALSE))
 	{
 		Camera * camera = new Camera(DirectX::XM_PI * 0.5, 16.0f / 9.0f, .01f, 100.0f);
@@ -147,7 +147,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->SetIntensity(0.4f);
 
 
-		const UINT MAX_EMITTERS = 64;
+		const UINT MAX_EMITTERS = 1;
 		ParticleEmitter * emitter[MAX_EMITTERS];
 		
 		Texture* emitterTextures[3] = { fire1, fire2, fire3 };
@@ -164,8 +164,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			emitter[i]->SetTextures(emitterTextures);
 			emitter[i]->Init();
 			emitter[i]->SetPosition(0, .25f, 0);
-			emitter[i]->SetPosition(10, .25f, 0);
-			emitter[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 3, (rand() % floorSize) - (floorSize / 2));
+			//emitter[i]->SetPosition(10, .25f, 0);
+			emitter[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 0, (rand() % floorSize) - (floorSize / 2));
 			emitter[i]->Update();
 		}
 
