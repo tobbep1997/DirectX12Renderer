@@ -4,6 +4,7 @@
 #include "../Objects/ParticleEmitter.h"
 #include "GeometryPass.h"
 #include <stdlib.h>
+#include "WrapperFunctions/X12Timer.h"
 
 #define PARTICLE_INFO	0
 #define PARTICLE_BUFFER 1
@@ -87,6 +88,14 @@ HRESULT ParticlePass::Init()
 		return hr;
 	}
 
+	p_renderingManager->NewTimer(PARTICLE_PASS);
+
+
+
+	p_renderingManager->GetTimer(PARTICLE_PASS)->CreateTimer(TIMER_COUNT, device);
+
+	p_renderingManager->GetTimer(PARTICLE_PASS)->SetCommandQueue(m_commandQueue);
+
 	return hr;
 }
 
@@ -149,13 +158,15 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 	{
 		return;
 	}
+	ID3D12GraphicsCommandList * commandList = m_commandList[frameIndex];
+
+	p_renderingManager->GetTimer(PARTICLE_PASS)->Start(commandList);
 
 	ParticleEmitter * emitter = nullptr;
 	for (size_t i = 0; i < m_emitters->size(); i++)
 	{
 		emitter = m_emitters->at(i);
 
-		ID3D12GraphicsCommandList * commandList = m_commandList[frameIndex];
 
 		emitter->SwitchToUAVState(commandList);
 
@@ -176,6 +187,11 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		
 	
 	}
+
+	p_renderingManager->GetTimer(PARTICLE_PASS)->Stop(commandList);
+	p_renderingManager->GetTimer(PARTICLE_PASS)->ResolveQueryToCpu(commandList);
+	p_renderingManager->GetTimer(PARTICLE_PASS)->CountTimer();
+
 
 	if (FAILED(m_commandList[frameIndex]->Close()))
 	{
@@ -242,6 +258,8 @@ void ParticlePass::Release()
 		SAFE_RELEASE(m_commandAllocator[i]);
 		SAFE_RELEASE(m_commandList[i]);
 	}
+
+	p_renderingManager->DeleteTimer(PARTICLE_PASS);
 
 }
 
