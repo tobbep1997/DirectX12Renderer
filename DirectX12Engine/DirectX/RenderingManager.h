@@ -4,7 +4,6 @@
 #include <dxgi1_5.h>
 #include "Render/WrapperFunctions/X12Adapter.h"
 
-
 class SSAOPass;
 class DeferredRender;
 class ShadowPass;
@@ -13,11 +12,14 @@ class ParticlePass;
 class ReflectionPass;
 class Camera;
 class X12Fence;
+class X12Timer;
 
 #define PASS_FENCES 10
 
 #define SHADOW_PASS 0
 #define PARTICLE_PASS 1
+
+#define TIMER_COUNT 100
 
 const unsigned int FRAME_BUFFER_COUNT = 3;
 class RenderingManager
@@ -62,6 +64,9 @@ public:
 	SSAOPass * GetSSAOPass() const;
 	ReflectionPass * GetReflectionPass() const;
 
+	void NewTimer(const UINT & index);
+	void DeleteTimer(const UINT & index);
+	X12Timer * GetTimer(const UINT & index) const;
 
 	HRESULT OpenCommandList();
 	HRESULT SignalGPU();
@@ -93,6 +98,8 @@ private:
 	UINT m_frameIndex = 0;
 	UINT m_prevFrameIndex = UINT_MAX;
 	UINT m_rtvDescriptorSize = 0;
+
+	X12Timer * m_timers[256] { nullptr };
 
 	HRESULT _flush(const Camera & camera, const float & deltaTime);
 	HRESULT _present() const;

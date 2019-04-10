@@ -9,6 +9,9 @@
 #include "Render/SSAOPass.h"
 #include "Render/ReflectionPass.h"
 
+#include "Render/WrapperFunctions/X12Timer.h"
+
+
 RenderingManager * RenderingManager::thisRenderingManager = nullptr;
 
 RenderingManager::RenderingManager()
@@ -167,6 +170,17 @@ HRESULT RenderingManager::_updatePipeline(const Camera & camera, const float & d
 	{
 		return hr;
 	}
+
+	if (m_timers[SHADOW_PASS]->GetCount() >= TIMER_COUNT)
+	{
+		m_timers[SHADOW_PASS]->ExportToMagnusTimelineCreator("ShadowPass.txt");
+	}
+
+	if (m_timers[PARTICLE_PASS]->GetCount() >= TIMER_COUNT)
+	{
+		m_timers[PARTICLE_PASS]->ExportToMagnusTimelineCreator("ParticlePass.txt");
+	}
+
 	if (FAILED(hr = m_commandAllocator[m_frameIndex]->Reset()))
 	{
 		return hr;
@@ -453,6 +467,24 @@ SSAOPass* RenderingManager::GetSSAOPass() const
 ReflectionPass* RenderingManager::GetReflectionPass() const
 {
 	return this->m_reflectionPass;
+}
+
+void RenderingManager::NewTimer(const UINT& index)
+{
+	SAFE_NEW(m_timers[index], new X12Timer());
+}
+
+void RenderingManager::DeleteTimer(const UINT& index)
+{
+	if (m_timers[index])
+		m_timers[index]->Release();
+
+	SAFE_DELETE(m_timers[index]);
+}
+
+X12Timer* RenderingManager::GetTimer(const UINT& index) const
+{
+	return m_timers[index];
 }
 
 HRESULT RenderingManager::OpenCommandList()

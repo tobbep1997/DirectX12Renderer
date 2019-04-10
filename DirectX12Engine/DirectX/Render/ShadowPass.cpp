@@ -5,6 +5,7 @@
 #include "GeometryPass.h"
 #include "DeferredRender.h"
 #include "WrapperFunctions/X12ConstantBuffer.h"
+#include "WrapperFunctions/X12Timer.h"
 
 
 ShadowPass::ShadowPass(RenderingManager* renderingManager, const Window& window)
@@ -27,6 +28,15 @@ HRESULT ShadowPass::Init()
 		//	
 		//}
 	}
+
+	p_renderingManager->NewTimer(SHADOW_PASS);
+
+	if (FAILED(hr = p_renderingManager->GetTimer(SHADOW_PASS)->CreateTimer(TIMER_COUNT)))
+	{
+		return hr;
+	}
+	p_renderingManager->GetTimer(SHADOW_PASS)->SetCommandQueue(p_renderingManager->GetCommandQueue());
+
 	return hr;	
 }
 
@@ -56,14 +66,16 @@ void ShadowPass::Update(const Camera& camera, const float & deltaTime)
 		m_constantLightBuffer->Copy(&m_lightValues, sizeof(m_lightValues), m_constantLightBufferPerObjectAlignedSize * counter++);
 	}
 
-	const UINT frameIndex = p_renderingManager->GetFrameIndex();
 	OpenCommandList();
-	p_renderingManager->ResourceDescriptorHeap(p_commandList[frameIndex]);
-	p_commandList[frameIndex]->SetPipelineState(m_pipelineState);
-	p_commandList[frameIndex]->SetGraphicsRootSignature(m_rootSignature);
-	p_commandList[frameIndex]->RSSetViewports(1, &m_viewport);
-	p_commandList[frameIndex]->RSSetScissorRects(1, &m_rect);
-	p_commandList[frameIndex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	
+	const UINT frameIndex = p_renderingManager->GetFrameIndex();
+	ID3D12GraphicsCommandList * commandList = p_commandList[frameIndex];
+	p_renderingManager->GetTimer(SHADOW_PASS)->Start(commandList);
+	p_renderingManager->ResourceDescriptorHeap(commandList);
+	commandList->SetPipelineState(m_pipelineState);
+	commandList->SetGraphicsRootSignature(m_rootSignature);
+	commandList->RSSetViewports(1, &m_viewport);
+	commandList->RSSetScissorRects(1, &m_rect);
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	
 }
 
 void ShadowPass::Draw()
@@ -130,6 +142,10 @@ void ShadowPass::Draw()
 		p_lightQueue->at(i)->GetDepthStencil()->SwitchToSRV(p_commandList[frameIndex]);
 	}
 
+	p_renderingManager->GetTimer(SHADOW_PASS)->Stop(commandList);
+	p_renderingManager->GetTimer(SHADOW_PASS)->ResolveQueryToCpu(commandList);
+	p_renderingManager->GetTimer(SHADOW_PASS)->CountTimer();
+
 	ExecuteCommandList();
 	p_renderingManager->GetPassFence(SHADOW_PASS)->Signal(p_renderingManager->GetCommandQueue());
 }
@@ -152,6 +168,8 @@ void ShadowPass::Release()
 
 	p_releaseInstanceBuffer();
 	p_releaseCommandList();
+
+	p_renderingManager->DeleteTimer(SHADOW_PASS);
 }
 
 HRESULT ShadowPass::_preInit()

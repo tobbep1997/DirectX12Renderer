@@ -123,6 +123,9 @@
     <ClCompile Include="DirectX\Render\WrapperFunctions\X12Adapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectX\Render\WrapperFunctions\X12Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window\Window.h">
@@ -258,6 +261,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DirectX\Render\WrapperFunctions\X12Adapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX\Render\WrapperFunctions\X12Timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

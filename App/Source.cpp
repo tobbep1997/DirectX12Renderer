@@ -147,7 +147,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		directionalLight->SetIntensity(0.4f);
 
 
-		const UINT MAX_EMITTERS = 1;
+		const UINT MAX_EMITTERS = 128;
 		ParticleEmitter * emitter[MAX_EMITTERS];
 		
 		Texture* emitterTextures[3] = { fire1, fire2, fire3 };
