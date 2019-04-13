@@ -12,7 +12,9 @@ public:
 	HRESULT Signal(ID3D12CommandQueue * commandQueue);
 	HRESULT WaitGgu(ID3D12CommandQueue * commandQueue) const;
 	HRESULT WaitCpu() const;
-	
+
+	const bool IsDone() const;
+
 	void Release() override;
 private:
 

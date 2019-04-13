@@ -4,7 +4,7 @@
 class X12ShaderResourceView;
 class X12ConstantBuffer;
 
-#define MAX_PARTICLES 1024
+#define MAX_PARTICLES 4096
 
 class ParticleEmitter :
 	public Transform
@@ -15,9 +15,11 @@ private:
 		Particle(const DirectX::XMFLOAT4 & startPosition, const float & timeToLive)
 		{
 			Position = startPosition;
+			SpawnPosition = startPosition;
 			TimeAlive = 0;
 			TimeToLive = timeToLive;
 		}
+		DirectX::XMFLOAT4 SpawnPosition;
 		DirectX::XMFLOAT4 Position;
 		float TimeAlive;
 		float TimeToLive;
@@ -55,7 +57,7 @@ public:
 	void Update() override;
 	void Draw();
 	void UpdateEmitter(const float & deltaTime);
-	void UpdateData();
+	void UpdateData(const UINT & frameIndex);
 
 	ID3D12Resource * GetVertexResource() const;
 	ID3D12Resource * GetCalcResource() const;
@@ -86,6 +88,8 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetVertexCpuDescriptorHandle() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCalcCpuDescriptorHandle() const;
 
+	X12Fence *const* GetFence() const;
+
 private:
 	HRESULT _createCommandList();
 	HRESULT _createBuffer();
@@ -107,6 +111,8 @@ private:
 
 	ID3D12GraphicsCommandList * m_commandList[FRAME_BUFFER_COUNT] = { nullptr };
 	ID3D12CommandAllocator * m_commandAllocator[FRAME_BUFFER_COUNT] { nullptr };
+
+	X12Fence * m_fences[FRAME_BUFFER_COUNT]{ nullptr };
 
 	RenderingManager * m_renderingManager = nullptr;
 	const Window * m_window = nullptr;

@@ -126,7 +126,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		{
 			pointLights[i] = new PointLight(renderingManager, *window);
 			pointLights[i]->Init();
-			pointLights[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 3, (rand() % floorSize) - (floorSize / 2));
+			pointLights[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 3, (rand() % floorSize) - (floorSize / 2));  // NOLINT
 			//pointLights[i]->SetPosition(0,2,0);
 			pointLights[i]->SetIntensity(15.5f);
 			pointLights[i]->SetDropOff(2.0f);
@@ -165,7 +165,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			emitter[i]->Init();
 			emitter[i]->SetPosition(0, .25f, 0);
 			//emitter[i]->SetPosition(10, .25f, 0);
-			emitter[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 0, (rand() % floorSize) - (floorSize / 2));
+			emitter[i]->SetPosition((rand() % floorSize) - (floorSize / 2), 0, (rand() % floorSize) - (floorSize / 2));  // NOLINT
 			emitter[i]->Update();
 		}
 

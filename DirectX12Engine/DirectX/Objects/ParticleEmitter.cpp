@@ -76,6 +76,17 @@ BOOL ParticleEmitter::Init()
 		}
 	}
 
+	ID3D12Device * pDevice = m_renderingManager->GetSecondAdapter() ? m_renderingManager->GetSecondAdapter()->GetDevice() : m_renderingManager->GetMainAdapter()->GetDevice();
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		SAFE_NEW(m_fences[i], new X12Fence());
+		if (FAILED(hr = m_fences[i]->CreateFence(L"Particle,", pDevice, D3D12_FENCE_FLAG_SHARED | D3D12_FENCE_FLAG_SHARED_CROSS_ADAPTER)))
+			return hr;
+	}
+
+	
+
 	SAFE_NEW(m_particles, new std::vector<Particle>());
 	return TRUE;
 }
@@ -94,6 +105,13 @@ void ParticleEmitter::Release()
 	if (m_shaderResourceView)
 		m_shaderResourceView->Release();
 	SAFE_DELETE(m_shaderResourceView);
+
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (m_fences[i])
+			m_fences[i]->Release();
+		SAFE_DELETE(m_fences[i]);
+	}
 
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
 	{
@@ -217,6 +235,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE ParticleEmitter::GetCalcCpuDescriptorHandle() const
 {
 	return m_calculationsOutputHandle[m_renderingManager->GetFrameIndex()];
 }
+
+X12Fence* const* ParticleEmitter::GetFence() const
+{
+	return m_fences;
+}
+
 
 HRESULT ParticleEmitter::_createCommandList()
 {
@@ -367,28 +391,7 @@ HRESULT ParticleEmitter::_createBuffer()
 void ParticleEmitter::_updateParticles(const float & deltaTime)
 {
 	using namespace DirectX;
-	for (size_t i = 0; i < m_particles->size(); i++)
-	{
-		if (m_particles->at(i).TimeAlive >= m_particles->at(i).TimeToLive)
-		{
-			const XMVECTOR baseSpawn = XMVectorAdd(
-				XMLoadFloat4(&GetPosition()),
-				XMLoadFloat4(&XMFLOAT4(
-					sinf(static_cast<float>(rand())) * m_emitterSettings.SpawnSpread,
-					0,
-					cosf(static_cast<float>(rand()))* m_emitterSettings.SpawnSpread,
-					0)));
-	
-			XMFLOAT4 position; XMStoreFloat4(&position, baseSpawn);
-			position.w = 1;
-	
-			float timeToLive = (static_cast<float>(rand() % 1000) / 1000.f);
-			timeToLive *= m_emitterSettings.ParticleMaxLife;
-			if (timeToLive <= m_emitterSettings.ParticleMinLife)
-				timeToLive = m_emitterSettings.ParticleMinLife;
-			m_particles->at(i) = Particle(position, timeToLive);
-		}
-	}
+
 	m_spawnTimer += deltaTime;
 	while (m_particles->size() < m_emitterSettings.MaxParticles &&  m_spawnTimer >= m_emitterSettings.SpawnRate)
 	{
@@ -424,11 +427,10 @@ void ParticleEmitter::UpdateEmitter(const float & deltaTime)
 	_updateParticles(deltaTime);
 }
 
-void ParticleEmitter::UpdateData()
+void ParticleEmitter::UpdateData(const UINT & frameIndex)
 {
 	using namespace DirectX;
-	const UINT frameIndex = m_renderingManager->GetFrameIndex();
-
+	
 	const bool copyData = m_renderingManager->GetSecondAdapter();
 
 	if (copyData)
@@ -459,13 +461,12 @@ void ParticleEmitter::UpdateData()
 		DirectX::XMFLOAT4 ParticleInfo;
 	};
 
-	if (frameIndex == UINT_MAX)
-		return;
 
 	OutputCalculations * outputArray = nullptr;
 	CD3DX12_RANGE readRange(0, sizeof(OutputCalculations) * m_particles->size());
 	if (SUCCEEDED(m_calculationsOutputResource[frameIndex]->Map(0, &readRange, reinterpret_cast<void**>(&outputArray))))
 	{
+
 		for (size_t i = 0; i < m_particles->size(); i++)
 		{
 			if (outputArray[i].Position.x == 0 &&
@@ -473,8 +474,9 @@ void ParticleEmitter::UpdateData()
 				outputArray[i].Position.z == 0)
 				continue;
 			m_particles->at(i).Position = outputArray[i].Position;
-			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;	
+			m_particles->at(i).TimeAlive = outputArray[i].ParticleInfo.y;		
 		}
+		
 		
 		m_calculationsOutputResource[frameIndex]->Unmap(0, &readRange);
 	}

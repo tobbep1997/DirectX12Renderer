@@ -17,7 +17,10 @@ ParticlePass::ParticlePass(RenderingManager* renderingManager, const Window& win
 	SAFE_NEW(m_emitters, new std::vector<ParticleEmitter*>());
 	SAFE_NEW(m_particleBuffer, new X12ConstantBuffer());
 	SAFE_NEW(m_particleInfoBuffer, new X12ConstantBuffer());
-	SAFE_NEW(m_fence, new X12Fence());
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		SAFE_NEW(m_fence[i], new X12Fence());
+	}
 
 	this->m_geometryPass = renderingManager->GetGeometryPass();
 }
@@ -77,13 +80,15 @@ HRESULT ParticlePass::Init()
 		}	
 	}
 
-
-	if (FAILED(hr = m_fence->CreateFence(L"Particle fence", device)))
-	{		
-		return hr;
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (FAILED(hr = m_fence[i]->CreateFence(L"Particle fence", device)))
+		{		
+			return hr;
+		}
 	}
 
-	if (FAILED(hr = p_renderingManager->GetPassFence(PARTICLE_PASS)->CreateFence(L"Particle fence", p_renderingManager->GetMainAdapter()->GetDevice(), D3D12_FENCE_FLAG_SHARED | D3D12_FENCE_FLAG_SHARED_CROSS_ADAPTER)))
+	if (FAILED(hr = p_renderingManager->GetPassFence(PARTICLE_PASS)->CreateFence(L"Particle fence", device, D3D12_FENCE_FLAG_SHARED | D3D12_FENCE_FLAG_SHARED_CROSS_ADAPTER)))
 	{
 		return hr;
 	}
@@ -107,12 +112,25 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		DirectX::XMFLOAT4X4 WorldMatrix;
 	}particleInfoBuffer;
 
+	static UINT frameCounter = 1;
 
 	particleInfoBuffer.CameraPosition = DirectX::XMFLOAT4A(
 		camera.GetPosition().x,
 		camera.GetPosition().y,
 		camera.GetPosition().z,
 		camera.GetPosition().w);
+
+	ParticleEmitter * emitter = nullptr;
+
+	if (SUCCEEDED(m_fence[m_prevFrame]->WaitCpu()))
+	{
+		for (size_t i = 0; i < m_emitters->size(); i++)
+		{
+			emitter = m_emitters->at(i);
+
+			emitter->UpdateData(m_prevFrame);
+		}
+	}
 
 	for (size_t i = 0; i < m_emitters->size(); i++)
 	{
@@ -130,6 +148,12 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 				m_emitters->at(i)->GetParticles()[j].Position.y,
 				m_emitters->at(i)->GetParticles()[j].Position.z,
 				m_emitters->at(i)->GetParticles()[j].Position.w
+			);
+			m_particleValues.ParticleSpawnPosition = DirectX::XMFLOAT4A(
+				m_emitters->at(i)->GetParticles()[j].SpawnPosition.x,
+				m_emitters->at(i)->GetParticles()[j].SpawnPosition.y,
+				m_emitters->at(i)->GetParticles()[j].SpawnPosition.z,
+				m_emitters->at(i)->GetParticles()[j].SpawnPosition.w
 			);
 			m_particleValues.ParticleSpeed = DirectX::XMFLOAT4A(
 				m_emitters->at(i)->GetSettings().Direction.x,
@@ -149,24 +173,28 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 		m_particleInfoBuffer->Copy(&particleInfoBuffer, sizeof(ParticleInfoBuffer), static_cast<UINT>(i) * 256);
 	}
 	
-	const UINT frameIndex = p_renderingManager->GetFrameIndex();
-	if (FAILED(m_commandAllocator[frameIndex]->Reset()))
+	m_frameIndex = p_renderingManager->GetFrameIndex();
+	if (FAILED(m_commandAllocator[m_frameIndex]->Reset()))
 	{
 		return;
 	}
-	if (FAILED(m_commandList[frameIndex]->Reset(m_commandAllocator[frameIndex], m_computePipelineState)))
+	if (FAILED(m_commandList[m_frameIndex]->Reset(m_commandAllocator[m_frameIndex], m_computePipelineState)))
 	{
 		return;
 	}
-	ID3D12GraphicsCommandList * commandList = m_commandList[frameIndex];
+	ID3D12GraphicsCommandList * commandList = m_commandList[m_frameIndex];
 
 	p_renderingManager->GetTimer(PARTICLE_PASS)->Start(commandList);
 
-	ParticleEmitter * emitter = nullptr;
+
+	
+
 	for (size_t i = 0; i < m_emitters->size(); i++)
 	{
 		emitter = m_emitters->at(i);
 
+		if (!emitter->GetParticles().empty())
+			m_geometryPass->AddEmitter(emitter);
 
 		emitter->SwitchToUAVState(commandList);
 
@@ -193,32 +221,21 @@ void ParticlePass::Update(const Camera& camera, const float & deltaTime)
 	p_renderingManager->GetTimer(PARTICLE_PASS)->CountTimer();
 
 
-	if (FAILED(m_commandList[frameIndex]->Close()))
+	if (FAILED(m_commandList[m_frameIndex]->Close()))
 	{
 		return;
 	}
 
-	ID3D12CommandList * ppCommandLists[] = { m_commandList[frameIndex] };
+	ID3D12CommandList * ppCommandLists[] = { m_commandList[m_frameIndex] };
 	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	   
-	if (SUCCEEDED(m_fence->Signal(m_commandQueue)))
+	if (SUCCEEDED(m_fence[m_frameIndex]->Signal(m_commandQueue)))
 	{
-		if (SUCCEEDED(m_fence->WaitCpu()))
-		{
-			for (size_t i = 0; i < m_emitters->size(); i++)
-			{
-				emitter = m_emitters->at(i);
-				emitter->UpdateData();
-			}
-		}
+
 	}
-	for (size_t i = 0; i < m_emitters->size(); i++)
-	{
-		emitter = m_emitters->at(i);
-		if (!emitter->GetParticles().empty())
-			m_geometryPass->AddEmitter(emitter);
-	}
-	p_renderingManager->GetPassFence(PARTICLE_PASS)->Signal(m_commandQueue);
+	m_prevFrame = m_frameIndex;
+	m_frameIndex = (m_frameIndex + 1) % FRAME_BUFFER_COUNT;
+	//p_renderingManager->GetPassFence(PARTICLE_PASS)->Signal(m_commandQueue);
 }
 
 void ParticlePass::Draw()
@@ -248,9 +265,12 @@ void ParticlePass::Release()
 		m_particleInfoBuffer->Release();
 	SAFE_DELETE(m_particleInfoBuffer);
 
-	if (m_fence)
-		m_fence->Release();
-	SAFE_DELETE(m_fence);
+	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		if (m_fence[i])
+			m_fence[i]->Release();
+		SAFE_DELETE(m_fence[i]);
+	}
 
 	SAFE_RELEASE(m_commandQueue);
 	for (UINT i = 0; i < FRAME_BUFFER_COUNT; i++)

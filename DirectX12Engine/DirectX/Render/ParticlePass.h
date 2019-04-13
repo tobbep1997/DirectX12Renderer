@@ -16,6 +16,7 @@ private:
 	{
 		DirectX::XMFLOAT4 ParticleInfo;
 		DirectX::XMFLOAT4 ParticlePosition;
+		DirectX::XMFLOAT4 ParticleSpawnPosition;
 		DirectX::XMFLOAT4 ParticleSpeed;
 		DirectX::XMFLOAT4 ParticleSize;
 	};
@@ -58,5 +59,8 @@ private:
 
 	GeometryPass * m_geometryPass;
 
-	X12Fence * m_fence;
+	X12Fence * m_fence[FRAME_BUFFER_COUNT] { nullptr };
+
+	UINT m_frameIndex = 0;
+	UINT m_prevFrame = 0;
 };

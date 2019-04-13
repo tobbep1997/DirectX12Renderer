@@ -14,6 +14,7 @@ struct ParticleStruct
 {
     float4 ParticleInfo; //X = deltaTime Y = TimeAlive Z = TimeToLive
     float4 ParticlePosition;
+    float4 ParticleSpawnPosition;
     float4 ParticleDirection; //W = velocity
     float4 ParticleSize;
 };
@@ -22,13 +23,19 @@ StructuredBuffer<ParticleStruct> ParticleBuffer : register(t0);
 RWStructuredBuffer<float4> VertexBufferOut : register(u0);
 RWStructuredBuffer<float4> CalcBufferOut : register(u1);
 
-void ParticleCalculations(inout float4 position, inout float4 info, in float4 direction)
+void ParticleCalculations(inout float4 position, in float4 spawnPosition, inout float4 info, in float4 direction)
 {
     if (info.x > 0)
     {
         position = float4(position.xyz + (direction.xyz * direction.w * info.x), 1);
         position.w = 1;
         info.y += info.x;
+
+        if (info.y >= info.z)
+        {
+            position = spawnPosition;
+            info.y = 0;
+        }
     }
 }
 
@@ -41,8 +48,8 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
     float4 particleInfo = ParticleBuffer[DTid.x].ParticleInfo;
     float4 particlePos = ParticleBuffer[DTid.x].ParticlePosition;
-    
-    ParticleCalculations(particlePos, particleInfo, ParticleBuffer[DTid.x].ParticleDirection);
+
+    ParticleCalculations(particlePos, ParticleBuffer[DTid.x].ParticleSpawnPosition, particleInfo, ParticleBuffer[DTid.x].ParticleDirection);
     
     
     float4 particleWorldPos = particlePos; //mul(particlePos, WorldMatrix);

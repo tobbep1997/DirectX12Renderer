@@ -57,6 +57,10 @@ HRESULT X12Fence::WaitCpu() const
 	return hr;
 }
 
+const bool X12Fence::IsDone() const
+{
+	return m_fence->GetCompletedValue() >= m_fenceValue;
+}
 
 
 void X12Fence::Release()
